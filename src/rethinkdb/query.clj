@@ -1,7 +1,7 @@
 (ns rethinkdb.query
   (:refer-clojure :exclude [count])
   (:require [clojure.data.json :as json]
-            [rethinkdb.net :refer [send-start-query read-response]]
+            [rethinkdb.net :refer [send-query read-response]]
             [rethinkdb.protodefs :refer [tt->int qt->int]]))
 
 (defn parse-args [args]
@@ -49,9 +49,15 @@
   ([type args]
    (json/write-str [(qt->int (name type)) (parse-args args)])))
 
+(defn process-response [resp]
+  (let [{t "t" r "r"} resp]
+    (condp = t
+      1 (first r)
+      2 r)))
+
 (defn run [args conn]
   (let [json (query->json :START (parse-args args))
         in (:in @conn)]
     (send conn update-in [:token] inc)
-    (send-start-query @conn json)
-    (read-response in)))
+    (send-query @conn json)
+    (process-response (read-response in))))

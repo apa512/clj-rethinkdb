@@ -28,7 +28,7 @@
           json (read-str in length)]
       (json/read-str json))))
 
-(defn send-start-query [{:keys [out token]} query]
+(defn send-query [{:keys [out token]} query]
   (let [n (count query)]
     (send-int out 0 8)
     (send-int out n 4)
