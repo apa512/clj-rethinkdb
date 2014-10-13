@@ -20,11 +20,13 @@
       (let [db-list (-> (r/db-list) (r/run conn))]
         (is (some #{"test"} db-list))
         (is (not (some #{"test_temp"} db-list)))))
-    (println (-> (r/db "test")
+    (-> (r/db "test")
         (r/table "pokemons")
-        (r/insert (take 100 (iterate identity {})))
-        (r/run conn)))
-    (println (-> (r/db "test") (r/table "pokemons") (r/run conn)))
+        (r/insert (take 100000 (repeat {})))
+        (r/run conn))
+    (doseq [doc (partition 10000 (-> (r/db "test") (r/table "pokemons") (r/run conn)))]
+      (println (-> (r/db-list) (r/run conn)))
+      (println (count doc)))
     (-> (r/db-drop "test") (r/run conn))))
 
 (use-fixtures :once clear-db)

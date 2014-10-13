@@ -1,5 +1,6 @@
 (ns rethinkdb.net
   (:require [clojure.data.json :as json]
+            [rethinkdb.query-builder :refer [query->json]]
             [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes]]))
 
 (defn send-int [out i n]
@@ -30,6 +31,24 @@
 
 (defn send-query [{:keys [out token]} query]
   (let [n (count query)]
-    (send-int out 0 8)
+    (send-int out token 8)
     (send-int out n 4)
     (send-str out query)))
+
+(defn send-continue [{:keys [in token] :as conn}]
+  (println "Loading more with token" token)
+  (let [json (query->json :CONTINUE)]
+    (send-query conn json)
+    (let [resp (read-response in)
+          {t "t" r "r"} resp]
+      (if (= 3 t)
+        (lazy-cat r (send-continue conn))
+        r))))
+
+(defn process-response [resp conn]
+  (let [{t "t" r "r"} resp]
+    (condp = t
+      1 (first r)
+      2 r
+      3 (lazy-cat r (send-continue conn))
+      16 (throw (Exception. (first r))))))
