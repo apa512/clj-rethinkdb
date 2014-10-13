@@ -1,10 +1,10 @@
 (ns rethinkdb.protodefs)
 
-(import Ql2$Query$QueryType
-        Ql2$Term$TermType)
+(import Rethinkdb$Query$QueryType
+        Rethinkdb$Term$TermType)
 
 (defn qt->int [enum]
-  (.getNumber (Enum/valueOf Ql2$Query$QueryType enum)))
+  (.getNumber (Enum/valueOf Rethinkdb$Query$QueryType enum)))
 
 (defn tt->int [enum]
-  (.getNumber (Enum/valueOf Ql2$Term$TermType enum)))
+  (.getNumber (Enum/valueOf Rethinkdb$Term$TermType enum)))
