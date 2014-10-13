@@ -29,26 +29,17 @@
           json (read-str in length)]
       (json/read-str json))))
 
-(defn send-query [{:keys [out token]} query]
+(defn send-query [{:keys [out in token] :as conn} query]
   (let [n (count query)]
     (send-int out token 8)
     (send-int out n 4)
-    (send-str out query)))
+    (send-str out query)
+    (let [{type "t" resp "r"} (read-response in)]
+      (condp = type
+        1 (first resp)
+        2 resp
+        3 (lazy-cat resp (send-query conn (query->json :CONTINUE)))
+        16 (throw (Exception. (first resp)))))))
 
-(defn send-continue [{:keys [in token] :as conn}]
-  (println "Loading more with token" token)
-  (let [json (query->json :CONTINUE)]
-    (send-query conn json)
-    (let [resp (read-response in)
-          {t "t" r "r"} resp]
-      (if (= 3 t)
-        (lazy-cat r (send-continue conn))
-        r))))
-
-(defn process-response [resp conn]
-  (let [{t "t" r "r"} resp]
-    (condp = t
-      1 (first r)
-      2 r
-      3 (lazy-cat r (send-continue conn))
-      16 (throw (Exception. (first r))))))
+(defn send-start-query [conn args]
+  (send-query conn (query->json :START args)))

@@ -1,8 +1,7 @@
 (ns rethinkdb.query
   (:refer-clojure :exclude [count])
   (:require [clojure.data.json :as json]
-            [rethinkdb.net :refer [send-query process-response read-response]]
-            [rethinkdb.query-builder :refer [query->json]]))
+            [rethinkdb.net :refer [send-start-query]]))
 
 (defn db [db]
   [:DB [db]])
@@ -34,9 +33,5 @@
   [:TABLE_DROP [db table]])
 
 (defn run [args conn]
-  (send conn update-in [:token] inc)
-  (println "Running query with token" (:token @conn))
-  (let [json (query->json :START args)
-        conn @conn]
-    (send-query conn json)
-    (process-response (read-response (:in conn)) conn)))
+  (swap! conn update-in [:token] inc)
+  (send-start-query @conn args))

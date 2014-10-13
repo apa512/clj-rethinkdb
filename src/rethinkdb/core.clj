@@ -27,10 +27,10 @@
   (let [socket (Socket. host port)
         out (DataOutputStream. (.getOutputStream socket))
         in  (DataInputStream. (.getInputStream socket))
-        conn (agent {:socket socket
-                     :out out
-                     :in in
-                     :token token})]
+        conn (atom {:socket socket
+                    :out out
+                    :in in
+                    :token token})]
     (send-version out)
     (send-auth-key out auth-key)
     (send-protocol out)
