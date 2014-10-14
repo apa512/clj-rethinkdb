@@ -1,5 +1,5 @@
 (ns rethinkdb.query
-  (:refer-clojure :exclude [count])
+  (:refer-clojure :exclude [count filter])
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]))
 
@@ -13,7 +13,33 @@
   [:COUNT [sq]])
 
 (defn insert [table objs]
-  [:INSERT [table [:MAKE_ARRAY (vec objs)]]])
+  [:INSERT [table [:MAKE_ARRAY (flatten (vector objs))]]])
+
+(defn get-field [obj-or-sq s]
+  [:GET_FIELD [obj-or-sq (name s)]])
+
+(defn eq [& args]
+  [:EQ args])
+
+(defmacro lambda [arglist & [body]]
+  (let [arg-replacements (zipmap arglist (map (fn [n]
+                                                [:VAR [(inc n)]])
+                                              (range)))
+        func-args (into [] (take (clojure.core/count arglist) (iterate inc 1)))
+        func-terms (clojure.walk/postwalk-replace arg-replacements body)]
+    [:FUNC [[:MAKE_ARRAY func-args] func-terms]]))
+
+(defn filter [sq obj-or-func]
+  [:FILTER [sq obj-or-func]])
+
+#_(defn filter [sq obj-or-func]
+  [:MAP
+   [sq
+    [:FUNC
+     [[:MAKE_ARRAY [1]]
+      [:GET_FIELD
+      [[:VAR [1]]
+       "name"]]]]]])
 
 ;;;; Management
 

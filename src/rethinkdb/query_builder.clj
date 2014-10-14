@@ -7,6 +7,7 @@
             (cond
               (keyword? arg) (tt->int (name arg))
               (vector? arg) (parse-args arg)
+              (seq? arg) (parse-args arg)
               :else arg))]
     (map parse args)))
 

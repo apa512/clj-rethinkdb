@@ -39,7 +39,7 @@
         1 (first resp)
         2 resp
         3 (lazy-cat resp (send-query conn (query->json :CONTINUE)))
-        16 (throw (Exception. (first resp)))))))
+        (throw (Exception. (first resp)))))))
 
 (defn send-start-query [conn args]
   (send-query conn (query->json :START args)))

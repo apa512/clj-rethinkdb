@@ -3,28 +3,44 @@
             [rethinkdb.core :refer :all]
             [rethinkdb.query :as r]))
 
+(def test-db "test_superheroes")
+
 (defn clear-db [test-fn]
   (let [conn (connect)
         db-list (-> (r/db-list) (r/run conn))]
-    (if (some #{"test"} db-list)
-      (-> (r/db-drop "test") (r/run conn))))
+    (if (some #{test-db} db-list)
+      (-> (r/db-drop test-db) (r/run conn))))
   (test-fn))
 
 (deftest core-test
   (let [conn (connect)]
     (testing "creating and dropping databases"
-      (-> (r/db-create "test") (r/run conn))
-      (-> (r/db-create "test_temp") (r/run conn))
-      (-> (r/db-drop "test_temp") (r/run conn))
-      (-> (r/db "test") (r/table-create "pokemons") (r/run conn))
+      (-> (r/db-create "test_tmp") (r/run conn))
+      (-> (r/db-create test-db) (r/run conn))
+      (-> (r/db-drop "test_tmp") (r/run conn))
+      (-> (r/db test-db) (r/table-create "dc_universe") (r/run conn))
       (let [db-list (-> (r/db-list) (r/run conn))]
-        (is (some #{"test"} db-list))
-        (is (not (some #{"test_temp"} db-list)))))
-    (-> (r/db "test")
-        (r/table "pokemons")
-        (r/insert (take 100000 (repeat {})))
-        (r/run conn))
-    (is (= 100000 (count (-> (r/db "test") (r/table "pokemons") (r/run conn)))))
-    (-> (r/db-drop "test") (r/run conn))))
+        (is (some #{test-db} db-list))
+        (is (not (some #{"test_tmp"} db-list)))))
+    (testing "inserting and retrieving documents"
+      (-> (r/db test-db)
+          (r/table "dc_universe")
+          (r/insert {:hero "Batman"
+                     :real_name "Bruce Wayne"})
+          (r/run conn))
+      (-> (r/db test-db)
+          (r/table "dc_universe")
+          (r/insert [{:hero "Superman"
+                      :real_name "Clark Kent"}
+                     {:hero "Nightwing"
+                      :real_name "Dick Grayson"}])
+          (r/run conn))
+      (is (= 3 (-> (r/db test-db) (r/table "dc_universe") (r/count) (r/run conn))))
+      (is (= 1 (count (-> (r/db test-db)
+                          (r/table "dc_universe")
+                          (r/filter
+                            (r/lambda [row]
+                                      (r/eq (r/get-field row "hero") "Superman")))
+                          (r/run conn))))))))
 
 (use-fixtures :once clear-db)
