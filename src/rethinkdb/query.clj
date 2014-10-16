@@ -38,15 +38,6 @@
 (defn map [sq obj-or-func]
   [:MAP [sq obj-or-func]])
 
-#_(defn filter [sq obj-or-func]
-  [:MAP
-   [sq
-    [:FUNC
-     [[:MAKE_ARRAY [1]]
-      [:GET_FIELD
-      [[:VAR [1]]
-       "name"]]]]]])
-
 ;;;; Management
 
 (defn db-create [db]
