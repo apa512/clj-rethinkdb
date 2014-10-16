@@ -3,14 +3,23 @@
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]))
 
+(defn rarray [args]
+  (let [args (if (sequential? args)
+               args
+               [args])]
+    [:MAKE_ARRAY args]))
+
+(defn rvar [arg]
+  [:VAR [arg]])
+
 (defmacro lambda [arglist & [body]]
   (let [arg-replacements (zipmap arglist
                                  (clojure.core/map (fn [n]
-                                                     [:VAR [(inc n)]])
+                                                     (rvar (inc n)))
                                                    (range)))
         func-args (into [] (take (clojure.core/count arglist) (iterate inc 1)))
         func-terms (clojure.walk/postwalk-replace arg-replacements body)]
-    [:FUNC [[:MAKE_ARRAY func-args] func-terms]]))
+    [:FUNC [(rarray func-args) func-terms]]))
 
 ;;;; DB manipulation
 
@@ -34,7 +43,7 @@
 ;;;; Writing data
 
 (defn insert [table objs]
-  [:INSERT [table [:MAKE_ARRAY (flatten (vector objs))]]])
+  [:INSERT [table (rarray objs)]])
 
 ;;;; Selecting data
 
@@ -49,6 +58,9 @@
 
 (defn get-field [obj-or-sq s]
   [:GET_FIELD [obj-or-sq (name s)]])
+
+(defn has-fields [obj-or-sq s]
+  [:HAS_FIELDS [obj-or-sq (name s)]])
 
 ;;;; Aggregation
 
