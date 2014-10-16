@@ -21,6 +21,9 @@
 (defn eq [& args]
   [:EQ args])
 
+(defn add [& args]
+  [:ADD args])
+
 (defmacro lambda [arglist & [body]]
   (let [arg-replacements (zipmap arglist (map (fn [n]
                                                 [:VAR [(inc n)]])
@@ -31,6 +34,9 @@
 
 (defn filter [sq obj-or-func]
   [:FILTER [sq obj-or-func]])
+
+(defn map [sq obj-or-func]
+  [:MAP [sq obj-or-func]])
 
 #_(defn filter [sq obj-or-func]
   [:MAP

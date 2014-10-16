@@ -40,7 +40,15 @@
                           (r/table "dc_universe")
                           (r/filter
                             (r/lambda [row]
-                                      (r/eq (r/get-field row "hero") "Superman")))
-                          (r/run conn))))))))
+                              (r/eq (r/get-field row "hero") "Superman")))
+                          (r/run conn))))))
+    (testing "mapping"
+      (is (= (set ["Superman" "Nightwing" "Batman"])
+             (set (-> (r/db test-db)
+                      (r/table "dc_universe")
+                      (r/map
+                        (r/lambda [row]
+                          (r/get-field row "hero")))
+                      (r/run conn))))))))
 
 (use-fixtures :once clear-db)
