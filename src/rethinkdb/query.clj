@@ -3,27 +3,6 @@
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]))
 
-(defn db [db]
-  [:DB [db]])
-
-(defn table [db table]
-  [:TABLE [db table]])
-
-(defn count [sq]
-  [:COUNT [sq]])
-
-(defn insert [table objs]
-  [:INSERT [table [:MAKE_ARRAY (flatten (vector objs))]]])
-
-(defn get-field [obj-or-sq s]
-  [:GET_FIELD [obj-or-sq (name s)]])
-
-(defn eq [& args]
-  [:EQ args])
-
-(defn add [& args]
-  [:ADD args])
-
 (defmacro lambda [arglist & [body]]
   (let [arg-replacements (zipmap arglist
                                  (clojure.core/map (fn [n]
@@ -33,13 +12,7 @@
         func-terms (clojure.walk/postwalk-replace arg-replacements body)]
     [:FUNC [[:MAKE_ARRAY func-args] func-terms]]))
 
-(defn filter [sq obj-or-func]
-  [:FILTER [sq obj-or-func]])
-
-(defn map [sq obj-or-func]
-  [:MAP [sq obj-or-func]])
-
-;;;; Management
+;;;; DB manipulation
 
 (defn db-create [db]
   [:DB_CREATE [db]])
@@ -50,11 +23,50 @@
 (defn db-list []
   [:DB_LIST])
 
+;;;; Table manipulation
+
 (defn table-create [db table]
   [:TABLE_CREATE [db table]])
 
 (defn table-drop [db table]
   [:TABLE_DROP [db table]])
+
+;;;; Writing data
+
+(defn insert [table objs]
+  [:INSERT [table [:MAKE_ARRAY (flatten (vector objs))]]])
+
+;;;; Selecting data
+
+(defn db [db]
+  [:DB [db]])
+
+(defn table [db table]
+  [:TABLE [db table]])
+
+(defn filter [sq obj-or-func]
+  [:FILTER [sq obj-or-func]])
+
+(defn get-field [obj-or-sq s]
+  [:GET_FIELD [obj-or-sq (name s)]])
+
+;;;; Aggregation
+
+(defn count [sq]
+  [:COUNT [sq]])
+
+;;;; Transformations
+
+(defn map [sq obj-or-func]
+  [:MAP [sq obj-or-func]])
+
+;;;; Math and logic
+
+(defn eq [& args]
+  [:EQ args])
+
+(defn add [& args]
+  [:ADD args])
 
 ;;;; Run query
 
