@@ -1,5 +1,5 @@
 (ns rethinkdb.query
-  (:refer-clojure :exclude [count filter])
+  (:refer-clojure :exclude [count filter map])
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]))
 
@@ -25,9 +25,10 @@
   [:ADD args])
 
 (defmacro lambda [arglist & [body]]
-  (let [arg-replacements (zipmap arglist (map (fn [n]
-                                                [:VAR [(inc n)]])
-                                              (range)))
+  (let [arg-replacements (zipmap arglist
+                                 (clojure.core/map (fn [n]
+                                                     [:VAR [(inc n)]])
+                                                   (range)))
         func-args (into [] (take (clojure.core/count arglist) (iterate inc 1)))
         func-terms (clojure.walk/postwalk-replace arg-replacements body)]
     [:FUNC [[:MAKE_ARRAY func-args] func-terms]]))
@@ -54,6 +55,8 @@
 
 (defn table-drop [db table]
   [:TABLE_DROP [db table]])
+
+;;;; Run query
 
 (defn run [args conn]
   (swap! conn update-in [:token] inc)
