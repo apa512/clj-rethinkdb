@@ -56,6 +56,9 @@
 (defn filter [sq obj-or-func]
   [:FILTER [sq obj-or-func]])
 
+(defn get [table id]
+  [:GET [table id]])
+
 (defn get-field [obj-or-sq s]
   [:GET_FIELD [obj-or-sq (name s)]])
 
