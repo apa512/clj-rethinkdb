@@ -1,5 +1,5 @@
 (defproject rethinkdb "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
+  :description "RethinkDB client"
   :url "http://github.com/apa512/clj-rethinkdb"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
