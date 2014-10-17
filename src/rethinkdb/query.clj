@@ -65,6 +65,9 @@
 (defn has-fields [obj-or-sq s]
   [:HAS_FIELDS [obj-or-sq (name s)]])
 
+(defn contains [sq x-or-func]
+  [:CONTAINS [sq x-or-func]])
+
 ;;;; Aggregation
 
 (defn count [sq]

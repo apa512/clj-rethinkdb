@@ -26,6 +26,7 @@
       (-> (r/db test-db)
           (r/table "dc_universe")
           (r/insert {:hero "Batman"
+                     :gadgets ["Batarangs" "Batclaw" "Batrope"]
                      :real_name "Bruce Wayne"})
           (r/run conn))
       (-> (r/db test-db)
