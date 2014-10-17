@@ -19,6 +19,16 @@
     (send-int out n 4)
     (send-str out auth-key)))
 
+(defn close [conn]
+  (let [conn @conn
+        socket (:socket conn)
+        out (:out conn)
+        in (:in conn)]
+    (.close out)
+    (.close in)
+    (.close socket)
+    true))
+
 (defn connect [& {:keys [host port token auth-key]
                   :or {host "127.0.0.1"
                        port 28015

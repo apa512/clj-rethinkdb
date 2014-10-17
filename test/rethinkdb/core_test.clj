@@ -56,6 +56,7 @@
                       (r/map
                         (r/lambda [row]
                           (r/get-field row "hero")))
-                      (r/run conn))))))))
+                      (r/run conn))))))
+    (println (close conn))))
 
 (use-fixtures :once clear-db)
