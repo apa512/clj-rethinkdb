@@ -16,14 +16,9 @@
     (String. resp)))
 
 (defn read-init-response [in]
-  (let [s (StringBuilder.)
-        x (byte-array 1)]
-    (loop [c (.read in x)]
-      (let [x1 (aget x 0)]
-        (if (== 0 x1)
-          (.toString s)
-          (do (.append s (char x1))
-              (recur (.read in x))))))))
+  (let [resp (byte-array 4096)]
+    (.read in resp 0 4096)
+    (clojure.string/replace (String. resp) #"\W*$" "")))
 
 (defn read-response [in]
   (let [token (byte-array 8)

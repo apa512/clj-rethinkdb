@@ -27,7 +27,7 @@
     (.close out)
     (.close in)
     (.close socket)
-    true))
+    :closed))
 
 (defn connect [& {:keys [host port token auth-key]
                   :or {host "127.0.0.1"
