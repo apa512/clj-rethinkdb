@@ -1,5 +1,5 @@
 (ns rethinkdb.query
-  (:refer-clojure :exclude [count filter map])
+  (:refer-clojure :exclude [count filter map get not])
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]))
 
@@ -53,11 +53,16 @@
 (defn get-field [obj-or-sq s]
   [:GET_FIELD [obj-or-sq (name s)]])
 
+(defn contains [sq x-or-func]
+  [:CONTAINS [sq x-or-func]])
+
+;;;; Document manipulation
+
 (defn has-fields [obj-or-sq s]
   [:HAS_FIELDS [obj-or-sq (name s)]])
 
-(defn contains [sq x-or-func]
-  [:CONTAINS [sq x-or-func]])
+(defn pluck [obj-or-sq s]
+  [:PLUCK [obj-or-sq (name s)]])
 
 ;;;; Aggregation
 

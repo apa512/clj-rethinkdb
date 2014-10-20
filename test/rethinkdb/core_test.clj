@@ -37,6 +37,12 @@
                       :real_name "Dick Grayson"}])
           (r/run conn))
       (is (= 3 (-> (r/db test-db) (r/table "dc_universe") (r/count) (r/run conn))))
+      (is (= (sort-by #(% "hero") [{"hero" "Batman"} {"hero" "Nightwing"} {"hero" "Superman"}])
+             (sort-by #(% "hero")
+                      (-> (r/db test-db)
+                          (r/table "dc_universe")
+                          (r/pluck :hero)
+                          (r/run conn)))))
       (is (= 1 (count (-> (r/db test-db)
                           (r/table "dc_universe")
                           (r/filter
@@ -67,6 +73,6 @@
                         (r/lambda [row]
                           (r/get-field row "hero")))
                       (r/run conn))))))
-    (println (close conn))))
+    (close conn)))
 
 (use-fixtures :once clear-db)
