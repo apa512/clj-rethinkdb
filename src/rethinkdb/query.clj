@@ -69,6 +69,9 @@
 (defn map [sq obj-or-func]
   [:MAP [sq obj-or-func]])
 
+(defn limit [sq n]
+  [:LIMIT [sq n]])
+
 ;;;; Math and logic
 
 (defn eq [& args]
@@ -76,6 +79,9 @@
 
 (defn add [& args]
   [:ADD args])
+
+(defn not [bool]
+  [:NOT [bool]])
 
 ;;;; Run query
 

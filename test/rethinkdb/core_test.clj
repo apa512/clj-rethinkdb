@@ -43,6 +43,16 @@
                             (r/lambda [row]
                               (r/eq (r/get-field row "hero") "Superman")))
                           (r/run conn)))))
+      (is (= 2 (count (-> (r/db test-db)
+                          (r/table "dc_universe")
+                          (r/filter
+                            (r/lambda [row]
+                                      (r/not (r/eq (r/get-field row "hero") "Superman"))))
+                          (r/run conn)))))
+      (is (= 1 (count (-> (r/db test-db)
+                          (r/table "dc_universe")
+                          (r/limit 1)
+                          (r/run conn)))))
       (is (= 3 (count (-> (r/db test-db)
                           (r/table "dc_universe")
                           (r/filter
