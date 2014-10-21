@@ -6,4 +6,5 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/data.json "0.2.5"]
                  [org.flatland/protobuf "0.8.1"]
+                 [clj-time "0.8.0"]
                  [revise/rethinkdb "1.0.8"]])

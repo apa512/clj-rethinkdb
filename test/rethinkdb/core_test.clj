@@ -1,5 +1,6 @@
 (ns rethinkdb.core-test
-  (:require [clojure.test :refer :all]
+  (:require [clj-time.core :as t]
+            [clojure.test :refer :all]
             [rethinkdb.core :refer :all]
             [rethinkdb.query :as r]))
 
@@ -73,6 +74,18 @@
                         (r/lambda [row]
                           (r/get-field row "hero")))
                       (r/run conn))))))
+    (testing "dates and times"
+      (let [date1 (t/date-time 1986 11 27)
+            date2 (t/date-time 1986 11 27 12 30 00)]
+        (-> (r/db test-db)
+            (r/table "dc_universe")
+            (r/insert {:name "Erik"
+                       :birthdate date1})
+            (r/run conn))
+        (println (-> (r/db test-db)
+                     (r/table "dc_universe")
+                     (r/has-fields :birthdate)
+                     (r/run conn)))))
     (close conn)))
 
 (use-fixtures :once clear-db)

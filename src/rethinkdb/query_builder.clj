@@ -1,5 +1,6 @@
 (ns rethinkdb.query-builder
   (:require [clojure.data.json :as json]
+            [clj-time.coerce :as c]
             [rethinkdb.protodefs :refer [tt->int qt->int]]))
 
 (defmulti parse-args
@@ -19,6 +20,10 @@
 
 (defmethod parse-args clojure.lang.Keyword [arg]
   (tt->int (name arg)))
+
+(defmethod parse-args org.joda.time.DateTime [arg]
+  (let [epoch (c/to-long arg)]
+    [(tt->int "EPOCH_TIME") [epoch]]))
 
 (defmethod parse-args :default [arg]
   arg)

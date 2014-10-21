@@ -1,6 +1,7 @@
 (ns rethinkdb.net
   (:require [clojure.data.json :as json]
             [rethinkdb.query-builder :refer [query->json]]
+            [rethinkdb.response :refer [parse-response]]
             [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes]]))
 
 (defn send-int [out i n]
@@ -20,10 +21,12 @@
     (.read in resp 0 4096)
     (clojure.string/replace (String. resp) #"\W*$" "")))
 
-(defn read-response [in]
-  (let [token (byte-array 8)
+(defn read-response [in token]
+  (let [recvd-token (byte-array 8)
         length (byte-array 4)]
-    (.read in token 0 8)
+    (.read in recvd-token 0 8)
+    (let [recvd-token (bytes->int recvd-token 8)]
+      (assert (= token recvd-token)))
     (.read in length 0 4)
     (let [length (bytes->int length 4)
           json (read-str in length)]
@@ -34,7 +37,8 @@
     (send-int out token 8)
     (send-int out n 4)
     (send-str out query)
-    (let [{type "t" resp "r"} (read-response in)]
+    (let [{type "t" resp "r"} (read-response in token)
+          resp (parse-response resp)]
       (condp = type
         1 (first resp)
         2 resp
