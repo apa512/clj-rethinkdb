@@ -4,7 +4,9 @@
 (defmulti parse-reql-type (fn [resp] (get resp "$reql_type$")))
 
 (defmethod parse-reql-type "TIME" [resp]
-  (c/from-long (get resp "epoch_time")))
+  (let [epoch (get resp "epoch_time")
+        epoch-milli (* epoch 1000)]
+    (c/from-long epoch-milli)))
 
 (defmulti parse-response
   (fn [args]

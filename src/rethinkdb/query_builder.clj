@@ -22,7 +22,7 @@
   (tt->int (name arg)))
 
 (defmethod parse-args org.joda.time.DateTime [arg]
-  (let [epoch (c/to-long arg)]
+  (let [epoch (c/to-epoch arg)]
     [(tt->int "EPOCH_TIME") [epoch]]))
 
 (defmethod parse-args :default [arg]
