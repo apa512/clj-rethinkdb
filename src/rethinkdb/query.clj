@@ -33,8 +33,8 @@
 
 ;;;; Writing data
 
-(defn insert [table objs]
-  [:INSERT [table objs]])
+(defn insert [table objs & {:as optargs}]
+  [:INSERT [table objs] (or optargs {})])
 
 ;;;; Selecting data
 

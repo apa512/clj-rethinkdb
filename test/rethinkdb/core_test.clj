@@ -24,12 +24,13 @@
         (is (some #{test-db} db-list))
         (is (not (some #{"test_tmp"} db-list)))))
     (testing "inserting and retrieving documents"
-      (-> (r/db test-db)
+      (println (-> (r/db test-db)
           (r/table "dc_universe")
           (r/insert {:hero "Batman"
                      :gadgets ["Batarangs" "Batclaw" "Batrope"]
-                     :real_name "Bruce Wayne"})
-          (r/run conn))
+                     :real_name "Bruce Wayne"}
+                    :return_changes true)
+          (r/run conn)))
       (-> (r/db test-db)
           (r/table "dc_universe")
           (r/insert [{:hero "Superman"

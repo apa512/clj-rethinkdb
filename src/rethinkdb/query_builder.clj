@@ -10,9 +10,10 @@
       (type args))))
 
 (defmethod parse-args :sequential [args]
-  (let [[fst nxt] args]
+  (let [[fst nxt & [optargs]] args]
     (if (keyword? fst)
-      [(tt->int (name fst)) (map parse-args nxt)]
+      (let [term [(tt->int (name fst)) (map parse-args nxt)]]
+        (if optargs (conj term optargs) term))
       [(tt->int "MAKE_ARRAY") (map parse-args args)])))
 
 (defmethod parse-args clojure.lang.PersistentArrayMap [arg]
