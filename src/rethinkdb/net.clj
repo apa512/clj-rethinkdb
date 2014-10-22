@@ -30,14 +30,14 @@
     (.read in length 0 4)
     (let [length (bytes->int length 4)
           json (read-str in length)]
-      (json/read-str json))))
+      (json/read-str json :key-fn keyword))))
 
 (defn send-query [{:keys [out in token] :as conn} query]
   (let [n (count query)]
     (send-int out token 8)
     (send-int out n 4)
     (send-str out query)
-    (let [{type "t" resp "r"} (read-response in token)
+    (let [{type :t resp :r} (read-response in token)
           resp (parse-response resp)]
       (condp = type
         1 (first resp)
