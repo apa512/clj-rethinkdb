@@ -67,8 +67,16 @@
                             (r/lambda [row]
                               (r/has-fields row "hero")))
                           (r/run conn))))))
+    (testing "updating"
+      (println (-> (r/db test-db)
+                   (r/table "dc_universe")
+                   (r/filter
+                     (r/lambda [row]
+                       (r/eq (r/get-field row :hero) "Batman")))
+                   (r/update {:hero "Fatman"} :return_changes true)
+                   (r/run conn))))
     (testing "mapping"
-      (is (= (set ["Superman" "Nightwing" "Batman"])
+      (is (= (set ["Superman" "Nightwing" "Fatman"])
              (set (-> (r/db test-db)
                       (r/table "dc_universe")
                       (r/map

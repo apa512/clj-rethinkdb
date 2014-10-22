@@ -34,7 +34,10 @@
 ;;;; Writing data
 
 (defn insert [table objs & {:as optargs}]
-  [:INSERT [table objs] (or optargs {})])
+  [:INSERT [table objs] optargs])
+
+(defn update [obj-or-sq obj-or-func & {:as optargs}]
+  [:UPDATE [obj-or-sq obj-or-func] optargs])
 
 ;;;; Selecting data
 
