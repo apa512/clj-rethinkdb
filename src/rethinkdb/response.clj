@@ -10,14 +10,15 @@
 
 (defmulti parse-response
   (fn [args]
-    (if (sequential? args)
-      :sequential
-      (type args))))
+    (cond
+      (sequential? args) :sequential
+      (map? args) :hash
+      :else (type args))))
 
 (defmethod parse-response :sequential [resp]
   (map parse-response resp))
 
-(defmethod parse-response clojure.lang.PersistentArrayMap [resp]
+(defmethod parse-response :hash [resp]
   (if-let [reql-type (:$reql_type$ resp)]
     (parse-reql-type resp)
     (zipmap (keys resp) (map parse-response (vals resp)))))

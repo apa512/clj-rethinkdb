@@ -73,10 +73,10 @@
                    (r/filter
                      (r/lambda [row]
                        (r/eq (r/get-field row :hero) "Batman")))
-                   (r/update {:hero "Fatman"} :return_changes true)
+                   (r/update {:created_at (t/date-time 1939 5 1)} :return_changes true)
                    (r/run conn))))
     (testing "mapping"
-      (is (= (set ["Superman" "Nightwing" "Fatman"])
+      (is (= (set ["Superman" "Nightwing" "Batman"])
              (set (-> (r/db test-db)
                       (r/table "dc_universe")
                       (r/map

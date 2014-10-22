@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [rethinkdb.query-builder :refer :all]))
 
-#_(deftest query-builder-test
+(deftest query-builder-test
   (is (= [14 ["test"] {}]
          (parse-args [:DB ["test"] {}])))
   (is (= [15 [[14 ["test"]]]]
