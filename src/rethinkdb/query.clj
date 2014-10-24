@@ -31,6 +31,12 @@
 (defn table-drop [db table]
   [:TABLE_DROP [db table]])
 
+(defn table-list [db]
+  [:TABLE_LIST [db]])
+
+(defn index-create [table idx lambda1 & {:as optargs}]
+  [:INDEX_CREATE [table idx lambda1] optargs])
+
 ;;;; Writing data
 
 (defn insert [table objs & {:as optargs}]
@@ -52,6 +58,9 @@
 
 (defn get [table id]
   [:GET [table id]])
+
+(defn get-all [table s & {:as optargs}]
+  [:GET_ALL [table s] optargs])
 
 (defn get-field [obj-or-sq s]
   [:GET_FIELD [obj-or-sq (name s)]])
