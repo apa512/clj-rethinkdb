@@ -26,79 +26,22 @@
   (let [conn (connect)]
     (testing "table management"
       (with-test-db
-        (r/table-create "pokemons")))
-    #_(testing "inserting and retrieving documents"
-      (println (-> (r/db test-db)
-          (r/table "dc_universe")
-          (r/insert {:hero "Batman"
-                     :gadgets ["Batarangs" "Batclaw" "Batrope"]
-                     :real_name "Bruce Wayne"}
-                    :return_changes true)
-          (r/run conn)))
-      (-> (r/db test-db)
-          (r/table "dc_universe")
-          (r/insert [{:hero "Superman"
-                      :real_name "Clark Kent"}
-                     {:hero "Nightwing"
-                      :real_name "Dick Grayson"}])
-          (r/run conn))
-      (is (= 3 (-> (r/db test-db) (r/table "dc_universe") (r/count) (r/run conn))))
-      (is (= (sort-by #(% :hero) [{:hero "Batman"} {:hero "Nightwing"} {:hero "Superman"}])
-             (sort-by #(% :hero)
-                      (-> (r/db test-db)
-                          (r/table "dc_universe")
-                          (r/pluck :hero)
-                          (r/run conn)))))
-      (is (= 1 (count (-> (r/db test-db)
-                          (r/table "dc_universe")
-                          (r/filter
-                            (r/lambda [row]
-                              (r/eq (r/get-field row "hero") "Superman")))
-                          (r/run conn)))))
-      (is (= 2 (count (-> (r/db test-db)
-                          (r/table "dc_universe")
-                          (r/filter
-                            (r/lambda [row]
-                                      (r/not (r/eq (r/get-field row "hero") "Superman"))))
-                          (r/run conn)))))
-      (is (= 1 (count (-> (r/db test-db)
-                          (r/table "dc_universe")
-                          (r/limit 1)
-                          (r/run conn)))))
-      (is (= 3 (count (-> (r/db test-db)
-                          (r/table "dc_universe")
-                          (r/filter
-                            (r/lambda [row]
-                              (r/has-fields row "hero")))
-                          (r/run conn))))))
-    #_(testing "updating"
-      (println (-> (r/db test-db)
-                   (r/table "dc_universe")
-                   (r/filter
-                     (r/lambda [row]
-                       (r/eq (r/get-field row :hero) "Batman")))
-                   (r/update {:created_at (t/date-time 1939 5 1)} :return_changes true)
-                   (r/run conn))))
-    #_(testing "mapping"
-      (is (= (set ["Superman" "Nightwing" "Batman"])
-             (set (-> (r/db test-db)
-                      (r/table "dc_universe")
-                      (r/map
-                        (r/lambda [row]
-                          (r/get-field row "hero")))
-                      (r/run conn))))))
-    #_(testing "dates and times"
-      (let [date1 (t/date-time 1986 11 27)
-            date2 (t/date-time 1986 11 27 12 30 00)]
-        (-> (r/db test-db)
-            (r/table "dc_universe")
-            (r/insert {:name "Erik"
-                       :birthdate date1})
-            (r/run conn))
-        (println (-> (r/db test-db)
-                     (r/table "dc_universe")
-                     (r/has-fields :birthdate)
-                     (r/run conn)))))
+        (r/table-create "pokedex" :primary-key :national_no)
+        (-> (r/table "pokedex")
+            (r/index-create "type" (r/lambda [row]
+                                     (r/get-field row :type))))))
+    (testing "writing data"
+      (with-test-db
+        (-> (r/table "pokedex")
+            (r/insert {:national_no 25
+                       :name "Pikachu"
+                       :type "Electric"
+                       :moves [{:name "Tail Whip"
+                                :type "Normal"}]}))))
+    (testing "selecting data"
+      (let [pikachu-with-pk (with-test-db (-> (r/table "pokedex") (r/get 25)))
+            pikachu-with-idx (first (with-test-db (-> (r/table "pokedex") (r/get-all "Electric" :index :type))))]
+        (is (= pikachu-with-pk pikachu-with-idx))))
     (close conn)))
 
 (use-fixtures :once clear-db)

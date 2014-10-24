@@ -25,8 +25,8 @@
 
 ;;;; Table manipulation
 
-(defn table-create [db table]
-  [:TABLE_CREATE [db table]])
+(defn table-create [db table & {:as optargs}]
+  [:TABLE_CREATE [db table] optargs])
 
 (defn table-drop [db table]
   [:TABLE_DROP [db table]])
@@ -36,6 +36,18 @@
 
 (defn index-create [table idx lambda1 & {:as optargs}]
   [:INDEX_CREATE [table idx lambda1] optargs])
+
+(defn index-drop [table idx]
+  [:INDEX_DROP [table idx]])
+
+(defn index-list [table]
+  [:INDEX_LIST [table]])
+
+(defn index-rename [table old-idx new-idx & {:as optargs}]
+  [:INDEX_RENAME [table old-idx new-idx] optargs])
+
+(defn index-wait [table & idxs]
+  [:INDEX_WAIT [table idxs]])
 
 ;;;; Writing data
 

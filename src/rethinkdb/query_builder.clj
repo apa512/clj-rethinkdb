@@ -1,7 +1,13 @@
 (ns rethinkdb.query-builder
   (:require [clojure.data.json :as json]
             [clj-time.coerce :as c]
-            [rethinkdb.protodefs :refer [tt->int qt->int]]))
+            [rethinkdb.protodefs :refer [tt->int qt->int]]
+            [rethinkdb.utils :refer [snake-case]]))
+
+(defn snake-case-keys [m]
+  (into {}
+    (for [[k v] m]
+      [(snake-case k) v])))
 
 (defmulti parse-args
   (fn [args]
@@ -13,7 +19,7 @@
   (let [[fst nxt & [optargs]] args]
     (if (keyword? fst)
       (let [term [(tt->int (name fst)) (map parse-args nxt)]]
-        (if optargs (conj term optargs) term))
+        (if optargs (conj term (snake-case-keys optargs)) term))
       [(tt->int "MAKE_ARRAY") (map parse-args args)])))
 
 (defmethod parse-args clojure.lang.PersistentArrayMap [arg]

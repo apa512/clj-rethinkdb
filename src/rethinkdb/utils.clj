@@ -1,4 +1,5 @@
 (ns rethinkdb.utils
+  (:require [clojure.string :as string])
   (:import [java.nio ByteOrder ByteBuffer]))
 
 (defn int->bytes [i n]
@@ -24,3 +25,6 @@
 
 (defn pp-bytes [bs]
   (vec (map #(format "%02x" %) bs)))
+
+(defn snake-case [s]
+  (string/replace (name s) #"-" "_"))
