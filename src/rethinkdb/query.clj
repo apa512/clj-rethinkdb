@@ -57,6 +57,9 @@
 (defn update [obj-or-sq obj-or-func & {:as optargs}]
   [:UPDATE [obj-or-sq obj-or-func] optargs])
 
+(defn delete [table-or-obj-or-sq]
+  [:DELETE [table-or-obj-or-sq]])
+
 ;;;; Selecting data
 
 (defn db [db]
