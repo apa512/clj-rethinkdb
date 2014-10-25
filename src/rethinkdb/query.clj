@@ -78,7 +78,7 @@
   [:GET_ALL [table s] optargs])
 
 (defn get-field [obj-or-sq s]
-  [:GET_FIELD [obj-or-sq (name s)]])
+  [:GET_FIELD [obj-or-sq s]])
 
 (defn contains [sq x-or-func]
   [:CONTAINS [sq x-or-func]])
@@ -86,10 +86,10 @@
 ;;;; Document manipulation
 
 (defn has-fields [obj-or-sq s]
-  [:HAS_FIELDS [obj-or-sq (name s)]])
+  [:HAS_FIELDS [obj-or-sq s]])
 
 (defn pluck [obj-or-sq s]
-  [:PLUCK [obj-or-sq (name s)]])
+  [:PLUCK [obj-or-sq s]])
 
 ;;;; Aggregation
 
