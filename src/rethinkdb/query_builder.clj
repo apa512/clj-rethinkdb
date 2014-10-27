@@ -11,18 +11,19 @@
 
 (defmulti parse-args
   (fn [args]
-    (if (sequential? args)
-      :sequential
-      (type args))))
+    (cond
+      (or (sequential? args) (seq? args)) :list
+      (map? args) :map
+      :else (type args))))
 
-(defmethod parse-args :sequential [args]
+(defmethod parse-args :list [args]
   (let [[fst nxt & [optargs]] args]
     (if (keyword? fst)
       (let [term [(tt->int (name fst)) (map parse-args nxt)]]
         (if optargs (conj term (snake-case-keys optargs)) term))
       [(tt->int "MAKE_ARRAY") (map parse-args args)])))
 
-(defmethod parse-args clojure.lang.PersistentArrayMap [arg]
+(defmethod parse-args :map [arg]
   (zipmap (keys arg) (map parse-args (vals arg))))
 
 (defmethod parse-args clojure.lang.Keyword [arg]
