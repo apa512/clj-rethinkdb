@@ -91,6 +91,9 @@
 (defn pluck [obj-or-sq s]
   [:PLUCK [obj-or-sq s]])
 
+(defn set-insert [sq x]
+  [:SET_INSERT [sq x]])
+
 ;;;; Aggregation
 
 (defn count [sq]
