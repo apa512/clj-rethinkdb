@@ -47,7 +47,7 @@
             (r/get 25)
             (r/update
               (r/lambda [row]
-                (r/set-insert (r/get-field row :moves) "Tail Whip")))))
+                {:moves (r/set-insert (r/get-field row :moves) "Tail Whip")}))))
       (is (= ["Tail Whip"]
              (with-test-db
                (-> (r/table :pokedex)
