@@ -36,7 +36,7 @@
             (r/insert {:national_no 25
                        :name "Pikachu"
                        :type "Electric"
-                       :moves ["Tail Whip"]}))))
+                       :moves ["Tail Whip" "Tail Whip" "Growl"]}))))
     (testing "selecting data"
       (let [pikachu-with-pk (with-test-db (-> (r/table :pokedex) (r/get 25)))
             pikachu-with-idx (first (with-test-db (-> (r/table :pokedex) (r/get-all "Electric" :index :type))))]
@@ -47,12 +47,18 @@
             (r/get 25)
             (r/update
               (r/lambda [row]
-                {:moves (r/set-insert (r/get-field row :moves) "Tail Whip")}))))
+                {:moves (r/set-insert (r/get-field row :moves) "Thunder Shock")}))))
+      (is (= ["Tail Whip" "Growl" "Thunder Shock"]
+             (with-test-db
+               (-> (r/table :pokedex)
+                   (r/get 25)
+                   (r/get-field :moves)))))
       (is (= ["Tail Whip"]
              (with-test-db
                (-> (r/table :pokedex)
                    (r/get 25)
-                   (r/get-field :moves))))))
+                   (r/get-field :moves)
+                   (r/set-difference ["Growl" "Thunder Shock"]))))))
     (close conn)))
 
 (use-fixtures :once clear-db)

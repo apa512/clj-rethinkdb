@@ -94,6 +94,9 @@
 (defn set-insert [sq x]
   [:SET_INSERT [sq x]])
 
+(defn set-difference [sq1 sq2]
+  [:SET_DIFFERENCE [sq1 sq2]])
+
 ;;;; Aggregation
 
 (defn count [sq]
