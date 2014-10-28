@@ -20,10 +20,7 @@
     (send-str out auth-key)))
 
 (defn close [conn]
-  (let [conn @conn
-        socket (:socket conn)
-        out (:out conn)
-        in (:in conn)]
+  (let [{:keys [socket out in]} @conn]
     (.close out)
     (.close in)
     (.close socket)

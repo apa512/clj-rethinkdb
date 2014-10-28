@@ -4,40 +4,45 @@
             [rethinkdb.protodefs :refer [tt->int qt->int]]
             [rethinkdb.utils :refer [snake-case]]))
 
+(declare parse-term)
+
 (defn snake-case-keys [m]
   (into {}
     (for [[k v] m]
       [(snake-case k) v])))
 
-(defmulti parse-args
-  (fn [args]
+(defn term [term args & [optargs]]
+  {::term term
+   ::args args
+   ::optargs optargs})
+
+(defmulti parse-arg
+  (fn [arg]
     (cond
-      (or (sequential? args) (seq? args)) :list
-      (map? args) :map
-      :else (type args))))
+      (::term arg) :query
+      (or (sequential? arg) (seq? arg)) :seq
+      (map? arg) :map)))
 
-(defmethod parse-args :list [args]
-  (let [[fst nxt & [optargs]] args]
-    (if (keyword? fst)
-      (let [term [(tt->int (name fst)) (map parse-args nxt)]]
-        (if optargs (conj term (snake-case-keys optargs)) term))
-      [(tt->int "MAKE_ARRAY") (map parse-args args)])))
+(defmethod parse-arg :query [arg]
+  (parse-term arg))
 
-(defmethod parse-args :map [arg]
-  (zipmap (keys arg) (map parse-args (vals arg))))
+(defmethod parse-arg :seq [arg]
+  (parse-term (term :MAKE_ARRAY arg)))
 
-(defmethod parse-args clojure.lang.Keyword [arg]
-  (tt->int (name arg)))
+(defmethod parse-arg :map [arg]
+  (zipmap (keys arg) (map parse-arg (vals arg))))
 
-(defmethod parse-args org.joda.time.DateTime [arg]
-  (let [epoch (c/to-epoch arg)]
-    [(tt->int "EPOCH_TIME") [epoch]]))
-
-(defmethod parse-args :default [arg]
+(defmethod parse-arg :default [arg]
   arg)
 
-(defn query->json
+(defn parse-term [{term ::term args ::args optargs ::optargs}]
+  (filter identity
+          [(tt->int term)
+           (map parse-arg (seq args))
+           (if optargs (snake-case-keys optargs))]))
+
+(defn parse-query
   ([type]
-   (json/write-str [(qt->int (name type))]))
-  ([type args]
-   (json/write-str [(qt->int (name type)) (parse-args args)])))
+   [(qt->int type)])
+  ([type term]
+   [(qt->int type) (parse-term term)]))

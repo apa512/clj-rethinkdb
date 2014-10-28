@@ -26,7 +26,7 @@
   (let [conn (connect)]
     (testing "table management"
       (with-test-db
-        (r/table-create :pokedex :primary-key :national_no)
+        (r/table-create :pokedex {:primary-key :national_no})
         (-> (r/table :pokedex)
             (r/index-create :type (r/lambda [row]
                                      (r/get-field row :type))))))
@@ -43,8 +43,8 @@
                        :moves [{:apa "Gris"}]}))))
     (testing "selecting data"
       (let [pikachu-with-pk (with-test-db (-> (r/table :pokedex) (r/get 25)))
-            pikachu-with-idx (first (with-test-db (-> (r/table :pokedex) (r/get-all "Electric" :index :type))))]
-        (is (= pikachu-with-pk pikachu-with-idx))))
+            pikachu-with-index (first (with-test-db (-> (r/table :pokedex) (r/get-all "Electric" {:index :type}))))]
+        (is (= pikachu-with-pk pikachu-with-index))))
     (testing "manipulating documents"
       (with-test-db
         (-> (r/table :pokedex)

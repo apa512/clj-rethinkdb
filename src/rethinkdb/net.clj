@@ -1,6 +1,6 @@
 (ns rethinkdb.net
   (:require [clojure.data.json :as json]
-            [rethinkdb.query-builder :refer [query->json]]
+            [rethinkdb.query-builder :refer [parse-query]]
             [rethinkdb.response :refer [parse-response]]
             [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes]]))
 
@@ -33,17 +33,18 @@
       (json/read-str json :key-fn keyword))))
 
 (defn send-query [{:keys [out in token] :as conn} query]
-  (let [n (count query)]
+  (let [json (json/write-str query)
+        n (count json)]
     (send-int out token 8)
     (send-int out n 4)
-    (send-str out query)
+    (send-str out json)
     (let [{type :t resp :r} (read-response in token)
           resp (parse-response resp)]
       (condp = type
         1 (first resp)
         2 resp
-        3 (lazy-cat resp (send-query conn (query->json :CONTINUE)))
+        3 (lazy-cat resp (send-query conn (parse-query :CONTINUE)))
         (throw (Exception. (first resp)))))))
 
 (defn send-start-query [conn args]
-  (send-query conn (query->json :START args)))
+  (send-query conn (parse-query :START args)))
