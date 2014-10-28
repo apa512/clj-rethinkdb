@@ -1,7 +1,7 @@
 (ns rethinkdb.query-builder
   (:require [clojure.data.json :as json]
             [clj-time.coerce :as c]
-            [rethinkdb.protodefs :refer [tt->int qt->int]]
+            [rethinkdb.types :refer [tt->int qt->int]]
             [rethinkdb.utils :refer [snake-case]]))
 
 (declare parse-term)

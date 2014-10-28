@@ -5,12 +5,12 @@
             [rethinkdb.query-builder :refer [term]]))
 
 (defmacro lambda [arglist & [body]]
-  (let [arg-replacements (zipmap arglist
+  (let [var-replacements (zipmap arglist
                                  (clojure.core/map (fn [n]
                                                      (term :VAR [(inc n)]))
                                                    (range)))
         func-args (into [] (take (clojure.core/count arglist) (iterate inc 1)))
-        func-terms (clojure.walk/postwalk-replace arg-replacements body)]
+        func-terms (clojure.walk/postwalk-replace var-replacements body)]
     (term :FUNC [func-args func-terms])))
 
 ;;;; DB manipulation
@@ -75,22 +75,22 @@
 (defn get [table id]
   (term :GET [table id]))
 
-(defn get-all [table s & [optargs]]
-  (term :GET_ALL [table s] optargs))
+(defn get-all [table x & [optargs]]
+  (term :GET_ALL [table x] optargs))
 
-(defn get-field [obj-or-sq s]
-  (term :GET_FIELD [obj-or-sq s]))
+(defn get-field [obj-or-sq x]
+  (term :GET_FIELD [obj-or-sq x]))
 
 (defn contains [sq x-or-func]
   (term :CONTAINS [sq x-or-func]))
 
 ;;;; Document manipulation
 
-(defn has-fields [obj-or-sq s]
-  (term :HAS_FIELDS [obj-or-sq s]))
+(defn has-fields [obj-or-sq x]
+  (term :HAS_FIELDS [obj-or-sq x]))
 
-(defn pluck [obj-or-sq s]
-  (term :PLUCK [obj-or-sq s]))
+(defn pluck [obj-or-sq x]
+  (term :PLUCK [obj-or-sq x]))
 
 (defn set-insert [sq x]
   (term :SET_INSERT [sq x]))

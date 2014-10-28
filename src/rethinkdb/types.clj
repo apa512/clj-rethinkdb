@@ -1,4 +1,4 @@
-(ns rethinkdb.protodefs)
+(ns rethinkdb.types)
 
 (import Rethinkdb$Query$QueryType
         Rethinkdb$Term$TermType)
