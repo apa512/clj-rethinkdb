@@ -29,7 +29,10 @@
         (r/table-create :pokedex {:primary-key :national_no})
         (-> (r/table :pokedex)
             (r/index-create :type (r/lambda [row]
-                                     (r/get-field row :type))))))
+                                     (r/get-field row :type))))
+        (r/table-create :temp)
+        (r/table-drop :temp))
+      (is (= ["pokedex"] (with-test-db (r/table-list)))))
     (testing "writing data"
       (with-test-db
         (-> (r/table :pokedex)

@@ -47,8 +47,14 @@
 (defn index-rename [table old-index new-index & [optargs]]
   (term :INDEX_RENAME [table old-index new-index] optargs))
 
-(defn index-wait [table & indexes]
-  (term :INDEX_WAIT [table indexes]))
+(defn index-status [table & index-names]
+  (term :INDEX_STATUS (concat [table] index-names)))
+
+(defn index-wait [table & index-names]
+  (term :INDEX_WAIT (concat [table] index-names)))
+
+(defn changes [table]
+  (term :CHANGES [table]))
 
 ;;;; Writing data
 

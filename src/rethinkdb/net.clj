@@ -44,6 +44,7 @@
         1 (first resp)
         2 resp
         3 (lazy-cat resp (send-query conn (parse-query :CONTINUE)))
+        5 resp
         (throw (Exception. (first resp)))))))
 
 (defn send-start-query [conn args]

@@ -8,6 +8,9 @@
         epoch-milli (* epoch 1000)]
     (c/from-long epoch-milli)))
 
+(defmethod parse-reql-type "BINARY" [resp]
+  resp)
+
 (defmulti parse-response
   (fn [args]
     (cond
