@@ -1,5 +1,5 @@
 (ns rethinkdb.query
-  (:refer-clojure :exclude [count filter map get not])
+  (:refer-clojure :exclude [count filter map get not replace sync])
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]
             [rethinkdb.query-builder :refer [term]]))
@@ -35,8 +35,8 @@
 (defn table-list [db]
   (term :TABLE_LIST [db]))
 
-(defn index-create [table index-name lambda1 & [optargs]]
-  (term :INDEX_CREATE [table index-name lambda1] optargs))
+(defn index-create [table index-name func & [optargs]]
+  (term :INDEX_CREATE [table index-name func] optargs))
 
 (defn index-drop [table index-name]
   (term :INDEX_DROP [table index-name]))
@@ -58,14 +58,23 @@
 
 ;;;; Writing data
 
-(defn insert [table objs & {:as optargs}]
+(defn insert [table objs & [optargs]]
   (term :INSERT [table objs] optargs))
 
 (defn update [obj-or-sq obj-or-func & [optargs]]
   (term :UPDATE [obj-or-sq obj-or-func] optargs))
 
-(defn delete [table-or-obj-or-sq]
-  (term :DELETE [table-or-obj-or-sq]))
+(defn replace [obj-or-sq func & [optargs]]
+  (term :REPLACE [obj-or-sq func] optargs))
+
+(defn delete [obj-or-sq & [optargs]]
+  (term :DELETE [obj-or-sq] optargs))
+
+(defn sync [table]
+  (term :SYNC [table]))
+
+(defn delete [obj-or-sq]
+  (term :DELETE [obj-or-sq]))
 
 ;;;; Selecting data
 
@@ -74,9 +83,6 @@
 
 (defn table [db table-name]
   (term :TABLE [db table-name]))
-
-(defn filter [sq obj-or-func]
-  (term :FILTER [sq obj-or-func]))
 
 (defn get [table id]
   (term :GET [table id]))
@@ -87,8 +93,25 @@
 (defn get-field [obj-or-sq x]
   (term :GET_FIELD [obj-or-sq x]))
 
-(defn contains [sq x-or-func]
-  (term :CONTAINS [sq x-or-func]))
+(defn between [lower-key upper-key & [optargs]]
+  (term :BETWEEN [lower-key upper-key] optargs))
+
+(defn filter [sq obj-or-func]
+  (term :FILTER [sq obj-or-func]))
+
+;;;; Joins
+
+(defn inner-join [sq1 sq2 func]
+  (term :INNER_JOIN [sq1 sq2 func]))
+
+(defn outer-join [sq1 sq2 func]
+  (term :OUTER_JOIN [sq1 sq2 func]))
+
+(defn eq-join [sq s table & [optargs]]
+  (term :EQ_JOIN [sq s table] optargs))
+
+(defn zip [sq]
+  (term :ZIP [sq]))
 
 ;;;; Document manipulation
 
@@ -103,11 +126,6 @@
 
 (defn set-difference [sq1 sq2]
   (term :SET_DIFFERENCE [sq1 sq2]))
-
-;;;; Aggregation
-
-(defn count [sq]
-  (term :COUNT [sq]))
 
 ;;;; Transformations
 
@@ -127,6 +145,14 @@
 
 (defn not [bool]
   (term :NOT [bool]))
+
+;;;; Aggregation
+
+(defn count [sq]
+  (term :COUNT [sq]))
+
+(defn contains [sq x-or-func]
+  (term :CONTAINS [sq x-or-func]))
 
 ;;;; Run query
 
