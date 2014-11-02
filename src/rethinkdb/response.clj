@@ -6,7 +6,7 @@
 (defmethod parse-reql-type "TIME" [resp]
   (let [epoch (:epoch_time resp)
         epoch-milli (* epoch 1000)]
-    (c/from-long epoch-milli)))
+    (c/from-long (long epoch-milli))))
 
 (defmethod parse-reql-type "BINARY" [resp]
   resp)
