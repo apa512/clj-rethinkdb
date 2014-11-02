@@ -39,6 +39,7 @@
             (r/insert {:national_no 25
                        :name "Pikachu"
                        :type "Electric"
+                       :last_seen (t/date-time 2014 10 20)
                        :moves ["Tail Whip" "Tail Whip" "Growl"]})))
       (with-test-db
         (-> (r/table :pokedex)

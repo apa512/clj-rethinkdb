@@ -21,7 +21,8 @@
     (cond
       (::term arg) :query
       (or (sequential? arg) (seq? arg)) :seq
-      (map? arg) :map)))
+      (map? arg) :map
+      (instance? org.joda.time.DateTime arg) :time)))
 
 (defmethod parse-arg :query [arg]
   (parse-term arg))
@@ -31,6 +32,9 @@
 
 (defmethod parse-arg :map [arg]
   (zipmap (keys arg) (map parse-arg (vals arg))))
+
+(defmethod parse-arg :time [arg]
+  (parse-term (term :EPOCH_TIME [(c/to-epoch arg)])))
 
 (defmethod parse-arg :default [arg]
   arg)
