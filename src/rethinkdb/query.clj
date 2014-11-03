@@ -1,5 +1,5 @@
 (ns rethinkdb.query
-  (:refer-clojure :exclude [count filter map get not replace sync])
+  (:refer-clojure :exclude [count filter map get not replace merge sync])
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]
             [rethinkdb.query-builder :refer [term]]))
@@ -115,17 +115,20 @@
 
 ;;;; Document manipulation
 
-(defn has-fields [obj-or-sq x]
-  (term :HAS_FIELDS [obj-or-sq x]))
-
 (defn pluck [obj-or-sq x]
   (term :PLUCK [obj-or-sq x]))
+
+(defn merge [obj-or-sq1 obj-or-sq2]
+  (term :MERGE [obj-or-sq1 obj-or-sq2]))
 
 (defn set-insert [sq x]
   (term :SET_INSERT [sq x]))
 
 (defn set-difference [sq1 sq2]
   (term :SET_DIFFERENCE [sq1 sq2]))
+
+(defn has-fields [obj-or-sq x]
+  (term :HAS_FIELDS [obj-or-sq x]))
 
 ;;;; Transformations
 
@@ -153,6 +156,11 @@
 
 (defn contains [sq x-or-func]
   (term :CONTAINS [sq x-or-func]))
+
+;;;; Control structure
+
+(defn coerce-to [top s]
+  (term :COERCE_TO [top s]))
 
 ;;;; Run query
 
