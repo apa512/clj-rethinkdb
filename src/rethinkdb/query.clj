@@ -143,11 +143,14 @@
 
 ;;;; Math and logic
 
+(defn add [& args]
+  (term :ADD args))
+
 (defn eq [& args]
   (term :EQ args))
 
-(defn add [& args]
-  (term :ADD args))
+(defn gt [& args]
+  (term :GT args))
 
 (defn not [bool]
   (term :NOT [bool]))
@@ -161,6 +164,9 @@
   (term :CONTAINS [sq x-or-func]))
 
 ;;;; Control structure
+
+(defn all [& bools]
+  (term :ALL bools))
 
 (defn coerce-to [top s]
   (term :COERCE_TO [top s]))
