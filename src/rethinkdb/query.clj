@@ -138,6 +138,9 @@
 (defn limit [sq n]
   (term :LIMIT [sq n]))
 
+(defn union [& sqs]
+  (term :UNION sqs))
+
 ;;;; Math and logic
 
 (defn eq [& args]
