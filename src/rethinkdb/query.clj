@@ -162,6 +162,9 @@
 
 ;;;; Control structure
 
+(defn all [& bools]
+  (term :ALL bools))
+
 (defn coerce-to [top s]
   (term :COERCE_TO [top s]))
 
