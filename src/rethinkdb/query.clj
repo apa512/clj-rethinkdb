@@ -140,11 +140,14 @@
 
 ;;;; Math and logic
 
+(defn add [& args]
+  (term :ADD args))
+
 (defn eq [& args]
   (term :EQ args))
 
-(defn add [& args]
-  (term :ADD args))
+(defn gt [& args]
+  (term :GT args))
 
 (defn not [bool]
   (term :NOT [bool]))
