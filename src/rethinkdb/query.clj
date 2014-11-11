@@ -1,5 +1,5 @@
 (ns rethinkdb.query
-  (:refer-clojure :exclude [count filter map get not replace merge sync])
+  (:refer-clojure :exclude [count filter map get not replace merge make-array sync])
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]
             [rethinkdb.query-builder :refer [term]]))
