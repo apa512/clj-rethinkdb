@@ -130,6 +130,9 @@
 (defn has-fields [obj-or-sq x]
   (term :HAS_FIELDS [obj-or-sq x]))
 
+(defn object [& key-vals]
+  (term :OBJECT key-vals))
+
 ;;;; Transformations
 
 (defn map [sq obj-or-func]
@@ -172,6 +175,9 @@
   (term :COERCE_TO [top s]))
 
 ;;;; Run query
+
+(defn make-array [& xs]
+  (term :MAKE_ARRAY xs))
 
 (defn run [args conn]
   (swap! conn update-in [:token] inc)
