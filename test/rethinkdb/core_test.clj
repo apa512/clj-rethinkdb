@@ -43,7 +43,7 @@
                        :moves ["Tail Whip" "Tail Whip" "Growl"]}))))
     (testing "selecting data"
       (let [pikachu-with-pk (with-test-db (-> (r/table :pokedex) (r/get 25)))
-            pikachu-with-index (first (with-test-db (-> (r/table :pokedex) (r/get-all "Electric" {:index :type}))))]
+            pikachu-with-index (first (with-test-db (-> (r/table :pokedex) (r/get-all ["Electric"] {:index :type}))))]
         (is (= pikachu-with-pk pikachu-with-index))))
     (testing "manipulating documents"
       (with-test-db

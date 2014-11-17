@@ -88,7 +88,7 @@
   (term :GET [table id]))
 
 (defn get-all [table x & [optargs]]
-  (term :GET_ALL [table x] optargs))
+  (term :GET_ALL (concat [table] x) optargs))
 
 (defn get-field [obj-or-sq x]
   (term :GET_FIELD [obj-or-sq x]))
