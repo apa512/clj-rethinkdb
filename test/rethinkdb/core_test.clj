@@ -16,11 +16,10 @@
   (test-fn))
 
 (defmacro with-test-db [& body]
-  (conj (for [term body]
-          `(-> (r/db test-db)
-               ~term
-               (r/run ~'conn)))
-        'do))
+  (cons 'do (for [term body]
+              `(-> (r/db test-db)
+                   ~term
+                   (r/run ~'conn)))))
 
 (deftest core-test
   (let [conn (connect)]
