@@ -160,6 +160,9 @@
 
 ;;;; Aggregation
 
+(defn group [sq s]
+  (term :GROUP [sq s]))
+
 (defn count [sq]
   (term :COUNT [sq]))
 

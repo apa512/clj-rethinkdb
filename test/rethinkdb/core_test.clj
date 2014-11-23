@@ -35,14 +35,20 @@
     (testing "writing data"
       (with-test-db
         (-> (r/table :pokedex)
-            (r/insert {:national_no 25
-                       :name "Pikachu"
-                       :type "Electric"
-                       :last_seen (t/date-time 2014 10 20)
-                       :moves ["Tail Whip" "Tail Whip" "Growl"]}))))
+            (r/insert [{:national_no 25
+                        :name "Pikachu"
+                        :type "Electric"
+                        :last_seen (t/date-time 2014 10 20)
+                        :moves ["Tail Whip" "Tail Whip" "Growl"]}
+                       {:national_no 81
+                        :name "Magnemite"
+                        :type "Electric"}]))))
     (testing "selecting data"
       (let [pikachu-with-pk (with-test-db (-> (r/table :pokedex) (r/get 25)))
-            pikachu-with-index (first (with-test-db (-> (r/table :pokedex) (r/get-all ["Electric"] {:index :type}))))]
+            pikachu-with-index (first (with-test-db (-> (r/table :pokedex)
+                                                        (r/get-all ["Electric"] {:index :type})
+                                                        (r/filter (r/lambda [row]
+                                                                    (r/eq "Pikachu" (r/get-field row :name)))))))]
         (is (= pikachu-with-pk pikachu-with-index))))
     (testing "manipulating documents"
       (with-test-db

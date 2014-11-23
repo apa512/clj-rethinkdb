@@ -1,12 +1,18 @@
 (ns rethinkdb.response
   (:require [clj-time.coerce :as c]))
 
+(declare parse-response)
+
 (defmulti parse-reql-type (fn [resp] (get resp :$reql_type$)))
 
 (defmethod parse-reql-type "TIME" [resp]
   (let [epoch (:epoch_time resp)
         epoch-milli (* epoch 1000)]
     (c/from-long (long epoch-milli))))
+
+(defmethod parse-reql-type "GROUPED_DATA" [resp]
+  (println (apply hash-map (apply concat (parse-response (:data resp)))))
+  (apply hash-map (apply concat (parse-response (:data resp)))))
 
 (defmethod parse-reql-type "BINARY" [resp]
   resp)
