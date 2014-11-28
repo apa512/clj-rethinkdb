@@ -25,13 +25,14 @@
   (let [conn (connect)]
     (testing "table management"
       (with-test-db
+        (r/table-create :playground)
         (r/table-create :pokedex {:primary-key :national_no})
         (-> (r/table :pokedex)
             (r/index-create :type (r/lambda [row]
                                      (r/get-field row :type))))
         (r/table-create :temp)
         (r/table-drop :temp))
-      (is (= ["pokedex"] (with-test-db (r/table-list)))))
+      (is (= ["playground" "pokedex"] (with-test-db (r/table-list)))))
     (testing "writing data"
       (with-test-db
         (-> (r/table :pokedex)
@@ -50,6 +51,12 @@
                                                         (r/filter (r/lambda [row]
                                                                     (r/eq "Pikachu" (r/get-field row :name)))))))]
         (is (= pikachu-with-pk pikachu-with-index))))
+    (testing "cursors"
+      (with-test-db
+        (-> (r/table :playground)
+            (r/insert (take 100000 (repeat {})))))
+      (take 100 (with-test-db
+                  (r/table :playground))))
     (testing "manipulating documents"
       (with-test-db
         (-> (r/table :pokedex)

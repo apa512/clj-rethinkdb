@@ -1,5 +1,5 @@
 (ns rethinkdb.core
-  (:require [rethinkdb.net :refer [send-int send-str read-init-response]])
+  (:require [rethinkdb.net :refer [send-int send-str read-init-response send-stop-query]])
   (:import [java.io DataInputStream DataOutputStream]
            [java.net Socket]))
 
@@ -20,7 +20,9 @@
     (send-str out auth-key)))
 
 (defn close [conn]
-  (let [{:keys [socket out in]} @conn]
+  (let [{:keys [socket out in waiting]} @conn]
+    (doseq [token waiting]
+      (send-stop-query conn token))
     (.close out)
     (.close in)
     (.close socket)
@@ -37,6 +39,7 @@
         conn (atom {:socket socket
                     :out out
                     :in in
+                    :waiting #{}
                     :token token})]
     (send-version out)
     (send-auth-key out auth-key)

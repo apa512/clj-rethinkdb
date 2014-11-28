@@ -40,10 +40,11 @@
   arg)
 
 (defn parse-term [{term ::term args ::args optargs ::optargs}]
-  (filter identity
-          [(tt->int term)
-           (map parse-arg (seq args))
-           (if optargs (snake-case-keys optargs))]))
+  (filter
+    identity
+    [(tt->int term)
+     (map parse-arg (seq args))
+     (if optargs (snake-case-keys optargs))]))
 
 (defn parse-query
   ([type]

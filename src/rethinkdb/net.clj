@@ -32,8 +32,9 @@
           json (read-str in length)]
       (json/read-str json :key-fn keyword))))
 
-(defn send-query [{:keys [out in token] :as conn} query]
+(defn send-query [conn token query]
   (let [json (json/write-str query)
+        {:keys [in out]} @conn
         n (count json)]
     (send-int out token 8)
     (send-int out n 4)
@@ -42,10 +43,17 @@
           resp (parse-response resp)]
       (condp = type
         1 (first resp)
-        2 resp
-        3 (lazy-cat resp (send-query conn (parse-query :CONTINUE)))
+        2 (do
+            (swap! conn update-in [:waiting] #(disj % token))
+            resp)
+        3 (do
+            (swap! conn update-in [:waiting] #(conj % token))
+            (lazy-cat resp (send-query conn token (parse-query :CONTINUE))))
         5 resp
         (throw (Exception. (first resp)))))))
 
-(defn send-start-query [conn args]
-  (send-query conn (parse-query :START args)))
+(defn send-start-query [conn token args]
+  (send-query conn token (parse-query :START args)))
+
+(defn send-stop-query [conn token]
+  (send-query conn token (parse-query :STOP)))
