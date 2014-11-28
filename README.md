@@ -1,5 +1,7 @@
 # clj-rethinkdb
 
+A RethinkDB client for Clojure. Tested with 1.15.x but should with work all versions that support the JSON protocol (i.e. >= 1.13).
+
 [![Circle CI](https://circleci.com/gh/apa512/clj-rethinkdb.svg?style=svg)](https://circleci.com/gh/apa512/clj-rethinkdb)
 
 ## Install
