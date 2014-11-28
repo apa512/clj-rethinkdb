@@ -56,7 +56,19 @@
         (-> (r/table :playground)
             (r/insert (take 100000 (repeat {})))))
       (take 100 (with-test-db
-                  (r/table :playground))))
+                  (-> (r/table :playground)
+                      (r/skip 100)))))
+    (testing "transformations"
+      (is (= [{:type "Electric"} {:type "Electric"}]
+             (with-test-db (-> (r/table :pokedex)
+                               (r/get-all ["Electric"] {:index :type})
+                               (r/with-fields [:type])))))
+      (is (= (with-test-db
+               (-> (r/table :pokedex)
+                   (r/order-by (r/desc :name))))
+             (reverse (with-test-db
+                        (-> (r/table :pokedex)
+                            (r/order-by (r/asc :name))))))))
     (testing "manipulating documents"
       (with-test-db
         (-> (r/table :pokedex)

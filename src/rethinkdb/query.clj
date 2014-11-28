@@ -4,13 +4,13 @@
             [rethinkdb.net :refer [send-start-query]]
             [rethinkdb.query-builder :refer [term]]))
 
-(defmacro fn [arglist & [body]]
-  (let [var-replacements (zipmap arglist
+(defmacro fn [args & [body]]
+  (let [arg-replacements (zipmap args
                                  (clojure.core/map (clojure.core/fn [n]
                                                      (term :VAR [(inc n)]))
                                                    (range)))
-        func-args (into [] (take (clojure.core/count arglist) (iterate inc 1)))
-        func-terms (clojure.walk/postwalk-replace var-replacements body)]
+        func-args (into [] (take (clojure.core/count args) (iterate inc 1)))
+        func-terms (clojure.walk/postwalk-replace arg-replacements body)]
     (term :FUNC [func-args func-terms])))
 
 ;;;; DB manipulation
@@ -44,8 +44,8 @@
 (defn index-list [table]
   (term :INDEX_LIST [table]))
 
-(defn index-rename [table old-index new-index & [optargs]]
-  (term :INDEX_RENAME [table old-index new-index] optargs))
+(defn index-rename [table old-name new-name & [optargs]]
+  (term :INDEX_RENAME [table old-name new-name] optargs))
 
 (defn index-status [table & index-names]
   (term :INDEX_STATUS (concat [table] index-names)))
@@ -61,20 +61,17 @@
 (defn insert [table objs & [optargs]]
   (term :INSERT [table objs] optargs))
 
-(defn update [obj-or-sq obj-or-func & [optargs]]
-  (term :UPDATE [obj-or-sq obj-or-func] optargs))
+(defn update [sel obj-or-func & [optargs]]
+  (term :UPDATE [sel obj-or-func] optargs))
 
-(defn replace [obj-or-sq func & [optargs]]
-  (term :REPLACE [obj-or-sq func] optargs))
+(defn replace [sel func & [optargs]]
+  (term :REPLACE [sel func] optargs))
 
 (defn delete [obj-or-sq & [optargs]]
   (term :DELETE [obj-or-sq] optargs))
 
 (defn sync [table]
   (term :SYNC [table]))
-
-(defn delete [obj-or-sq]
-  (term :DELETE [obj-or-sq]))
 
 ;;;; Selecting data
 
@@ -87,14 +84,14 @@
 (defn get [table id]
   (term :GET [table id]))
 
-(defn get-all [table x & [optargs]]
-  (term :GET_ALL (concat [table] x) optargs))
+(defn get-all [table ids & [optargs]]
+  (term :GET_ALL (concat [table] ids) optargs))
 
-(defn get-field [obj-or-sq x]
-  (term :GET_FIELD [obj-or-sq x]))
+(defn get-field [sel field-name]
+  (term :GET_FIELD [sel field-name]))
 
-(defn between [lower-key upper-key & [optargs]]
-  (term :BETWEEN [lower-key upper-key] optargs))
+(defn between [sel lower-key upper-key & [optargs]]
+  (term :BETWEEN [sel lower-key upper-key] optargs))
 
 (defn filter [sq obj-or-func]
   (term :FILTER [sq obj-or-func]))
@@ -107,11 +104,34 @@
 (defn outer-join [sq1 sq2 func]
   (term :OUTER_JOIN [sq1 sq2 func]))
 
-(defn eq-join [sq s table & [optargs]]
-  (term :EQ_JOIN [sq s table] optargs))
+(defn eq-join [sq index-name table & [optargs]]
+  (term :EQ_JOIN [sq index-name table] optargs))
 
 (defn zip [sq]
   (term :ZIP [sq]))
+
+;;;; Transformations
+
+(defn map [sq obj-or-func]
+  (term :MAP [sq obj-or-func]))
+
+(defn with-fields [sq fields]
+  (term :WITH_FIELDS (concat [sq] fields)))
+
+(defn concat-map [sel func]
+  (term :CONCATMAP [sel func]))
+
+(defn order-by [sel field-or-ordering]
+  (term :ORDERBY [sel field-or-ordering]))
+
+(defn skip [sel n]
+  (term :SKIP [sel n]))
+
+(defn limit [sq n]
+  (term :LIMIT [sq n]))
+
+(defn union [& sqs]
+  (term :UNION sqs))
 
 ;;;; Document manipulation
 
@@ -132,17 +152,6 @@
 
 (defn object [& key-vals]
   (term :OBJECT key-vals))
-
-;;;; Transformations
-
-(defn map [sq obj-or-func]
-  (term :MAP [sq obj-or-func]))
-
-(defn limit [sq n]
-  (term :LIMIT [sq n]))
-
-(defn union [& sqs]
-  (term :UNION sqs))
 
 ;;;; Math and logic
 
@@ -191,6 +200,14 @@
 
 (defn coerce-to [top s]
   (term :COERCE_TO [top s]))
+
+;;; Misc
+
+(defn asc [field-name]
+  (term :ASC [field-name]))
+
+(defn desc [field-name]
+  (term :DESC [field-name]))
 
 ;;;; Run query
 
