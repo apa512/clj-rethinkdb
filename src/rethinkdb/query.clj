@@ -1,12 +1,12 @@
 (ns rethinkdb.query
-  (:refer-clojure :exclude [count filter map get not replace merge make-array sync])
+  (:refer-clojure :exclude [count filter map get not mod replace merge make-array fn sync])
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]
             [rethinkdb.query-builder :refer [term]]))
 
-(defmacro lambda [arglist & [body]]
+(defmacro fn [arglist & [body]]
   (let [var-replacements (zipmap arglist
-                                 (clojure.core/map (fn [n]
+                                 (clojure.core/map (clojure.core/fn [n]
                                                      (term :VAR [(inc n)]))
                                                    (range)))
         func-args (into [] (take (clojure.core/count arglist) (iterate inc 1)))
@@ -149,6 +149,18 @@
 (defn add [& args]
   (term :ADD args))
 
+(defn sub [& args]
+  (term :SUB args))
+
+(defn mul [& args]
+  (term :MUL args))
+
+(defn div [& args]
+  (term :DIV args))
+
+(defn mod [& args]
+  (term :MOD args))
+
 (defn eq [& args]
   (term :EQ args))
 
@@ -173,6 +185,9 @@
 
 (defn all [& bools]
   (term :ALL bools))
+
+(defn any [& bools]
+  (term :ANY bools))
 
 (defn coerce-to [top s]
   (term :COERCE_TO [top s]))

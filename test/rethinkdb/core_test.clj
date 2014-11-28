@@ -28,7 +28,7 @@
         (r/table-create :playground)
         (r/table-create :pokedex {:primary-key :national_no})
         (-> (r/table :pokedex)
-            (r/index-create :type (r/lambda [row]
+            (r/index-create :type (r/fn [row]
                                      (r/get-field row :type))))
         (r/table-create :temp)
         (r/table-drop :temp))
@@ -48,7 +48,7 @@
       (let [pikachu-with-pk (with-test-db (-> (r/table :pokedex) (r/get 25)))
             pikachu-with-index (first (with-test-db (-> (r/table :pokedex)
                                                         (r/get-all ["Electric"] {:index :type})
-                                                        (r/filter (r/lambda [row]
+                                                        (r/filter (r/fn [row]
                                                                     (r/eq "Pikachu" (r/get-field row :name)))))))]
         (is (= pikachu-with-pk pikachu-with-index))))
     (testing "cursors"
@@ -62,7 +62,7 @@
         (-> (r/table :pokedex)
             (r/get 25)
             (r/update
-              (r/lambda [row]
+              (r/fn [row]
                 {:moves (r/set-insert (r/get-field row :moves) "Thunder Shock")}))))
       (is (= ["Tail Whip" "Growl" "Thunder Shock"]
              (with-test-db
