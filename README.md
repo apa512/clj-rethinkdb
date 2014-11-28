@@ -26,7 +26,9 @@
       (r/table "authors")
       (r/insert [{:name "E.L. Jamas"
                   :genre "crap"
-                  :books ["Fifty Shades of Grey" "Fifty Shades Darker" "Fifty Shades Freed"]}
+                  :books ["Fifty Shades of Grey"
+                          "Fifty Shades Darker"
+                          "Fifty Shades Freed"]}
                  {:name "Stephenie Meyer"
                   :genre "crap"
                   :books ["Twilight" "New Moon" "Eclipse" "Breaking Dawn"]}])
