@@ -11,7 +11,6 @@
     (c/from-long (long epoch-milli))))
 
 (defmethod parse-reql-type "GROUPED_DATA" [resp]
-  (println (apply hash-map (apply concat (parse-response (:data resp)))))
   (apply hash-map (apply concat (parse-response (:data resp)))))
 
 (defmethod parse-reql-type "BINARY" [resp]
@@ -21,13 +20,13 @@
   (fn [args]
     (cond
       (sequential? args) :sequential
-      (map? args) :hash
+      (map? args) :map
       :else (type args))))
 
 (defmethod parse-response :sequential [resp]
   (map parse-response resp))
 
-(defmethod parse-response :hash [resp]
+(defmethod parse-response :map [resp]
   (if-let [reql-type (:$reql_type$ resp)]
     (parse-reql-type resp)
     (zipmap (keys resp) (map parse-response (vals resp)))))
