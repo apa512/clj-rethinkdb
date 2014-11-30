@@ -47,8 +47,7 @@
                (swap! conn update-in [:waiting] #(disj % token))
                resp)
         #{3 5} (do
-                 (if (= 3 type)
-                   (swap! conn update-in [:waiting] #(conj % token)))
+                 (swap! conn update-in [:waiting] #(conj % token))
                  (lazy-cat resp (send-query conn token (parse-query :CONTINUE))))
         (throw (Exception. (first resp)))))))
 
