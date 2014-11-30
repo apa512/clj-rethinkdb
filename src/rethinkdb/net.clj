@@ -41,15 +41,15 @@
     (send-str out json)
     (let [{type :t resp :r} (read-response in token)
           resp (parse-response resp)]
-      (condp = type
-        1 (first resp)
-        2 (do
-            (swap! conn update-in [:waiting] #(disj % token))
-            resp)
-        3 (do
-            (swap! conn update-in [:waiting] #(conj % token))
-            (lazy-cat resp (send-query conn token (parse-query :CONTINUE))))
-        5 resp
+      (condp get type
+        #{1} (first resp)
+        #{2} (do
+               (swap! conn update-in [:waiting] #(disj % token))
+               resp)
+        #{3 5} (do
+                 (if (= 3 type)
+                   (swap! conn update-in [:waiting] #(conj % token)))
+                 (lazy-cat resp (send-query conn token (parse-query :CONTINUE))))
         (throw (Exception. (first resp)))))))
 
 (defn send-start-query [conn token args]
