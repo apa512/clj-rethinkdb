@@ -8,7 +8,7 @@ A RethinkDB client for Clojure. Tested with 1.15.x but should with work all vers
 
 [![Clojars Project](http://clojars.org/rethinkdb/latest-version.svg)](http://clojars.org/rethinkdb)
 
-## Example
+## Usage
 
 ```clojure
 (require '[rethinkdb.core :refer [connect close]])
