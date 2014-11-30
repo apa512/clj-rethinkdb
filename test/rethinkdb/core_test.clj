@@ -4,7 +4,7 @@
             [rethinkdb.core :refer :all]
             [rethinkdb.query :as r]))
 
-(def test-db :test)
+(def test-db "test_cljrethinkdb")
 
 (defn clear-db [test-fn]
   (let [conn (connect)
@@ -25,12 +25,18 @@
   (let [conn (connect)]
     (testing "table management"
       (with-test-db
-        (r/table-create :playground)
+        (r/table-create :playground {:durability "soft"})
         (r/table-create :pokedex {:primary-key :national_no})
         (-> (r/table :pokedex)
             (r/index-create :type (r/fn [row]
                                      (r/get-field row :type))))
+        (-> (r/table :pokedex)
+            (r/index-create :moves (r/fn [row]
+                                     (r/get-field row :moves))
+                            {:multi true}))
         (r/table-create :temp)
+        (-> (r/table :pokedex)
+            (r/index-rename :moves :move))
         (r/table-drop :temp))
       (is (= ["playground" "pokedex"] (with-test-db (r/table-list)))))
     (testing "writing data"
@@ -50,7 +56,10 @@
                                                         (r/get-all ["Electric"] {:index :type})
                                                         (r/filter (r/fn [row]
                                                                     (r/eq "Pikachu" (r/get-field row :name)))))))]
-        (is (= pikachu-with-pk pikachu-with-index))))
+        (is (= pikachu-with-pk pikachu-with-index))
+        (is (not-empty (with-test-db
+                         (-> (r/table :pokedex)
+                             (r/get-all ["Tail Whip"] {:index :move})))))))
     (testing "cursors"
       (with-test-db
         (-> (r/table :playground)
