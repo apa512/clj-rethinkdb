@@ -4,14 +4,18 @@
             [rethinkdb.core :refer :all]
             [rethinkdb.query :as r]))
 
-(def test-db "test_cljrethinkdb")
+(def test-db "cljrethinkdb_test")
+(def tmp-db "cljrethinkdb_tmp")
 
-(defn clear-db [test-fn]
+(defn setup [test-fn]
   (let [conn (connect)
         db-list (-> (r/db-list) (r/run conn))]
-    (if (some #{(name test-db)} db-list)
+    (if (some #{test-db} db-list)
       (-> (r/db-drop test-db) (r/run conn)))
     (r/run (r/db-create test-db) conn)
+    (-> (r/db test-db)
+        (r/table-create "pokedex" {:primary-key "national_no"})
+        (r/run conn))
     (close conn))
   (test-fn))
 
@@ -22,6 +26,19 @@
                    (r/run ~'conn)))))
 
 (deftest core-test
+  (let [conn (connect)]
+    (testing "database management"
+      (r/run (r/db-create tmp-db) conn)
+      (is (clojure.set/subset? #{test-db tmp-db} (set (r/run (r/db-list) conn))))
+      (r/run (r/db-drop tmp-db) conn))
+
+    (testing "table management")))
+
+
+
+
+
+#_(deftest core-test
   (let [conn (connect)]
     (testing "table management"
       (with-test-db
@@ -98,4 +115,4 @@
                    (r/set-difference ["Growl" "Thunder Shock"]))))))
     (close conn)))
 
-(use-fixtures :once clear-db)
+(use-fixtures :each setup)
