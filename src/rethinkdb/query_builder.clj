@@ -20,14 +20,14 @@
   (fn [arg]
     (cond
       (::term arg) :query
-      (or (sequential? arg) (seq? arg)) :seq
+      (or (sequential? arg) (seq? arg)) :sequential
       (map? arg) :map
       (instance? org.joda.time.DateTime arg) :time)))
 
 (defmethod parse-arg :query [arg]
   (parse-term arg))
 
-(defmethod parse-arg :seq [arg]
+(defmethod parse-arg :sequential [arg]
   (parse-term (term :MAKE_ARRAY arg)))
 
 (defmethod parse-arg :map [arg]

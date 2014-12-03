@@ -1,5 +1,6 @@
 (ns rethinkdb.query
-  (:refer-clojure :exclude [count filter map get not mod replace merge make-array fn sync])
+  (:refer-clojure :exclude [count filter map get not mod replace merge
+                            make-array distinct nth fn sync])
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]
             [rethinkdb.query-builder :refer [term]]))
@@ -64,8 +65,8 @@
 (defn update [sel obj-or-func & [optargs]]
   (term :UPDATE [sel obj-or-func] optargs))
 
-(defn replace [sel func & [optargs]]
-  (term :REPLACE [sel func] optargs))
+(defn replace [sel obj-or-func & [optargs]]
+  (term :REPLACE [sel obj-or-func] optargs))
 
 (defn delete [obj-or-sq & [optargs]]
   (term :DELETE [obj-or-sq] optargs))
@@ -130,8 +131,23 @@
 (defn limit [sq n]
   (term :LIMIT [sq n]))
 
+(defn slice [sq n1 n2]
+  (term :SLICE [sq n1 n2]))
+
+(defn nth [sq n]
+  (term :NTH [sq n]))
+
+(defn indexes-of [sq obj-or-func]
+  (term :INDEXES_OF [sq obj-or-func]))
+
+(defn is-empty [sq]
+  (term :IS_EMPTY [sq]))
+
 (defn union [& sqs]
   (term :UNION sqs))
+
+(defn sample [sq n]
+  (term :SAMPLE [sq n]))
 
 ;;;; Document manipulation
 
@@ -143,6 +159,9 @@
 
 (defn set-insert [sq x]
   (term :SET_INSERT [sq x]))
+
+(defn set-intersection [sq1 sq2]
+  (term :SET_INTERSECTION [sq1 sq2]))
 
 (defn set-difference [sq1 sq2]
   (term :SET_DIFFERENCE [sq1 sq2]))
@@ -189,6 +208,9 @@
 
 (defn contains [sq x-or-func]
   (term :CONTAINS [sq x-or-func]))
+
+(defn distinct [sq]
+  (term :DISTINCT [sq]))
 
 ;;;; Control structure
 
