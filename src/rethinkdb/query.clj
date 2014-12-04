@@ -14,7 +14,7 @@
         func-terms (clojure.walk/postwalk-replace arg-replacements body)]
     (term :FUNC [func-args func-terms])))
 
-;;;; DB manipulation
+;;; Manipulating databases
 
 (defn db-create [db-name]
   (term :DB_CREATE [db-name]))
@@ -25,7 +25,7 @@
 (defn db-list []
   (term :DB_LIST []))
 
-;;;; Table manipulation
+;;; Manipulating tables
 
 (defn table-create [db table-name & [optargs]]
   (term :TABLE_CREATE [db table-name] optargs))
@@ -57,7 +57,7 @@
 (defn changes [table]
   (term :CHANGES [table]))
 
-;;;; Writing data
+;;; Writing data
 
 (defn insert [table objs & [optargs]]
   (term :INSERT [table objs] optargs))
@@ -74,7 +74,7 @@
 (defn sync [table]
   (term :SYNC [table]))
 
-;;;; Selecting data
+;;; Selecting data
 
 (defn db [db-name]
   (term :DB [db-name]))
@@ -97,7 +97,7 @@
 (defn filter [sq obj-or-func]
   (term :FILTER [sq obj-or-func]))
 
-;;;; Joins
+;;; Joins
 
 (defn inner-join [sq1 sq2 func]
   (term :INNER_JOIN [sq1 sq2 func]))
@@ -111,7 +111,7 @@
 (defn zip [sq]
   (term :ZIP [sq]))
 
-;;;; Transformations
+;;; Transformations
 
 (defn map [sq obj-or-func]
   (term :MAP [sq obj-or-func]))
@@ -149,7 +149,21 @@
 (defn sample [sq n]
   (term :SAMPLE [sq n]))
 
-;;;; Document manipulation
+;;; Aggregation
+
+(defn group [sq s]
+  (term :GROUP [sq s]))
+
+(defn count [sq]
+  (term :COUNT [sq]))
+
+(defn contains [sq x-or-func]
+  (term :CONTAINS [sq x-or-func]))
+
+(defn distinct [sq]
+  (term :DISTINCT [sq]))
+
+;;; Document manipulation
 
 (defn pluck [obj-or-sq x]
   (term :PLUCK [obj-or-sq x]))
@@ -172,7 +186,7 @@
 (defn object [& key-vals]
   (term :OBJECT key-vals))
 
-;;;; Math and logic
+;;; Math and logic
 
 (defn add [& args]
   (term :ADD args))
@@ -198,21 +212,7 @@
 (defn not [bool]
   (term :NOT [bool]))
 
-;;;; Aggregation
-
-(defn group [sq s]
-  (term :GROUP [sq s]))
-
-(defn count [sq]
-  (term :COUNT [sq]))
-
-(defn contains [sq x-or-func]
-  (term :CONTAINS [sq x-or-func]))
-
-(defn distinct [sq]
-  (term :DISTINCT [sq]))
-
-;;;; Control structure
+;;; Control structure
 
 (defn all [& bools]
   (term :ALL bools))
@@ -223,7 +223,7 @@
 (defn coerce-to [top s]
   (term :COERCE_TO [top s]))
 
-;;; Misc
+;;; Sotring
 
 (defn asc [field-name]
   (term :ASC [field-name]))
@@ -231,7 +231,7 @@
 (defn desc [field-name]
   (term :DESC [field-name]))
 
-;;;; Run query
+;;; Run query
 
 (defn make-array [& xs]
   (term :MAKE_ARRAY xs))
