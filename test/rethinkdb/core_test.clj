@@ -13,6 +13,9 @@
                    ~term
                    (r/run ~'conn)))))
 
+(defn run [term]
+  (r/run term conn))
+
 (def pokemons [{:national_no 25
                 :name "Pikachu"
                 :type ["Electric"]}
@@ -45,6 +48,19 @@
         (-> (r/table :pokedex) (r/index-rename :tmp :xxx))           {:renamed 1}
         (-> (r/table :pokedex) (r/index-drop :xxx))                  {:dropped 1}
         (-> (r/table :pokedex) r/index-list)                         ["type"]))
+
+    (testing "string manipulating"
+      (are [term result] (= (run term) result)
+        (r/match "pikachu" "^pika") {:str "pika" :start 0 :groups [] :end 4}
+        (r/split "split this string") ["split" "this" "string"]
+        (r/split "split,this string" ",") ["split" "this string"]
+        (r/split "split this string" " " 1) ["split" "this string"]
+        (r/upcase "Shouting") "SHOUTING"
+        (r/downcase "Whispering") "whispering"))
+
+    (testing "math and logic"
+      (are [term result] (= (run term) result)
+        (r/add 2 2) 4))
     (close conn)))
 
 (use-fixtures :once setup)
