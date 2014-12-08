@@ -186,6 +186,22 @@
 (defn object [& key-vals]
   (term :OBJECT key-vals))
 
+;;; String manipulating
+
+(defn match [s regex-str]
+  (term :MATCH [s regex-str]))
+
+(defn split
+  ([s] (term :SPLIT [s]))
+  ([s separator] (term :SPLIT [s separator]))
+  ([s separator max-splits] (term :SPLIT [s separator max-splits])))
+
+(defn upcase [s]
+  (term :UPCASE [s]))
+
+(defn downcase [s]
+  (term :DOWNCASE [s]))
+
 ;;; Math and logic
 
 (defn add [& args]
@@ -220,10 +236,13 @@
 (defn any [& bools]
   (term :ANY bools))
 
+(defn branch [bool true-branch false-branch]
+  (term :BRANCH [bool true-branch false-branch]))
+
 (defn coerce-to [top s]
   (term :COERCE_TO [top s]))
 
-;;; Sotring
+;;; Sorting
 
 (defn asc [field-name]
   (term :ASC [field-name]))

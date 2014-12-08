@@ -4,7 +4,17 @@
             [rethinkdb.core :refer :all]
             [rethinkdb.query :as r]))
 
+(def conn (connect))
 (def test-db "cljrethinkdb_test")
+
+(defmacro db-run [& body]
+  (cons 'do (for [term body]
+              `(-> (r/db test-db)
+                   ~term
+                   (r/run ~'conn)))))
+
+(defn run [term]
+  (r/run term conn))
 
 (def pokemons [{:national_no 25
                 :name "Pikachu"
@@ -14,181 +24,49 @@
                 :type ["Electric" "Steel"]}])
 
 (defn setup [test-fn]
-  (let [conn (connect)
-        db-list (-> (r/db-list) (r/run conn))]
-    (if (some #{test-db} db-list)
-      (r/run (r/db-drop test-db) conn))
-    (r/run (r/db-create test-db) conn)
-    (close conn))
+  (if (some #{test-db} (r/run (r/db-list) conn))
+    (r/run (r/db-drop test-db) conn))
+  (r/run (r/db-create test-db) conn)
   (test-fn))
 
-;;; Manipulating databases
-
-(def create-table (-> (r/db test-db)
-                      (r/table-create :pokedex {:primary-key :national_no})))
-(def create-tmp-table (-> (r/db test-db)
-                          (r/table-create :tmp)))
-
-;;; Manipulating tables
-
-(def drop-table (-> (r/db test-db) (r/table-drop :tmp)))
-(def list-tables (-> (r/db test-db) r/table-list))
-(def create-index (-> (r/db test-db)
-                      (r/table :pokedex)
-                      (r/index-create :type (r/fn [row]
-                                              (r/get-field row :type))
-                                      {:multi true})))
-(def create-tmp-index (-> (r/db test-db)
-                          (r/table :pokedex)
-                          (r/index-create :name (r/fn [row]
-                                                  (r/get-field row :name)))))
-(def drop-index (-> (r/db test-db)
-                    (r/table :pokedex)
-                    (r/index-drop :name)))
-(def list-indexes (-> (r/db test-db)
-                      (r/table :pokedex)
-                      r/index-list))
-
 (deftest core-test
-  (let [conn (connect)
-        run (fn [term] (r/run term conn))]
-    (testing "database management"
-      (is (= (run (r/db-create "cljrethinkdb_tmp")) {:created 1}))
-      (is (= (run (r/db-drop "cljrethinkdb_tmp")) {:dropped 1}))
-      (is (contains? (set (run (r/db-list))) test-db)))
-    (testing "table management"
-      (are [term res] (= (run term) res)
-        create-table {:created 1}
-        create-tmp-table {:created 1}
-        drop-table {:dropped 1}
-        list-tables ["pokedex"]
-        create-index {:created 1}
-        create-tmp-index {:created 1}
-        drop-index {:dropped 1}
-        list-indexes ["type"]
-        ))))
+  (let [conn (connect)]
+    (testing "manipulating databases"
+      (is (= (r/run (r/db-create "cljrethinkdb_tmp") conn) {:created 1}))
+      (is (= (r/run (r/db-drop "cljrethinkdb_tmp") conn) {:dropped 1}))
+      (is (contains? (set (r/run (r/db-list) conn)) test-db)))
 
+    (testing "manipulating tables"
+      (db-run (r/table-create :tmp))
+      (are [term result] (= (db-run term) result)
+        (r/table-create :pokedex {:primary-key :national_no})        {:created 1}
+        (r/table-drop :tmp) {:dropped 1}
+        (-> (r/table :pokedex) (r/index-create :tmp (r/fn [row] 1))) {:created 1}
+        (-> (r/table :pokedex)
+            (r/index-create :type (r/fn [row]
+                                    (r/get-field row :type))))       {:created 1}
+        (-> (r/table :pokedex) (r/index-rename :tmp :xxx))           {:renamed 1}
+        (-> (r/table :pokedex) (r/index-drop :xxx))                  {:dropped 1}
+        (-> (r/table :pokedex) r/index-list)                         ["type"]))
 
-;(deftest core-test
-;  (let [conn (connect)]
-;    (testing "database management"
-;      (r/run (r/db-create tmp-db) conn)
-;      (is (clojure.set/subset? #{test-db tmp-db} (set (r/run (r/db-list) conn))))
-;      (r/run (r/db-drop tmp-db) conn))
-;
-;    (testing "table management"
-;      (with-test-db
-;        (r/table-create "pokedex" {:primary-key "national_no"})
-;        (r/table-create "tmp" {:durability "hard"})
-;        (-> (r/table "pokedex")
-;            (r/index-create "height" (r/fn [row]
-;                                       (r/get-field row "height"))))
-;        (-> (r/table "pokedex")
-;            (r/index-drop "height"))
-;        (r/table-drop "tmp")
-;        (-> (r/table "pokedex")
-;            (r/index-create "types" (r/fn [row]
-;                                      (r/get-field row "type")) {:multi true}))
-;        (-> (r/table "pokedex")
-;            (r/index-rename "types" "type"))
-;        (-> (r/table "pokedex")
-;            r/index-wait))
-;      (is (= ["type"] (map :index (with-test-db (-> (r/table "pokedex") r/index-status)))))
-;      (is (= ["type" (with-test-db (-> (r/table "pokedex") r/index-list))]))
-;      (is (= ["pokedex"] (with-test-db (r/table-list)))))
-;
-;    (testing "writing data"
-;      (with-test-db
-;        (-> (r/table "pokedex")
-;            (r/insert pikachu))
-;        (-> (r/table "pokedex")
-;            (r/insert [magnemite
-;                       {:national_no 52
-;                        :name "Meowth"}
-;                       {:national_no 6
-;                        :name "Charisard"
-;                        :type ["Fire"]
-;                        :moves ["Blaze" "Solar Power"]}]))
-;        (-> (r/table "pokedex")
-;            (r/get 6)
-;            (r/update {:name "Charizard"}
-;                      {:return_changes true}))
-;        (-> (r/table "pokedex")
-;            (r/get 6)
-;            (r/replace {:name "Charizard"
-;                        :type ["Fire" "Flying"]
-;                        :abilities ["Blaze" "Solar Power"]}))
-;        (-> (r/table "pokedex")
-;            (r/get 52)
-;            (r/delete {:durability "hard"}))
-;        (-> (r/table "pokedex")
-;            r/sync)))
-;
-;    (testing "selecting data"
-;      (with-test-db
-;        (r/table-create "xy")
-;        (-> (r/table "xy")
-;            (r/insert [{:id 25
-;                        :name "Pikachu"
-;                        :type ["Electric"]}
-;                       {:id 312
-;                        :name "Minun"
-;                        :type ["Electric"]}])))
-;      (is (some #(= pikachu %) (with-test-db (r/table "pokedex"))))
-;      (is (= pikachu (with-test-db (-> (r/table "pokedex") (r/get 25)))))
-;      (is (= 2 (count (with-test-db (-> (r/table "pokedex") (r/get-all ["Electric"] {:index "type"}))))))
-;      (is (= [magnemite] (with-test-db (-> (r/table "pokedex") (r/between 81 82)))))
-;      (is (= [pikachu] (with-test-db (-> (r/table "pokedex") (r/filter (r/fn [row]
-;                                                                         (r/eq "Pikachu" (r/get-field row "name"))))))))
-;      (is (= pikachu (:left (first (with-test-db
-;                                     (-> (r/table "pokedex")
-;                                         (r/inner-join (r/table (r/db test-db) "xy")
-;                                                       (r/fn [row1 row2]
-;                                                         (r/eq (r/get-field row1 "name") (r/get-field row2 "name"))))))))))
-;      (with-test-db (-> (r/table "pokedex")
-;                        (r/outer-join (r/table (r/db test-db) "xy")
-;                                      (r/fn [row1 row2]
-;                                        (r/not (r/is-empty (r/set-intersection (r/get-field row1 "type") (r/get-field row2 "type"))))))))
-;      (is (apply = 25
-;            ((juxt :id :national_no) (first (with-test-db
-;                                              (-> (r/table "pokedex")
-;                                                  (r/eq-join "national_no" (r/table (r/db test-db) "xy"))
-;                                                  r/zip)))))))
-;
-;    (testing "transformations"
-;      (is (= #{6 25 81} (set (with-test-db
-;                               (-> (r/table "pokedex")
-;                                   (r/map (r/fn [row]
-;                                            (r/get-field row "national_no"))))))))
-;      (is (= [{:coolest_pokemon true}] (with-test-db
-;                                         (-> (r/table "pokedex")
-;                                             (r/get-all ["Electric"] {:index "type"})
-;                                             (r/with-fields ["coolest_pokemon"])))))
-;      (is (= ["Magnet Pull" "Sturdy" "Analytic" "Tail Whip" "Tail Whip" "Growl"]
-;             (with-test-db
-;               (-> (r/table "pokedex")
-;                   (r/order-by (r/desc "national_no"))
-;                   (r/has-fields "abilities")
-;                   (r/concat-map (r/fn [row]
-;                                   (r/get-field row "abilities")))))))
-;      (is (= 2 (with-test-db (-> (r/table "pokedex")
-;                                 (r/skip 1)
-;                                 r/count))))
-;      (is (= 1 (with-test-db (-> (r/table "pokedex")
-;                                 (r/limit 1)
-;                                 r/count))))
-;      (is (= 2 (with-test-db (-> (r/table "pokedex")
-;                                 (r/slice 1 3)
-;                                 r/count))))
-;      (is (= pikachu (with-test-db (-> (r/table "pokedex")
-;                                       (r/order-by "national_no")
-;                                       (r/nth 1)))))
-;      (is (= [1] (with-test-db (-> (r/table "pokedex")
-;                                   (r/order-by "national_no")
-;                                   (r/map (r/fn [row]
-;                                            (r/get-field row "national_no")))
-;                                   (r/indexes-of 25)))))
-;      (with-test-db (-> (r/table "pokedex")
-;                        (r/sample 3))))))
+    (testing "string manipulating"
+      (are [term result] (= (run term) result)
+        (r/match "pikachu" "^pika")         {:str "pika" :start 0 :groups [] :end 4}
+        (r/split "split this string")       ["split" "this" "string"]
+        (r/split "split,this string" ",")   ["split" "this string"]
+        (r/split "split this string" " " 1) ["split" "this string"]
+        (r/upcase "Shouting")               "SHOUTING"
+        (r/downcase "Whispering")           "whispering"))
+
+    (testing "control structure"
+      (are [term result] (= (run term) result)
+        (r/branch true 1 0)                         1
+        (r/branch false 1 0)                        0
+        (r/coerce-to [["name" "Pikachu"]] "OBJECT") {:name "Pikachu"}))
+
+    (testing "math and logic"
+      (are [term result] (= (run term) result)
+        (r/add 2 2) 4))
+    (close conn)))
 
 (use-fixtures :once setup)
