@@ -49,6 +49,9 @@
         (-> (r/table :pokedex) (r/index-drop :xxx))                  {:dropped 1}
         (-> (r/table :pokedex) r/index-list)                         ["type"]))
 
+    (testing "writing data"
+      (is (= (:inserted (db-run (-> (r/table :pokedex) (r/insert pokemons)))) 2)))
+
     (testing "string manipulating"
       (are [term result] (= (run term) result)
         (r/match "pikachu" "^pika")         {:str "pika" :start 0 :groups [] :end 4}
