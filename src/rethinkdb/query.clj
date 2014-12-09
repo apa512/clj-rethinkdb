@@ -1,6 +1,6 @@
 (ns rethinkdb.query
   (:refer-clojure :exclude [count filter map get not mod replace merge
-                            make-array distinct nth fn sync])
+                            make-array distinct nth do fn sync])
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]
             [rethinkdb.query-builder :refer [term]]))
@@ -239,8 +239,14 @@
 (defn branch [bool true-branch false-branch]
   (term :BRANCH [bool true-branch false-branch]))
 
+(defn for-each [sq func]
+  (term :FOREACH [sq func]))
+
 (defn coerce-to [top s]
   (term :COERCE_TO [top s]))
+
+(defn do [args fun]
+  (term :FUNCALL [fun args]))
 
 ;;; Sorting
 
