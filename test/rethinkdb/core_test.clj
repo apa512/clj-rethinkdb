@@ -13,6 +13,9 @@
                    ~term
                    (r/run ~'conn)))))
 
+(defn split-map [m]
+  (map (fn [[k v]] {k v}) m))
+
 (defn run [term]
   (r/run term conn))
 
@@ -22,6 +25,10 @@
                {:national_no 81
                 :name "Magnemite"
                 :type ["Electric" "Steel"]}])
+
+(def bulbasaur {:national_no 1
+                :name "Bulbasaur"
+                :type ["Grass" "Poison"]})
 
 (defn setup [test-fn]
   (if (some #{test-db} (r/run (r/db-list) conn))
@@ -50,7 +57,20 @@
         (-> (r/table :pokedex) r/index-list)                         ["type"]))
 
     (testing "writing data"
-      (is (= (:inserted (db-run (-> (r/table :pokedex) (r/insert pokemons)))) 2)))
+      (are [term result] (contains? (set (split-map (db-run term))) result)
+        (-> (r/table :pokedex) (r/insert bulbasaur))          {:inserted 1}
+        (-> (r/table :pokedex) (r/insert pokemons))           {:inserted 2}
+        (-> (r/table :pokedex)
+            (r/get 1)
+            (r/update {:japanese "Fushigidane"}))             {:replaced 1}
+        (-> (r/table :pokedex)
+            (r/get 1)
+            (r/replace (merge bulbasaur {:weight "6.9 kg"}))) {:replaced 1}
+        (-> (r/table :pokedex) (r/get 1) r/delete)            {:deleted 1}
+        (-> (r/table :pokedex) r/sync)                        {:synced 1}))
+
+    (testing "selecting data"
+      (is (= (set (db-run (r/table :pokedex))) (set pokemons))))
 
     (testing "string manipulating"
       (are [term result] (= (run term) result)
