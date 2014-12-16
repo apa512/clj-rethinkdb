@@ -45,10 +45,10 @@
         #{1} (first resp)
         #{2} (do
                (swap! conn update-in [:waiting] #(disj % token))
-               resp)
+               (with-meta resp {:token token}))
         #{3 5} (do
                  (swap! conn update-in [:waiting] #(conj % token))
-                 (lazy-cat resp (send-query conn token (parse-query :CONTINUE))))
+                 (with-meta (lazy-cat resp (send-query conn token (parse-query :CONTINUE))) {:token token}))
         (throw (Exception. (first resp)))))))
 
 (defn send-start-query [conn token args]
