@@ -1,6 +1,6 @@
 (ns rethinkdb.query
   (:refer-clojure :exclude [count filter map get not mod replace merge
-                            make-array distinct nth do fn sync])
+                            make-array distinct nth do fn sync time])
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]
             [rethinkdb.query-builder :refer [term]]))
@@ -183,6 +183,9 @@
 (defn has-fields [obj-or-sq x]
   (term :HAS_FIELDS [obj-or-sq x]))
 
+(defn insert-at [sq n x]
+  (term :INSERT_AT [sq n x]))
+
 (defn object [& key-vals]
   (term :OBJECT key-vals))
 
@@ -228,6 +231,18 @@
 (defn not [bool]
   (term :NOT [bool]))
 
+;;; Dates and times
+
+(defn now []
+  (term :NOW []))
+
+(defn time [& date-time-parts]
+  (let [args (concat date-time-parts
+                     (if (instance? String (last date-time-parts))
+                       []
+                       ["+00:00"]))]
+    (term :TIME args)))
+
 ;;; Control structure
 
 (defn all [& bools]
@@ -235,6 +250,9 @@
 
 (defn any [& bools]
   (term :ANY bools))
+
+(defn do [args fun]
+  (term :FUNCALL [fun args]))
 
 (defn branch [bool true-branch false-branch]
   (term :BRANCH [bool true-branch false-branch]))
@@ -245,8 +263,20 @@
 (defn coerce-to [top s]
   (term :COERCE_TO [top s]))
 
-(defn do [args fun]
-  (term :FUNCALL [fun args]))
+(defn type-of [top]
+  (term :TYPEOF [top]))
+
+(defn info [top]
+  (term :INFO [top]))
+
+(defn json [s]
+  (term :JSON [s]))
+
+(defn http [url & [optargs]]
+  (term :HTTP [url] optargs))
+
+(defn uuid []
+  (term :UUID []))
 
 ;;; Sorting
 

@@ -36,6 +36,17 @@
   (r/run (r/db-create test-db) conn)
   (test-fn))
 
+(defn between-notional-no [from to]
+  (-> (r/db test-db)
+      (r/table :pokedex)
+      (r/between from to {:right-bound :closed})))
+
+(defn with-name [name]
+  (-> (r/db test-db)
+      (r/table :pokedex)
+      (r/filter (r/fn [row]
+                  (r/eq (r/get-field row :name) name)))))
+
 (deftest core-test
   (let [conn (connect)]
     (testing "manipulating databases"
@@ -70,7 +81,11 @@
         (-> (r/table :pokedex) r/sync)                        {:synced 1}))
 
     (testing "selecting data"
-      (is (= (set (db-run (r/table :pokedex))) (set pokemons))))
+      (is (= (set (db-run (r/table :pokedex))) (set pokemons)))
+      (is (= (db-run (-> (r/table :pokedex) (r/get 25))) (first pokemons)))
+      (is (= (db-run (-> (r/table :pokedex) (r/get-all [25 81]))) pokemons))
+      (is (= (run (between-notional-no 80 81)) [(last pokemons)]))
+      (is (= (run (with-name "Pikachu")) [(first pokemons)])))
 
     (testing "string manipulating"
       (are [term result] (= (run term) result)
@@ -81,11 +96,21 @@
         (r/upcase "Shouting")               "SHOUTING"
         (r/downcase "Whispering")           "whispering"))
 
+    (testing "dates and times"
+      (are [term result] (= (run term) result)
+        (r/time 2014 12 31)          (t/date-time 2014 12 31)
+        (r/time 2014 12 31 "+01:00") (t/date-time 2014 12 30 23)
+        (r/time 2014 12 31 10 15 30) (t/date-time 2014 12 31 10 15 30)))
+
     (testing "control structure"
       (are [term result] (= (run term) result)
         (r/branch true 1 0)                         1
         (r/branch false 1 0)                        0
-        (r/coerce-to [["name" "Pikachu"]] "OBJECT") {:name "Pikachu"}))
+        (r/coerce-to [["name" "Pikachu"]] "OBJECT") {:name "Pikachu"}
+        (r/type-of [1 2 3])                         "ARRAY"
+        (r/type-of {:number 42})                    "OBJECT"
+        (r/info (r/db test-db))                     {:type "DB" :name test-db}
+        (r/json "{\"number\":42}") {:number 42}))
 
     (testing "math and logic"
       (are [term result] (= (run term) result)
