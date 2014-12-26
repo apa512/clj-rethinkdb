@@ -1,5 +1,6 @@
 (ns rethinkdb.response
-  (:require [clj-time.coerce :as c]))
+  (:require [clj-time.core :as t]
+            [clj-time.coerce :as c]))
 
 (declare parse-response)
 
@@ -7,8 +8,11 @@
 
 (defmethod parse-reql-type "TIME" [resp]
   (let [epoch (:epoch_time resp)
+        timezone (Integer/parseInt (re-find #"..." (:timezone resp)))
         epoch-milli (* epoch 1000)]
-    (c/from-long (long epoch-milli))))
+    (t/to-time-zone
+      (c/from-long (long epoch-milli))
+      (t/time-zone-for-offset timezone))))
 
 (defmethod parse-reql-type "GROUPED_DATA" [resp]
   (apply hash-map (apply concat (parse-response (:data resp)))))

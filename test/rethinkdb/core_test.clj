@@ -98,9 +98,40 @@
 
     (testing "dates and times"
       (are [term result] (= (run term) result)
-        (r/time 2014 12 31)          (t/date-time 2014 12 31)
-        (r/time 2014 12 31 "+01:00") (t/date-time 2014 12 30 23)
-        (r/time 2014 12 31 10 15 30) (t/date-time 2014 12 31 10 15 30)))
+        (r/time 2014 12 31)                     (t/date-time 2014 12 31)
+        (r/time 2014 12 31 "+01:00")            (t/from-time-zone
+                                                  (t/date-time 2014 12 31)
+                                                  (t/time-zone-for-offset 1))
+        (r/time 2014 12 31 10 15 30)            (t/date-time 2014 12 31 10 15 30)
+        (r/epoch-time 531360000)                (t/date-time 1986 11 3)
+        (r/iso8601 "2013-01-01T01:01:01+00:00") (t/date-time 2013 01 01 01 01 01)
+        (r/in-timezone
+          (r/time 2014 12 12) "+02:00")         (t/to-time-zone
+                                                  (t/date-time 2014 12 12)
+                                                  (t/time-zone-for-offset 2))
+        (r/timezone
+          (r/in-timezone
+            (r/time 2014 12 12) "+02:00"))      "+02:00"
+        (r/during (r/time 2014 12 11)
+                  (r/time 2014 12 10)
+                  (r/time 2014 12 12))          true
+        (r/during (r/time 2014 12 11)
+                  (r/time 2014 12 10)
+                  (r/time 2014 12 11)
+                  {:right-bound :closed})       true
+        (r/date (r/time 2014 12 31 10 15 0))    (t/date-time 2014 12 31)
+        (r/time-of-day
+          (r/time 2014 12 31 10 15 0))          (+ (* 15 60) (* 10 60 60))
+        (r/year (r/time 2014 12 31))            2014
+        (r/month (r/time 2014 12 31))           12
+        (r/day (r/time 2014 12 31))             31
+        (r/day-of-week (r/time 2014 12 31))     3
+        (r/day-of-year (r/time 2014 12 31))     365
+        (r/hours (r/time 2014 12 31 10 4 5))    10
+        (r/minutes (r/time 2014 12 31 10 4 5))  4
+        (r/seconds (r/time 2014 12 31 10 4 5))  5
+        (r/to-iso8601 (r/time 2014 12 31))      "2014-12-31T00:00:00+00:00"
+        (r/to-epoch-time (r/time 1970 1 1))     0))
 
     (testing "control structure"
       (are [term result] (= (run term) result)

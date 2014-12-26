@@ -243,6 +243,57 @@
                        ["+00:00"]))]
     (term :TIME args)))
 
+(defn epoch-time [i]
+  (term :EPOCH_TIME [i]))
+
+(defn iso8601 [s & [optargs]]
+  (term :ISO8601 [s] optargs))
+
+(defn in-timezone [time-obj s]
+  (term :IN_TIMEZONE [time-obj s]))
+
+(defn timezone [time-obj]
+  (term :TIMEZONE [time-obj]))
+
+(defn during [time-obj start-time end-time & [optargs]]
+  (term :DURING [time-obj start-time end-time] optargs))
+
+(defn date [time-obj]
+  (term :DATE [time-obj]))
+
+(defn time-of-day [time-obj]
+  (term :TIME_OF_DAY [time-obj]))
+
+(defn year [time-obj]
+  (term :YEAR [time-obj]))
+
+(defn month [time-obj]
+  (term :MONTH [time-obj]))
+
+(defn day [time-obj]
+  (term :DAY [time-obj]))
+
+(defn day-of-week [time-obj]
+  (term :DAY_OF_WEEK [time-obj]))
+
+(defn day-of-year [time-obj]
+  (term :DAY_OF_YEAR [time-obj]))
+
+(defn hours [time-obj]
+  (term :HOURS [time-obj]))
+
+(defn minutes [time-obj]
+  (term :MINUTES [time-obj]))
+
+(defn seconds [time-obj]
+  (term :SECONDS [time-obj]))
+
+(defn to-iso8601 [time-obj]
+  (term :TO_ISO8601 [time-obj]))
+
+(defn to-epoch-time [time-obj]
+  (term :TO_EPOCH_TIME [time-obj]))
+
 ;;; Control structure
 
 (defn all [& bools]
