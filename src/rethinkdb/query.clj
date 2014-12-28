@@ -1,6 +1,6 @@
 (ns rethinkdb.query
   (:refer-clojure :exclude [count filter map get not mod replace merge
-                            make-array distinct nth do fn sync time])
+                            make-array distinct keys nth do fn sync time])
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]
             [rethinkdb.query-builder :refer [term]]))
@@ -168,11 +168,26 @@
 (defn pluck [obj-or-sq x]
   (term :PLUCK [obj-or-sq x]))
 
+(defn without [obj-or-sq fields]
+  (term :WITHOUT (concat [obj-or-sq] fields)))
+
 (defn merge [obj-or-sq1 obj-or-sq2]
   (term :MERGE [obj-or-sq1 obj-or-sq2]))
 
+(defn append [sq x]
+  (term :APPEND [sq x]))
+
+(defn prepend [sq x]
+  (term :PREPEND [sq x]))
+
+(defn difference [sq1 sq2]
+  (term :DIFFERENCE [sq1 sq2]))
+
 (defn set-insert [sq x]
   (term :SET_INSERT [sq x]))
+
+(defn set-union [sq1 sq2]
+  (term :SET_UNION [sq1 sq2]))
 
 (defn set-intersection [sq1 sq2]
   (term :SET_INTERSECTION [sq1 sq2]))
@@ -185,6 +200,22 @@
 
 (defn insert-at [sq n x]
   (term :INSERT_AT [sq n x]))
+
+(defn splice-at [sq1 n sq2]
+  (term :SPLICE_AT [sq1 n sq2]))
+
+(defn delete-at
+  ([sq idx] (term :DELETE_AT [sq idx]))
+  ([sq idx end-idx] (term :DELETE_AT [sq idx end-idx])))
+
+(defn change-at [sq n x]
+  (term :CHANGE_AT [sq n x]))
+
+(defn keys [obj]
+  (term :KEYS [obj]))
+
+(defn literal [x]
+  (term :LITERAL [x]))
 
 (defn object [& key-vals]
   (term :OBJECT key-vals))

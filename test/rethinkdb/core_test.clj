@@ -87,6 +87,11 @@
       (is (= (run (between-notional-no 80 81)) [(last pokemons)]))
       (is (= (run (with-name "Pikachu")) [(first pokemons)])))
 
+    (testing "document manipulation"
+      (is (= (db-run (-> (r/table :pokedex)
+                         (r/get 25)
+                         (r/without [:type :name]))) {:national_no 25})))
+
     (testing "string manipulating"
       (are [term result] (= (run term) result)
         (r/match "pikachu" "^pika")         {:str "pika" :start 0 :groups [] :end 4}
