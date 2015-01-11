@@ -151,6 +151,9 @@
     (testing "math and logic"
       (are [term result] (= (run term) result)
         (r/add 2 2) 4))
+
+    (testing "geospatial commands"
+      (is (= 104646.93093328025 (run (r/distance (r/point 20 20) (r/point 21 20))))))
     (close conn)))
 
 (use-fixtures :once setup)

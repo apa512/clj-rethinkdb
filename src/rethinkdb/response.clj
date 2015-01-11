@@ -18,7 +18,10 @@
   (apply hash-map (apply concat (parse-response (:data resp)))))
 
 (defmethod parse-reql-type "BINARY" [resp]
-  resp)
+  (dissoc resp :$reql_type$))
+
+(defmethod parse-reql-type "GEOMETRY" [resp]
+  (dissoc resp :$reql_type$))
 
 (defmulti parse-response
   (fn [args]

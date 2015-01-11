@@ -368,6 +368,17 @@
 (defn desc [field-name]
   (term :DESC [field-name]))
 
+;;; Geospatial commands
+
+(defn point [x y & [optargs]]
+  (term :POINT [x y] optargs))
+
+(defn circle [point radius & [optargs]]
+  (term :CIRCLE [point radius] optargs))
+
+(defn distance [point1 point2 & [optargs]]
+  (term :DISTANCE [point1 point2] optargs))
+
 ;;; Run query
 
 (defn make-array [& xs]
