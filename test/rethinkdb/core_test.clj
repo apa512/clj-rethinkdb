@@ -153,7 +153,11 @@
         (r/add 2 2) 4))
 
     (testing "geospatial commands"
-      (is (= 104646.93093328025 (run (r/distance (r/point 20 20) (r/point 21 20))))))
+      (is (= {:type "Point" :coordinates [50 50]}
+             (run (r/geojson {:type "Point" :coordinates [50 50]}))))
+      (is (= "Polygon" (:type (run (r/fill (r/line [[50 51] [51 51] [51 52] [50 51]]))))))
+      (is (= 104644.93094219 (run (r/distance (r/point 20 20)
+                                              (r/circle (r/point 21 20) 2))))))
     (close conn)))
 
 (use-fixtures :once setup)

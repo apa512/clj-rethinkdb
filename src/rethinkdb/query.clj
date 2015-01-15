@@ -370,14 +370,44 @@
 
 ;;; Geospatial commands
 
-(defn point [x y & [optargs]]
-  (term :POINT [x y] optargs))
-
 (defn circle [point radius & [optargs]]
   (term :CIRCLE [point radius] optargs))
 
 (defn distance [point1 point2 & [optargs]]
   (term :DISTANCE [point1 point2] optargs))
+
+(defn fill [point]
+  (term :FILL [point]))
+
+(defn geojson [obj]
+  (term :GEOJSON [obj]))
+
+(defn to-geojson [geo]
+  (term :TO_GEOJSON [geo]))
+
+(defn get-intersection [table geo & [optargs]]
+  (term :GET_INTERSECTION [table geo] optargs))
+
+(defn get-nearest [table geo & [optargs]]
+  (term :GET_NEAREST [table geo] optargs))
+
+(defn includes [geo1 geo2]
+  (term :INCLUDES [geo1 geo2]))
+
+(defn intersects [geo1 geo2]
+  (term :INTERSECTS [geo1 geo2]))
+
+(defn line [points]
+  (term :LINE points))
+
+(defn point [x y & [optargs]]
+  (term :POINT [x y] optargs))
+
+(defn polygon [points]
+  (term :POLYGON points))
+
+(defn polygon-sub [outer-polygon inner-polygon]
+  (term :POLYGON_SUB [outer-polygon inner-polygon]))
 
 ;;; Run query
 
