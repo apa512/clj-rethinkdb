@@ -1,6 +1,7 @@
 (ns rethinkdb.query
   (:refer-clojure :exclude [count filter map get not mod replace merge
-                            make-array distinct keys nth do fn sync time])
+                            reduce make-array distinct keys nth min max
+                            do fn sync time])
   (:require [clojure.data.json :as json]
             [rethinkdb.net :refer [send-start-query]]
             [rethinkdb.query-builder :refer [term]]))
@@ -154,8 +155,30 @@
 (defn group [sq s]
   (term :GROUP [sq s]))
 
+(defn ungroup [grouped]
+  (term :UNGROUP [grouped]))
+
+(defn reduce [sq func]
+  (term :REDUCE [sq func]))
+
 (defn count [sq]
   (term :COUNT [sq]))
+
+(defn sum
+  ([sq] (term :SUM [sq]))
+  ([sq str-or-func] (term :SUM [sq str-or-func])))
+
+(defn avg
+  ([sq] (term :AVG [sq]))
+  ([sq str-or-func] (term :AVG [sq str-or-func])))
+
+(defn min
+  ([sq] (term :MIN [sq]))
+  ([sq str-or-func] (term :MIN [sq str-or-func])))
+
+(defn max
+  ([sq] (term :MAX [sq]))
+  ([sq str-or-func] (term :MAX [sq str-or-func])))
 
 (defn contains [sq x-or-func]
   (term :CONTAINS [sq x-or-func]))
@@ -256,11 +279,26 @@
 (defn eq [& args]
   (term :EQ args))
 
+(defn ne [& args]
+  (term :NE args))
+
 (defn gt [& args]
   (term :GT args))
 
+(defn ge [& args]
+  (term :GE args))
+
+(defn lt [& args]
+  (term :LT args))
+
+(defn le [& args]
+  (term :LE args))
+
 (defn not [bool]
   (term :NOT [bool]))
+
+(defn random [n1 n2 & [optargs]]
+  (term :RANDOM [n1 n2] optargs))
 
 ;;; Dates and times
 

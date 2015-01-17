@@ -87,6 +87,13 @@
       (is (= (run (between-notional-no 80 81)) [(last pokemons)]))
       (is (= (run (with-name "Pikachu")) [(first pokemons)])))
 
+    (testing "aggregation"
+      (are [term result] (= (run term) result)
+        (r/avg [2 4]) 3
+        (r/min [4 2]) 2
+        (r/max [4 6]) 6
+        (r/sum [3 4]) 7))
+
     (testing "document manipulation"
       (is (= (db-run (-> (r/table :pokedex)
                          (r/get 25)
@@ -149,6 +156,7 @@
         (r/json "{\"number\":42}") {:number 42}))
 
     (testing "math and logic"
+      (is (< (run (r/random 0 2)) 2))
       (are [term result] (= (run term) result)
         (r/add 2 2) 4))
 
