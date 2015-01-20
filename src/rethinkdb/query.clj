@@ -3,17 +3,15 @@
                             reduce make-array distinct keys nth min max
                             do fn sync time])
   (:require [clojure.data.json :as json]
+            [clojure.walk :refer [postwalk postwalk-replace]]
             [rethinkdb.net :refer [send-start-query]]
             [rethinkdb.query-builder :refer [term]]))
 
 (defmacro fn [args & [body]]
-  (let [arg-replacements (zipmap args
-                                 (clojure.core/map (clojure.core/fn [n]
-                                                     (term :VAR [(inc n)]))
-                                                   (range)))
-        func-args (into [] (take (clojure.core/count args) (iterate inc 1)))
-        func-terms (clojure.walk/postwalk-replace arg-replacements body)]
-    (term :FUNC [func-args func-terms])))
+  (let [new-args (into [] (clojure.core/map #(hash-map :temp-var (keyword %)) args))
+        new-replacements (zipmap args new-args)
+        new-terms (postwalk-replace new-replacements body)]
+    (term :FUNC [new-args new-terms])))
 
 ;;; Manipulating databases
 
@@ -449,9 +447,28 @@
 
 ;;; Run query
 
+(defn replace-vars [query]
+  (let [var-counter (atom 0)]
+    (postwalk
+      #(if (and (map? %) (= :FUNC (:rethinkdb.query-builder/term %)))
+         (let [args (first (:rethinkdb.query-builder/args %))
+               new-vars (into [] (range @var-counter (+ @var-counter (clojure.core/count args))))
+               new-args (clojure.core/map
+                          (clojure.core/fn [arg]
+                            (term :VAR [arg]))
+                          new-vars)
+               arg-replacements (zipmap args new-args)]
+           (swap! var-counter + (clojure.core/count args))
+           (postwalk-replace
+             arg-replacements
+             (assoc-in % [:rethinkdb.query-builder/args 0] new-vars)))
+         %)
+      query)))
+
 (defn make-array [& xs]
   (term :MAKE_ARRAY xs))
 
-(defn run [args conn]
+(defn run [query conn]
+  (replace-vars query)
   (let [token (:token (swap! conn update-in [:token] inc))]
-    (send-start-query conn token args)))
+    (send-start-query conn token (replace-vars query))))

@@ -51,8 +51,8 @@
                  (with-meta (lazy-cat resp (send-query conn token (parse-query :CONTINUE))) {:token token}))
         (throw (Exception. (first resp)))))))
 
-(defn send-start-query [conn token args]
-  (send-query conn token (parse-query :START args)))
+(defn send-start-query [conn token query]
+  (send-query conn token (parse-query :START query)))
 
 (defn send-stop-query [conn token]
   (send-query conn token (parse-query :STOP)))
