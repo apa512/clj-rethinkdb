@@ -166,6 +166,23 @@
       (is (= "Polygon" (:type (run (r/fill (r/line [[50 51] [51 51] [51 52] [50 51]]))))))
       (is (= 104644.93094219 (run (r/distance (r/point 20 20)
                                               (r/circle (r/point 21 20) 2))))))
+    (testing "nested fns"
+      (is (= [{:a {:foo "bar"}
+               :b [1 2]}]
+             (run (-> [{:foo "bar"}]
+                      (r/map (r/fn [x]
+                               {:a x
+                                :b (-> [1 2]
+                                       (r/map (r/fn [x]
+                                                x)))}))))))
+      (is (= [{:a {:foo "bar"}
+               :b [{:foo "bar"} {:foo "bar"}]}]
+            (run (-> [{:foo "bar"}]
+                      (r/map (r/fn [x]
+                               {:a x
+                                :b (-> [1 2]
+                                       (r/map (r/fn [y]
+                                                x)))})))))))
     (close conn)))
 
 (use-fixtures :once setup)
