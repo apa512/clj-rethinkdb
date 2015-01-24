@@ -31,7 +31,7 @@
       :else (type args))))
 
 (defmethod parse-response :sequential [resp]
-  (map parse-response resp))
+  (into [] (map parse-response resp)))
 
 (defmethod parse-response :map [resp]
   (if-let [reql-type (:$reql_type$ resp)]
