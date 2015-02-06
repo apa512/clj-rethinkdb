@@ -50,22 +50,22 @@
 (deftest core-test
   (let [conn (connect)]
     (testing "manipulating databases"
-      (is (= (r/run (r/db-create "cljrethinkdb_tmp") conn) {:created 1}))
-      (is (= (r/run (r/db-drop "cljrethinkdb_tmp") conn) {:dropped 1}))
+      (is (= 1 (:dbs_created (r/run (r/db-create "cljrethinkdb_tmp") conn))))
+      (is (= 1 (:dbs_dropped (r/run (r/db-drop "cljrethinkdb_tmp") conn))))
       (is (contains? (set (r/run (r/db-list) conn)) test-db)))
 
     (testing "manipulating tables"
       (db-run (r/table-create :tmp))
-      (are [term result] (= (db-run term) result)
-        (r/table-create :pokedex {:primary-key :national_no})        {:created 1}
-        (r/table-drop :tmp) {:dropped 1}
+      (are [term result] (contains? (set (split-map (db-run term))) result)
+        (r/table-create :pokedex {:primary-key :national_no})        {:tables_created 1}
+        (r/table-drop :tmp) {:tables_dropped 1}
         (-> (r/table :pokedex) (r/index-create :tmp (r/fn [row] 1))) {:created 1}
         (-> (r/table :pokedex)
             (r/index-create :type (r/fn [row]
                                     (r/get-field row :type))))       {:created 1}
         (-> (r/table :pokedex) (r/index-rename :tmp :xxx))           {:renamed 1}
-        (-> (r/table :pokedex) (r/index-drop :xxx))                  {:dropped 1}
-        (-> (r/table :pokedex) r/index-list)                         ["type"]))
+        (-> (r/table :pokedex) (r/index-drop :xxx))                  {:dropped 1})
+      (is (= ["type"] (db-run (-> (r/table :pokedex) r/index-list)))))
 
     (testing "writing data"
       (are [term result] (contains? (set (split-map (db-run term))) result)
@@ -146,14 +146,14 @@
         (r/to-epoch-time (r/time 1970 1 1))     0))
 
     (testing "control structure"
-      (are [term result] (= (run term) result)
+      (are [term result] (= result (run term))
         (r/branch true 1 0)                         1
         (r/branch false 1 0)                        0
         (r/coerce-to [["name" "Pikachu"]] "OBJECT") {:name "Pikachu"}
         (r/type-of [1 2 3])                         "ARRAY"
         (r/type-of {:number 42})                    "OBJECT"
-        (r/info (r/db test-db))                     {:type "DB" :name test-db}
-        (r/json "{\"number\":42}") {:number 42}))
+        (r/json "{\"number\":42}")                  {:number 42})
+      (is (= (:name (run (r/info (r/db test-db)))) "cljrethinkdb_test")))
 
     (testing "math and logic"
       (is (< (run (r/random 0 2)) 2))

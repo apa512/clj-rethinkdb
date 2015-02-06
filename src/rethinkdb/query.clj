@@ -382,7 +382,7 @@
   (term :COERCE_TO [top s]))
 
 (defn type-of [top]
-  (term :TYPEOF [top]))
+  (term :TYPE_OF [top]))
 
 (defn info [top]
   (term :INFO [top]))
