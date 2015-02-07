@@ -119,10 +119,10 @@
   (term :WITH_FIELDS (concat [sq] fields)))
 
 (defn concat-map [sel func]
-  (term :CONCATMAP [sel func]))
+  (term :CONCAT_MAP [sel func]))
 
 (defn order-by [sel field-or-ordering]
-  (term :ORDERBY [sel field-or-ordering]))
+  (term :ORDER_BY [sel field-or-ordering]))
 
 (defn skip [sel n]
   (term :SKIP [sel n]))
@@ -376,7 +376,7 @@
   (term :BRANCH [bool true-branch false-branch]))
 
 (defn for-each [sq func]
-  (term :FOREACH [sq func]))
+  (term :FOR_EACH [sq func]))
 
 (defn coerce-to [top s]
   (term :COERCE_TO [top s]))
@@ -444,6 +444,11 @@
 
 (defn polygon-sub [outer-polygon inner-polygon]
   (term :POLYGON_SUB [outer-polygon inner-polygon]))
+
+;;; Configuration
+
+(defn config [table-or-db]
+  (term :CONFIG [table-or-db]))
 
 ;;; Run query
 

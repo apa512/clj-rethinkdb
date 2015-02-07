@@ -166,6 +166,11 @@
       (is (= "Polygon" (:type (run (r/fill (r/line [[50 51] [51 51] [51 52] [50 51]]))))))
       (is (= 104644.93094219 (run (r/distance (r/point 20 20)
                                               (r/circle (r/point 21 20) 2))))))
+
+    (testing "configuration"
+      (is (= "cljrethinkdb_test" (:name (run (r/config (r/db "cljrethinkdb_test"))))))
+      (is (= "pokedex" (:name (run (-> (r/db "cljrethinkdb_test") (r/table :pokedex) r/config))))))
+
     (testing "nested fns"
       (is (= [{:a {:foo "bar"}
                :b [1 2]}]
