@@ -94,6 +94,18 @@
         (r/max [4 6]) 6
         (r/sum [3 4]) 7))
 
+    (testing "feeds"
+      (let [tmp-conn (connect)
+            changes (future
+                      (take 2 (-> (r/db test-db)
+                                (r/table :pokedex)
+                                r/changes
+                                (r/run tmp-conn))))]
+          (db-run (-> (r/table :pokedex)
+                      (r/insert (take 1000 (repeat {:name "Test"})))))
+        (is (= "Test" ((comp :name :new_val first) @changes)))
+        (close tmp-conn)))
+
     (testing "document manipulation"
       (is (= (db-run (-> (r/table :pokedex)
                          (r/get 25)
@@ -169,7 +181,9 @@
 
     (testing "configuration"
       (is (= "cljrethinkdb_test" (:name (run (r/config (r/db "cljrethinkdb_test"))))))
-      (is (= "pokedex" (:name (run (-> (r/db "cljrethinkdb_test") (r/table :pokedex) r/config))))))
+      (is (= "pokedex" (:name (run (-> (r/db "cljrethinkdb_test") (r/table :pokedex) r/config)))))
+      (is (= "pokedex" (:name (db-run (-> (r/table :pokedex)
+                                          r/status))))))
 
     (testing "nested fns"
       (is (= [{:a {:foo "bar"}

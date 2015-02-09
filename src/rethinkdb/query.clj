@@ -450,6 +450,12 @@
 (defn config [table-or-db]
   (term :CONFIG [table-or-db]))
 
+(defn rebalance [table-or-db]
+  (term :REBALANCE [table-or-db]))
+
+(defn status [table]
+  (term :STATUS [table]))
+
 ;;; Run query
 
 (defn replace-vars [query]
