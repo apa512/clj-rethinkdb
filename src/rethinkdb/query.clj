@@ -5,7 +5,7 @@
   (:require [clojure.data.json :as json]
             [clojure.walk :refer [postwalk postwalk-replace]]
             [rethinkdb.net :refer [send-start-query]]
-            [rethinkdb.query-builder :refer [term]]))
+            [rethinkdb.query-builder :refer [term parse-term]]))
 
 (defmacro fn [args & [body]]
   (let [new-args (into [] (clojure.core/map #(hash-map :temp-var (keyword %)) args))
@@ -122,7 +122,10 @@
   (term :CONCAT_MAP [sel func]))
 
 (defn order-by [sel field-or-ordering]
-  (term :ORDER_BY [sel field-or-ordering]))
+  (if-let [index (or (clojure.core/get field-or-ordering "index")
+                     (clojure.core/get field-or-ordering :index))]
+    (term :ORDER_BY [sel] {:index (parse-term index)})
+    (term :ORDER_BY [sel field-or-ordering])))
 
 (defn skip [sel n]
   (term :SKIP [sel n]))

@@ -80,6 +80,12 @@
         (-> (r/table :pokedex) (r/get 1) r/delete)            {:deleted 1}
         (-> (r/table :pokedex) r/sync)                        {:synced 1}))
 
+    (testing "transformations"
+      (is (= [25 81] (db-run (-> (r/table :pokedex)
+                                 (r/order-by {:index (r/asc :national_no)})
+                                 (r/map (r/fn [row]
+                                          (r/get-field row :national_no))))))))
+
     (testing "selecting data"
       (is (= (set (db-run (r/table :pokedex))) (set pokemons)))
       (is (= (db-run (-> (r/table :pokedex) (r/get 25))) (first pokemons)))
