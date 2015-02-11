@@ -262,7 +262,9 @@
 
 ;;; Math and logic
 
-(defn add [& args]
+(defn add
+  "Sum numbers, concatenate strings or concatenate arrays."
+  [& args]
   (term :ADD args))
 
 (defn sub [& args]

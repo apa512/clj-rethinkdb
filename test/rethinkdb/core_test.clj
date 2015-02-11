@@ -176,7 +176,9 @@
     (testing "math and logic"
       (is (< (run (r/random 0 2)) 2))
       (are [term result] (= (run term) result)
-        (r/add 2 2) 4))
+        (r/add 2 2 2) 6
+        (r/add "Hello " "from " "Tokyo") "Hello from Tokyo"
+        (r/add [1 2] [3 4]) [1 2 3 4]))
 
     (testing "geospatial commands"
       (is (= {:type "Point" :coordinates [50 50]}
