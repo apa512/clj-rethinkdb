@@ -53,7 +53,9 @@
 (defn index-wait [table & index-names]
   (term :INDEX_WAIT (concat [table] index-names)))
 
-(defn changes [table]
+(defn changes
+  "Return an infinite stream of objects representing changes to a table or a document."
+  [table]
   (term :CHANGES [table]))
 
 ;;; Writing data
@@ -90,7 +92,15 @@
 (defn get-field [sel field-name]
   (term :GET_FIELD [sel field-name]))
 
-(defn between [sel lower-key upper-key & [optargs]]
+(defn between
+  "Get all documents between two keys. Accepts three optional arguments: ```index```,
+  ```left-bound```, and ```right-bound```. If ```index``` is set to the name of a secondary
+  index, ```between``` will return all documents where that index's value is in the
+  specified range (it uses the primary key by default). ```left-bound``` or
+  ```right-bound``` may be set to open or closed to indicate whether or not to
+  include that endpoint of the range (by default, ```left-bound``` is closed and
+  ```right-bound``` is open)."
+  [sel lower-key upper-key & [optargs]]
   (term :BETWEEN [sel lower-key upper-key] optargs))
 
 (defn filter [sq obj-or-func]
@@ -118,7 +128,10 @@
 (defn with-fields [sq fields]
   (term :WITH_FIELDS (concat [sq] fields)))
 
-(defn concat-map [sel func]
+(defn concat-map
+  "Concatenate one or more elements into a single sequence using a mapping
+  function."
+  [sel func]
   (term :CONCAT_MAP [sel func]))
 
 (defn order-by [sel field-or-ordering]
@@ -162,26 +175,40 @@
 (defn reduce [sq func]
   (term :REDUCE [sq func]))
 
-(defn count [sq]
-  (term :COUNT [sq]))
+(defn count
+  "Count the number of elements in the sequence. With a single argument, count
+  the number of elements equal to it. If the argument is a function, it is
+  equivalent to calling filter before count."
+  ([sq] (term :COUNT [sq]))
+  ([sq x-or-func] (term :COUNT [sq x-or-func])))
 
 (defn sum
   ([sq] (term :SUM [sq]))
-  ([sq str-or-func] (term :SUM [sq str-or-func])))
+  ([sq field-or-func] (term :SUM [sq field-or-func])))
 
 (defn avg
+  "Averages all the elements of a sequence. If called with a field name,
+  averages all the values of that field in the sequence, skipping elements of
+  the sequence that lack that field. If called with a function, calls that
+  function on every element of the sequence and averages the results, skipping
+  elements of the sequence where that function returns ```nil``` or a non-existence
+  error."
   ([sq] (term :AVG [sq]))
-  ([sq str-or-func] (term :AVG [sq str-or-func])))
+  ([sq field-or-func] (term :AVG [sq field-or-func])))
 
 (defn min
   ([sq] (term :MIN [sq]))
-  ([sq str-or-func] (term :MIN [sq str-or-func])))
+  ([sq field-or-func] (term :MIN [sq field-or-func])))
 
 (defn max
   ([sq] (term :MAX [sq]))
-  ([sq str-or-func] (term :MAX [sq str-or-func])))
+  ([sq field-or-func] (term :MAX [sq field-or-func])))
 
-(defn contains [sq x-or-func]
+(defn contains
+  "Returns whether or not a sequence contains all the specified values, or if
+  functions are provided instead, returns whether or not a sequence contains
+  values matching all the specified functions."
+  [sq x-or-func]
   (term :CONTAINS [sq x-or-func]))
 
 (defn distinct [sq]
@@ -198,16 +225,24 @@
 (defn merge [obj-or-sq1 obj-or-sq2]
   (term :MERGE [obj-or-sq1 obj-or-sq2]))
 
-(defn append [sq x]
+(defn append
+  "Append a value to an array."
+  [sq x]
   (term :APPEND [sq x]))
 
-(defn prepend [sq x]
+(defn prepend
+  "Prepend a value to an array."
+  [sq x]
   (term :PREPEND [sq x]))
 
-(defn difference [sq1 sq2]
+(defn difference
+  "Remove the elements of one array from another array."
+  [sq1 sq2]
   (term :DIFFERENCE [sq1 sq2]))
 
-(defn set-insert [sq x]
+(defn set-insert
+  "Add a value to an array and return it as a set (an array with distinct values)."
+  [sq x]
   (term :SET_INSERT [sq x]))
 
 (defn set-union [sq1 sq2]
@@ -232,7 +267,9 @@
   ([sq idx] (term :DELETE_AT [sq idx]))
   ([sq idx end-idx] (term :DELETE_AT [sq idx end-idx])))
 
-(defn change-at [sq n x]
+(defn change-at
+  "Change a value in an array at a given index. Returns the modified array."
+  [sq n x]
   (term :CHANGE_AT [sq n x]))
 
 (defn keys [obj]
@@ -330,7 +367,10 @@
 (defn during [time-obj start-time end-time & [optargs]]
   (term :DURING [time-obj start-time end-time] optargs))
 
-(defn date [time-obj]
+(defn date
+  "Return a new time object only based on the day, month and year (ie. the same
+  day at 00:00)."
+  [time-obj]
   (term :DATE [time-obj]))
 
 (defn time-of-day [time-obj]
@@ -342,7 +382,9 @@
 (defn month [time-obj]
   (term :MONTH [time-obj]))
 
-(defn day [time-obj]
+(defn day
+  "Return the day of a time object as a number between 1 and 31."
+  [time-obj]
   (term :DAY [time-obj]))
 
 (defn day-of-week [time-obj]
@@ -368,29 +410,38 @@
 
 ;;; Control structure
 
-(defn all [& bools]
+(defn all
+  "Compute the logical \"and\" of two or more values."
+  [& bools]
   (term :ALL bools))
 
-(defn any [& bools]
+(defn any
+  "Compute the logical \"or\" of two or more values."
+  [& bools]
   (term :ANY bools))
 
 (defn do [args fun]
   (term :FUNCALL [fun args]))
 
-(defn branch [bool true-branch false-branch]
+(defn branch
+  "If the ```bool``` expression returns ```false``` or ```nil```, the ```false-branch``` will be
+  evaluated. Otherwise, the ```true-branch``` will be evaluated."
+  [bool true-branch false-branch]
   (term :BRANCH [bool true-branch false-branch]))
 
 (defn for-each [sq func]
   (term :FOR_EACH [sq func]))
 
-(defn coerce-to [top s]
-  (term :COERCE_TO [top s]))
+(defn coerce-to
+  "Convert a value of one type into another."
+  [x s]
+  (term :COERCE_TO [x s]))
 
-(defn type-of [top]
-  (term :TYPE_OF [top]))
+(defn type-of [x]
+  (term :TYPE_OF [x]))
 
-(defn info [top]
-  (term :INFO [top]))
+(defn info [x]
+  (term :INFO [x]))
 
 (defn json [s]
   (term :JSON [s]))
@@ -403,15 +454,23 @@
 
 ;;; Sorting
 
-(defn asc [field-name]
+(defn asc
+  "Specify ascending order."
+  [field-name]
   (term :ASC [field-name]))
 
-(defn desc [field-name]
+(defn desc
+  "Specify descending order."
+  [field-name]
   (term :DESC [field-name]))
 
 ;;; Geospatial commands
 
-(defn circle [point radius & [optargs]]
+(defn circle
+  "Construct a circular line or polygon. A circle in RethinkDB is a polygon or
+  line *approximating* a circle of a given radius around a given center,
+  consisting of a specified number of vertices (default 32)."
+  [point radius & [optargs]]
   (term :CIRCLE [point radius] optargs))
 
 (defn distance [point1 point2 & [optargs]]
@@ -452,7 +511,10 @@
 
 ;;; Configuration
 
-(defn config [table-or-db]
+(defn config
+  "Query (read and/or update) the configurations for individual tables or
+  databases."
+  [table-or-db]
   (term :CONFIG [table-or-db]))
 
 (defn rebalance [table-or-db]
