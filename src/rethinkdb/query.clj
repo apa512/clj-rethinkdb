@@ -15,42 +15,76 @@
 
 ;;; Manipulating databases
 
-(defn db-create [db-name]
+(defn db-create
+  "Create a database. A RethinkDB database is a collection of tables, similar
+  to relational databases.
+
+  Note: that you can only use alphanumeric characters and underscores for the
+  database name."
+  [db-name]
   (term :DB_CREATE [db-name]))
 
-(defn db-drop [db-name]
+(defn db-drop
+  "Drop a database. The database, all its tables, and corresponding data will
+  be deleted."
+  [db-name]
   (term :DB_DROP [db-name]))
 
-(defn db-list []
+(defn db-list
+  "List all database names in the system. The result is a list of strings."
+  []
   (term :DB_LIST []))
 
 ;;; Manipulating tables
 
-(defn table-create [db table-name & [optargs]]
+(defn table-create
+  "Create a table. A RethinkDB table is a collection of JSON documents."
+  [db table-name & [optargs]]
   (term :TABLE_CREATE [db table-name] optargs))
 
-(defn table-drop [db table-name]
+(defn table-drop
+  "Drop a table. The table and all its data will be deleted."
+  [db table-name]
   (term :TABLE_DROP [db table-name]))
 
-(defn table-list [db]
+(defn table-list
+  "List all table names in a database. The result is a list of strings."
+  [db]
   (term :TABLE_LIST [db]))
 
-(defn index-create [table index-name func & [optargs]]
+(defn index-create
+  "Create a new secondary index on a table."
+  [table index-name func & [optargs]]
   (term :INDEX_CREATE [table index-name func] optargs))
 
-(defn index-drop [table index-name]
+(defn index-drop
+  "Delete a previously created secondary index of this table."
+  [table index-name]
   (term :INDEX_DROP [table index-name]))
 
-(defn index-list [table]
+(defn index-list
+  "List all the secondary indexes of this table."
+  [table]
   (term :INDEX_LIST [table]))
 
-(defn index-rename [table old-name new-name & [optargs]]
+(defn index-rename
+  "Rename an existing secondary index on a table. If the optional argument
+  overwrite is specified as ```true```, a previously existing index with the new name
+  will be deleted and the index will be renamed. If overwrite is ```false``` (the
+  default) an error will be raised if the new index name already exists."
+  [table old-name new-name & [optargs]]
   (term :INDEX_RENAME [table old-name new-name] optargs))
 
-(defn index-status [table & index-names]
+(defn index-status
+  "Get the status of the specified indexes on this table, or the status of all
+  indexes on this table if no indexes are specified."
+  [table & index-names]
   (term :INDEX_STATUS (concat [table] index-names)))
 
-(defn index-wait [table & index-names]
+(defn index-wait
+  "Wait for the specified indexes on this table to be ready, or for all indexes
+  on this table to be ready if no indexes are specified."
+  [table & index-names]
   (term :INDEX_WAIT (concat [table] index-names)))
 
 (defn changes
@@ -60,36 +94,69 @@
 
 ;;; Writing data
 
-(defn insert [table objs & [optargs]]
+(defn insert
+  "Insert documents into a table. Accepts a list of documents."
+  [table objs & [optargs]]
   (term :INSERT [table objs] optargs))
 
-(defn update [sel obj-or-func & [optargs]]
+(defn update
+  "Update JSON documents in a table. Accepts a JSON document, a ReQL
+  expression, or a combination of the two."
+  [sel obj-or-func & [optargs]]
   (term :UPDATE [sel obj-or-func] optargs))
 
-(defn replace [sel obj-or-func & [optargs]]
+(defn replace
+  "Replace documents in a table. Accepts a JSON document or a ReQL expression,
+  and replaces the original document with the new one. The new document must
+  have the same primary key as the original document."
+  [sel obj-or-func & [optargs]]
   (term :REPLACE [sel obj-or-func] optargs))
 
-(defn delete [obj-or-sq & [optargs]]
+(defn delete
+  "Delete one or more documents from a table."
+  [obj-or-sq & [optargs]]
   (term :DELETE [obj-or-sq] optargs))
 
-(defn sync [table]
+(defn sync
+  "```sync``` ensures that writes on a given table are written to permanent storage.
+  Queries that specify soft durability ```({:durability \"soft\"})``` do not give such
+  guarantees, so ```sync``` can be used to ensure the state of these queries. A call
+  to ```sync``` does not return until all previous writes to the table are
+  persisted."
+  [table]
   (term :SYNC [table]))
 
 ;;; Selecting data
 
-(defn db [db-name]
+(defn db
+  "Reference a database."
+  [db-name]
   (term :DB [db-name]))
 
-(defn table [db table-name]
+(defn table
+  "Select all documents in a table. This command can be chained with other
+  commands to do further processing on the data."
+  [db table-name]
   (term :TABLE [db table-name]))
 
-(defn get [table id]
+(defn get
+  "Get a document by primary key.
+
+  If no document exists with that primary key, get will return ```nil```"
+  [table id]
   (term :GET [table id]))
 
-(defn get-all [table ids & [optargs]]
+(defn get-all
+  "Get all documents where the given value matches the value of the requested
+  index.
+
+  Accepts a list of values."
+  [table ids & [optargs]]
   (term :GET_ALL (concat [table] ids) optargs))
 
-(defn get-field [sel field-name]
+(defn get-field
+  "Get a single field from an object."
+  [sel field-name]
   (term :GET_FIELD [sel field-name]))
 
 (defn between
@@ -103,7 +170,19 @@
   [sel lower-key upper-key & [optargs]]
   (term :BETWEEN [sel lower-key upper-key] optargs))
 
-(defn filter [sq obj-or-func]
+(defn filter
+  "Get all the documents for which the given predicate is true.
+
+  filter can be called on a sequence, selection, or a field containing an array
+  of elements. The return type is the same as the type on which the function
+  was called on.
+
+  The body of every filter is wrapped in an implicit ```{:default false}```, which means
+  that if a non-existence errors is thrown (when you try to access a field that
+  does not exist in a document), RethinkDB will just ignore the document. Passing
+  the optional argument ```{:default (r/error)}``` will cause any non-existence errors
+  to raise an exception."
+  [sq obj-or-func]
   (term :FILTER [sq obj-or-func]))
 
 ;;; Joins
@@ -368,7 +447,7 @@
   (term :DURING [time-obj start-time end-time] optargs))
 
 (defn date
-  "Return a new time object only based on the day, month and year (ie. the same
+  "Return a new time object only based on the day, month and year (i.e. the same
   day at 00:00)."
   [time-obj]
   (term :DATE [time-obj]))
@@ -431,6 +510,12 @@
 
 (defn for-each [sq func]
   (term :FOR_EACH [sq func]))
+
+(defn error
+  "Throw a runtime error. If called with no arguments inside the second
+  argument to ```:default```, re-throw the current error."
+  ([] (term :ERROR []))
+  ([s] (term :ERROR [s])))
 
 (defn coerce-to
   "Convert a value of one type into another."
