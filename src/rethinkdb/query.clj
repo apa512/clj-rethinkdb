@@ -173,7 +173,7 @@
   was called on.
 
   By default RethinkDB will ignore documents where a specified field is missing.
-  Passing the optional argument ```{:default (r/error)}``` will cause any
+  Passing ```{:default (r/error)}``` as an optional argument will cause any
   non-existence error to raise an exception."
   [sq obj-or-func]
   (term :FILTER [sq obj-or-func]))
@@ -371,7 +371,8 @@
 
 (defn merge
   "Merge two objects together to construct a new object with properties from
-  both. Gives preference to attributes from other when there is a conflict."
+  both. Gives preference to attributes from the second object when there is a
+  conflict."
   [obj-or-sq1 obj-or-sq2]
   (term :MERGE [obj-or-sq1 obj-or-sq2]))
 
@@ -466,7 +467,9 @@
   - ```str```: The matched string
   - ```start```: The matched string's start
   - ```end```: The matched string's end
-  - ```groups```: The capture groups defined with parentheses"
+  - ```groups```: The capture groups defined with parentheses
+
+  If no match is found, returns ```nil```."
   [s regex-str]
   (term :MATCH [s regex-str]))
 
@@ -475,7 +478,7 @@
   arguments. When called with a separator, splits on that separator. When
   called with a separator and a maximum number of splits, splits on that
   separator at most ```max-splits``` times. (Can be called with ```nil``` as the separator
-  if you want to split on whitespace while still specifying max_splits.)"
+  if you want to split on whitespace while still specifying ```max-splits```.)"
   ([s] (term :SPLIT [s]))
   ([s separator] (term :SPLIT [s separator]))
   ([s separator max-splits] (term :SPLIT [s separator max-splits])))
@@ -553,8 +556,7 @@
   (term :NOT [bool]))
 
 (defn random
-  "Generate a random number between given (or implied) bounds. ```random``` takes
-  zero, one or two arguments."
+  "Generate a random number between given bounds."
   [n1 n2 & [optargs]]
   (term :RANDOM [n1 n2] optargs))
 
@@ -586,13 +588,13 @@
   "Create a time object based on an ISO 8601 date-time string (e.g.
   '2013-01-01T01:01:01+00:00'). We support all valid ISO 8601 formats except
   for week dates. If you pass an ISO 8601 date-time without a time zone, you must
-  specify the time zone with the defaultTimezone argument."
+  specify the time zone with the ```default-timezone``` argument."
   [s & [optargs]]
   (term :ISO8601 [s] optargs))
 
 (defn in-timezone
   "Return a new time object with a different timezone. While the time stays the
-  same, the results returned by methods such as hours() will change since they
+  same, the results returned by functions such as ```hours``` will change since they
   take the timezone into account. The timezone argument has to be of the ISO
   8601 format."
   [time-obj s]
@@ -665,7 +667,7 @@
   (term :SECONDS [time-obj]))
 
 (defn to-iso8601
-  "Convert a time object to its iso 8601 format."
+  "Convert a time object to its ISO 8601 format."
   [time-obj]
   (term :TO_ISO8601 [time-obj]))
 
@@ -704,8 +706,7 @@
   (term :FOR_EACH [sq func]))
 
 (defn error
-  "Throw a runtime error. If called with no arguments inside the second
-  argument to ```:default```, re-throw the current error."
+  "Throw a runtime error."
   ([] (term :ERROR []))
   ([s] (term :ERROR [s])))
 
@@ -771,8 +772,8 @@
 
 (defn fill
   "Convert a Line object into a Polygon object. If the last point does not
-  specify the same coordinates as the first point, polygon will close the
-  ```polygon``` by connecting them."
+  specify the same coordinates as the first point, ```fill``` will close the
+  polygon by connecting them."
   [point]
   (term :FILL [point]))
 
