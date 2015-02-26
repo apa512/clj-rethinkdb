@@ -103,13 +103,14 @@
     (testing "feeds"
       (let [tmp-conn (connect)
             changes (future
-                      (take 2 (-> (r/db test-db)
-                                (r/table :pokedex)
-                                r/changes
-                                (r/run tmp-conn))))]
-          (db-run (-> (r/table :pokedex)
-                      (r/insert (take 1000 (repeat {:name "Test"})))))
-        (is (= "Test" ((comp :name :new_val first) @changes)))
+                      (first (-> (r/db test-db)
+                                 (r/table :pokedex)
+                                 r/changes
+                                 (r/run tmp-conn))))]
+        (Thread/sleep 1000)
+        (db-run (-> (r/table :pokedex)
+                    (r/insert {:name "Test"})))
+        (is (= "Test" ((comp :name :new_val) @changes)))
         (close tmp-conn)))
 
     (testing "document manipulation"
