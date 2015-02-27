@@ -107,9 +107,9 @@
                                  (r/table :pokedex)
                                  r/changes
                                  (r/run tmp-conn))))]
-        (Thread/sleep 1000)
+        (Thread/sleep 500)
         (db-run (-> (r/table :pokedex)
-                    (r/insert {:name "Test"})))
+                    (r/insert (take 10000 (repeat {:name "Test"})))))
         (is (= "Test" ((comp :name :new_val) @changes)))
         (close tmp-conn)))
 

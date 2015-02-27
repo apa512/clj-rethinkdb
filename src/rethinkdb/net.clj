@@ -4,6 +4,19 @@
             [rethinkdb.response :refer [parse-response]]
             [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes]]))
 
+(declare send-continue-query send-stop-query)
+
+(defprotocol ICursor
+  (close [this]))
+
+(deftype Cursor [conn token coll]
+  ICursor
+  (close [this] (send-stop-query conn token))
+  clojure.lang.Seqable
+  (seq [this] (do
+                (Thread/sleep 200)
+                (lazy-seq (concat coll (send-continue-query conn token))))))
+
 (defn send-int [out i n]
   (.write out (int->bytes i n) 0 n))
 
@@ -46,16 +59,18 @@
         #{2} (do
                (swap! conn update-in [:waiting] #(disj % token))
                resp)
-        #{3 5} (do
-                 (swap! conn update-in [:waiting] #(conj % token))
-                 (lazy-seq (concat resp (do
-                                          (when (= type 5)
-                                            (Thread/sleep 500))
-                                          (send-query conn token (parse-query :CONTINUE))))))
+        #{3 5} (if (get (:waiting @conn) token)
+                 (lazy-seq (concat resp (send-continue-query conn token)))
+                 (do
+                   (swap! conn update-in [:waiting] #(conj % token))
+                   (Cursor. conn token resp)))
         (throw (Exception. (first resp)))))))
 
 (defn send-start-query [conn token query]
   (send-query conn token (parse-query :START query)))
+
+(defn send-continue-query [conn token]
+  (send-query conn token (parse-query :CONTINUE)))
 
 (defn send-stop-query [conn token]
   (send-query conn token (parse-query :STOP)))
