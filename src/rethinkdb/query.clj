@@ -4,7 +4,7 @@
                             do fn sync time])
   (:require [clojure.data.json :as json]
             [clojure.walk :refer [postwalk postwalk-replace]]
-            [rethinkdb.net :refer [send-start-query]]
+            [rethinkdb.net :refer [send-start-query] :as net]
             [rethinkdb.query-builder :refer [term parse-term]]))
 
 (defmacro fn [args & [body]]
@@ -12,6 +12,11 @@
         new-replacements (zipmap args new-args)
         new-terms (postwalk-replace new-replacements body)]
     (term :FUNC [new-args new-terms])))
+
+;;; Cursors
+
+(defn close [cursor]
+  (net/close cursor))
 
 ;;; Manipulating databases
 
