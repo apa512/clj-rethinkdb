@@ -45,4 +45,4 @@ A RethinkDB client for Clojure. Tested with 1.16.x but should with work all vers
   (close conn))
 ```
 
-Se full documentation at http://apa512.github.io/clj-rethinkdb/ (work in progress).
+See full documentation at http://apa512.github.io/clj-rethinkdb/ (work in progress).
