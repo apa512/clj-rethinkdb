@@ -1,7 +1,7 @@
 (ns rethinkdb.query
   (:refer-clojure :exclude [count filter map get not mod replace merge
                             reduce make-array distinct keys nth min max
-                            do fn sync time])
+                            do fn sync time update])
   (:require [clojure.data.json :as json]
             [clojure.walk :refer [postwalk postwalk-replace]]
             [rethinkdb.net :refer [send-start-query] :as net]
