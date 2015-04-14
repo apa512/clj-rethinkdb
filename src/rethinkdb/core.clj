@@ -1,6 +1,7 @@
 (ns rethinkdb.core
   (:require [rethinkdb.net :refer [send-int send-str read-init-response send-stop-query]])
-  (:import [java.io DataInputStream DataOutputStream]
+  (:import [clojure.lang IAtom IDeref]
+           [java.io Closeable DataInputStream DataOutputStream]
            [java.net Socket]))
 
 (defn send-version [out]
@@ -28,6 +29,23 @@
     (.close socket)
     :closed))
 
+(defn conn-atom
+  "Returns an atom-like wrapper around a connection that's closeable."
+  [conn-map]
+  (let [a (atom conn-map)]
+    (reify
+      Closeable
+      (close [_] (close a))
+      IDeref (deref [_] @a)
+      IAtom
+      (swap [_ f] (.swap a f))
+      (swap [_ f x] (.swap a f x))
+      (swap [_ f x y] (.swap a f x y))
+      (swap [_ f x y more] (.swap a f x y more))
+      (reset [_ new] (.reset a new))
+      (compareAndSet [_ old new]
+        (.compareAndSet a old new)))))
+
 (defn connect [& {:keys [host port token auth-key]
                   :or {host "127.0.0.1"
                        port 28015
@@ -36,11 +54,12 @@
   (let [socket (Socket. host port)
         out (DataOutputStream. (.getOutputStream socket))
         in  (DataInputStream. (.getInputStream socket))
-        conn (atom {:socket socket
-                    :out out
-                    :in in
-                    :waiting #{}
-                    :token token})]
+        conn (conn-atom
+              {:socket socket
+               :out out
+               :in in
+               :waiting #{}
+               :token token})]
     (send-version out)
     (send-auth-key out auth-key)
     (send-protocol out)

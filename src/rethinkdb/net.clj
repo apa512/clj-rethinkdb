@@ -2,15 +2,18 @@
   (:require [clojure.data.json :as json]
             [rethinkdb.query-builder :refer [parse-query]]
             [rethinkdb.response :refer [parse-response]]
-            [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes]]))
+            [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes]])
+  (:import [java.io Closeable]))
 
 (declare send-continue-query send-stop-query)
 
-(defprotocol ICursor
-  (close [this]))
+(defn close
+  "Clojure proxy for java.io.Closeable's close."
+  [^Closeable x]
+  (.close x))
 
 (deftype Cursor [conn token coll]
-  ICursor
+  Closeable
   (close [this] (and (send-stop-query conn token) :closed))
   clojure.lang.Seqable
   (seq [this] (do
