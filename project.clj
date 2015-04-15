@@ -6,7 +6,7 @@
   :codox {:defaults {:doc/format :markdown}
           :src-dir-uri "https://github.com/apa512/clj-rethinkdb/blob/master/"
           :src-linenum-anchor-prefix "L"}
-  :dependencies [[org.clojure/clojure "1.7.0-beta1"]
+  :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/data.json "0.2.6"]
                  [org.flatland/protobuf "0.8.1"]
                  [rethinkdb-protobuf "0.2.0"]
