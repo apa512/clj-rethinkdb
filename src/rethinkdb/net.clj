@@ -60,12 +60,12 @@
       (condp get type
         #{1} (first resp)
         #{2} (do
-               (swap! conn update-in [:waiting] #(disj % token))
+               (swap! (:conn conn) update-in [:waiting] #(disj % token))
                resp)
         #{3 5} (if (get (:waiting @conn) token)
                  (lazy-seq (concat resp (send-continue-query conn token)))
                  (do
-                   (swap! conn update-in [:waiting] #(conj % token))
+                   (swap! (:conn conn) update-in [:waiting] #(conj % token))
                    (Cursor. conn token resp)))
         (throw (Exception. (first resp)))))))
 
