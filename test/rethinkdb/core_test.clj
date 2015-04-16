@@ -48,7 +48,7 @@
                   (r/eq (r/get-field row :name) name)))))
 
 (deftest core-test
-  (let [conn (connect)]
+  (with-open [conn (connect)]
     (testing "manipulating databases"
       (is (= 1 (:dbs_created (r/run (r/db-create "cljrethinkdb_tmp") conn))))
       (is (= 1 (:dbs_dropped (r/run (r/db-drop "cljrethinkdb_tmp") conn))))
@@ -89,7 +89,7 @@
     (testing "selecting data"
       (is (= (set (db-run (r/table :pokedex))) (set pokemons)))
       (is (= (db-run (-> (r/table :pokedex) (r/get 25))) (first pokemons)))
-      (is (= (db-run (-> (r/table :pokedex) (r/get-all [25 81]))) pokemons))
+      (is (= (into [] (db-run (-> (r/table :pokedex) (r/get-all [25 81])))) pokemons))
       (is (= (run (between-notional-no 80 81)) [(last pokemons)]))
       (is (= (run (with-name "Pikachu")) [(first pokemons)])))
 
