@@ -1,6 +1,7 @@
 (ns rethinkdb.core
   (:require [rethinkdb.net :refer [send-int send-str read-init-response send-stop-query]])
-  (:import [java.io DataInputStream DataOutputStream]
+  (:import [clojure.lang IDeref]
+           [java.io Closeable DataInputStream DataOutputStream]
            [java.net Socket]))
 
 (defn send-version [out]
@@ -28,19 +29,36 @@
     (.close socket)
     :closed))
 
-(defn connect [& {:keys [host port token auth-key]
-                  :or {host "127.0.0.1"
-                       port 28015
-                       token 0
-                       auth-key ""}}]
+
+
+(defrecord Connection [conn]
+  IDeref
+  (deref [_] @conn)
+  Closeable
+  (close [_] (close conn)))
+
+(defmethod print-method Connection
+  [r writer]
+  (print-method (:conn r) writer))
+
+(defn connection [m]
+  (->Connection (atom m)))
+
+(defn connect
+  [& {:keys [host port token auth-key]
+      :or {host "127.0.0.1"
+           port 28015
+           token 0
+           auth-key ""}}]
   (let [socket (Socket. host port)
         out (DataOutputStream. (.getOutputStream socket))
         in  (DataInputStream. (.getInputStream socket))
-        conn (atom {:socket socket
-                    :out out
-                    :in in
-                    :waiting #{}
-                    :token token})]
+        conn (connection
+              {:socket socket
+               :out out
+               :in in
+               :waiting #{}
+               :token token})]
     (send-version out)
     (send-auth-key out auth-key)
     (send-protocol out)

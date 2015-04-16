@@ -895,5 +895,5 @@
   (term :MAKE_ARRAY xs))
 
 (defn run [query conn]
-  (let [token (:token (swap! conn update-in [:token] inc))]
+  (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
     (send-start-query conn token (replace-vars query))))

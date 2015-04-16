@@ -15,7 +15,7 @@ A RethinkDB client for Clojure. Tested with 1.16.x but should with work all vers
 (require '[rethinkdb.core :refer [connect close]])
 (require '[rethinkdb.query :as r])
 
-(let [conn (connect :host "127.0.0.1" :port 28015)]
+(with-open [conn (connect :host "127.0.0.1" :port 28015)]
   (r/run (r/db-create "test") conn)
   (-> (r/db "test")
       (r/table-create "authors")
@@ -41,8 +41,7 @@ A RethinkDB client for Clojure. Tested with 1.16.x but should with work all vers
       (r/get-all ["crap"] {:index "genre"})
       (r/filter (r/fn [row]
                   (r/eq "Stephenie Meyer" (r/get-field row "name"))))
-      (r/run conn))
-  (close conn))
+      (r/run conn)))
 ```
 
 See full documentation at http://apa512.github.io/clj-rethinkdb/ (work in progress).

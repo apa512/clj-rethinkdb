@@ -2,15 +2,18 @@
   (:require [clojure.data.json :as json]
             [rethinkdb.query-builder :refer [parse-query]]
             [rethinkdb.response :refer [parse-response]]
-            [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes]]))
+            [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes]])
+  (:import [java.io Closeable]))
 
 (declare send-continue-query send-stop-query)
 
-(defprotocol ICursor
-  (close [this]))
+(defn close
+  "Clojure proxy for java.io.Closeable's close."
+  [^Closeable x]
+  (.close x))
 
 (deftype Cursor [conn token coll]
-  ICursor
+  Closeable
   (close [this] (and (send-stop-query conn token) :closed))
   clojure.lang.Seqable
   (seq [this] (do
@@ -57,12 +60,12 @@
       (condp get type
         #{1} (first resp)
         #{2} (do
-               (swap! conn update-in [:waiting] #(disj % token))
+               (swap! (:conn conn) update-in [:waiting] #(disj % token))
                resp)
         #{3 5} (if (get (:waiting @conn) token)
                  (lazy-seq (concat resp (send-continue-query conn token)))
                  (do
-                   (swap! conn update-in [:waiting] #(conj % token))
+                   (swap! (:conn conn) update-in [:waiting] #(conj % token))
                    (Cursor. conn token resp)))
         (throw (Exception. (first resp)))))))
 
