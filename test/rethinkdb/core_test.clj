@@ -30,6 +30,11 @@
                 :name "Bulbasaur"
                 :type ["Grass" "Poison"]})
 
+(def abilities [{:pokedex_name "Pikachu"
+                 :abilities ["Static" "Lightning Rod"]}
+                {:pokedex_name "Magnemite"
+                 :abilities ["Magnet Pull" "Sturdy" "Analytic"]}])
+
 (defn setup [test-fn]
   (if (some #{test-db} (r/run (r/db-list) conn))
     (r/run (r/db-drop test-db) conn))
@@ -58,8 +63,13 @@
       (db-run (r/table-create :tmp))
       (are [term result] (contains? (set (split-map (db-run term))) result)
         (r/table-create :pokedex {:primary-key :national_no})        {:tables_created 1}
+        (r/table-create :abilities)                                  {:tables_created 1}
         (r/table-drop :tmp) {:tables_dropped 1}
         (-> (r/table :pokedex) (r/index-create :tmp (r/fn [row] 1))) {:created 1}
+        (-> (r/table :abilities)
+            (r/index-create :pokedex_name
+                            (r/fn [row]
+                              (r/get-field row :pokedex_name))))     {:created 1}
         (-> (r/table :pokedex)
             (r/index-create :type (r/fn [row]
                                     (r/get-field row :type))))       {:created 1}
@@ -92,6 +102,12 @@
       (is (= (into [] (db-run (-> (r/table :pokedex) (r/get-all [25 81])))) pokemons))
       (is (= (run (between-notional-no 80 81)) [(last pokemons)]))
       (is (= (run (with-name "Pikachu")) [(first pokemons)])))
+
+    (testing "joins"
+      (db-run (-> (r/table :pokedex)
+                  (r/eq-join :name
+                             (r/table (r/db test-db) :abilities)
+                             {:index :pokedex_name}))))
 
     (testing "aggregation"
       (are [term result] (= (run term) result)
