@@ -57,6 +57,8 @@
     (testing "manipulating tables"
       (db-run (r/table-create :tmp))
       (are [term result] (contains? (set (split-map (db-run term))) result)
+        (-> (r/table :tmp)
+            (r/insert {:id (java.util.UUID/randomUUID)}))            {:inserted 1}
         (r/table-create :pokedex {:primary-key :national_no})        {:tables_created 1}
         (r/table-drop :tmp) {:tables_dropped 1}
         (-> (r/table :pokedex) (r/index-create :tmp (r/fn [row] 1))) {:created 1}

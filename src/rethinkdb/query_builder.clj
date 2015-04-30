@@ -22,7 +22,8 @@
       (::term arg) :query
       (or (sequential? arg) (seq? arg)) :sequential
       (map? arg) :map
-      (instance? org.joda.time.DateTime arg) :time)))
+      (instance? org.joda.time.DateTime arg) :time
+      (instance? java.util.UUID arg) :uuid)))
 
 (defmethod parse-arg :query [arg]
   (parse-term arg))
@@ -35,6 +36,9 @@
 
 (defmethod parse-arg :time [arg]
   (parse-term (term :EPOCH_TIME [(c/to-epoch arg)])))
+
+(defmethod parse-arg :uuid [arg]
+  (str arg))
 
 (defmethod parse-arg :default [arg]
   arg)
