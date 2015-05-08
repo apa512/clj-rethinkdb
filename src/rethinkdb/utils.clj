@@ -28,3 +28,17 @@
 
 (defn snake-case [s]
   (string/replace (name s) #"-" "_"))
+
+(defn mapk
+  "Applies the supplied function to every key in the supplied
+  map. Returns a transformed map."
+  [f m]
+  (into {} (for [[k v] m]
+             [(f k) v])))
+
+(defn mapv
+  "Applies the supplied function to every value in the supplied
+  map. Returns a transformed map."
+  [f m]
+  (into {} (for [[k v] m]
+             [k (f v)])))

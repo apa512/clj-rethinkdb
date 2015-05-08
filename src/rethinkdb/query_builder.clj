@@ -2,14 +2,12 @@
   (:require [clojure.data.json :as json]
             [clj-time.coerce :as c]
             [rethinkdb.types :refer [tt->int qt->int]]
-            [rethinkdb.utils :refer [snake-case]]))
+            [rethinkdb.utils :as u :refer [snake-case]]))
 
 (declare parse-term)
 
 (defn snake-case-keys [m]
-  (into {}
-    (for [[k v] m]
-      [(snake-case k) v])))
+  (u/mapk snake-case m))
 
 (defn term [term args & [optargs]]
   {::term term
@@ -32,7 +30,7 @@
   (parse-term (term :MAKE_ARRAY arg)))
 
 (defmethod parse-arg :map [arg]
-  (zipmap (keys arg) (map parse-arg (vals arg))))
+  (u/mapv parse-arg arg))
 
 (defmethod parse-arg :time [arg]
   (parse-term (term :EPOCH_TIME [(c/to-epoch arg)])))

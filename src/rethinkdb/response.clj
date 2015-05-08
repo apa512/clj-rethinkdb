@@ -1,6 +1,7 @@
 (ns rethinkdb.response
   (:require [clj-time.core :as t]
-            [clj-time.coerce :as c]))
+            [clj-time.coerce :as c]
+            [rethinkdb.utils :as u]))
 
 (declare parse-response)
 
@@ -36,7 +37,7 @@
 (defmethod parse-response :map [resp]
   (if-let [reql-type (:$reql_type$ resp)]
     (parse-reql-type resp)
-    (zipmap (keys resp) (map parse-response (vals resp)))))
+    (u/mapv parse-response resp)))
 
 (defmethod parse-response :default [resp]
   resp)
