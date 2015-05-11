@@ -97,7 +97,7 @@
       (is (= (set (db-run (r/table :pokedex))) (set pokemons)))
       (is (= (db-run (-> (r/table :pokedex) (r/get 25))) (first pokemons)))
       (is (= (into [] (db-run (-> (r/table :pokedex) (r/get-all [25 81])))) pokemons))
-      (is (= (run min-to-max) pokemons))
+      (is (= pokemons (sort-by :national_no (run min-to-max))))
       (is (= (run (between-notional-no 80 81)) [(last pokemons)]))
       (is (= (run (with-name "Pikachu")) [(first pokemons)])))
 
