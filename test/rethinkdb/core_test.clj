@@ -41,6 +41,11 @@
       (r/table :pokedex)
       (r/between from to {:right-bound :closed})))
 
+(def min-to-max
+  (-> (r/db test-db)
+      (r/table :pokedex)
+      (r/between r/minval r/maxval {:right-bound :closed})))
+
 (defn with-name [name]
   (-> (r/db test-db)
       (r/table :pokedex)
@@ -92,6 +97,7 @@
       (is (= (set (db-run (r/table :pokedex))) (set pokemons)))
       (is (= (db-run (-> (r/table :pokedex) (r/get 25))) (first pokemons)))
       (is (= (into [] (db-run (-> (r/table :pokedex) (r/get-all [25 81])))) pokemons))
+      (is (= (run min-to-max) pokemons))
       (is (= (run (between-notional-no 80 81)) [(last pokemons)]))
       (is (= (run (with-name "Pikachu")) [(first pokemons)])))
 

@@ -871,6 +871,14 @@
   [table]
   (term :STATUS [table]))
 
+;;; Misc
+
+(def minval
+  (term :MINVAL []))
+
+(def maxval
+  (term :MAXVAL []))
+
 ;;; Run query
 
 (defn replace-vars [query]
