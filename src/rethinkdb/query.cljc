@@ -2,8 +2,7 @@
   (:refer-clojure :exclude [count filter map get not mod replace merge
                             reduce make-array distinct keys nth min max
                             do fn sync time update])
-  (:require [clojure.data.json :as json]
-            [clojure.walk :refer [postwalk postwalk-replace]]
+  (:require [clojure.walk :refer [postwalk postwalk-replace]]
             [rethinkdb.net :refer [send-start-query] :as net]
             [rethinkdb.query-builder :refer [term parse-term]]))
 
@@ -15,8 +14,8 @@
 
 ;;; Cursors
 
-(defn close [cursor]
-  (net/close cursor))
+#?(:clj (defn close [cursor]
+          (net/close cursor)))
 
 ;;; Manipulating databases
 
@@ -683,6 +682,8 @@
 
 ;;; Control structure
 
+;; TODO: all and any have been deprecated in place of OR and AND in protobuf spec
+;; TODO: need to handle the old and new values when querying?
 (defn all
   "Compute the logical \"and\" of two or more values."
   [& bools]
