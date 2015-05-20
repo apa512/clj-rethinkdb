@@ -115,8 +115,5 @@
      :cljs (get query-types enum)))
 
 (defn tt->int [enum]
-  (.getNumber (Enum/valueOf Ql2$Term$TermType (name enum))))
-
-(defn tt->int [enum]
   #?(:clj  (.getNumber (Enum/valueOf Ql2$Term$TermType (name enum)))
      :cljs (get term-types enum)))
