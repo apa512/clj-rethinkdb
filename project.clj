@@ -1,13 +1,24 @@
 (defproject rethinkdb "0.8.0-SNAPSHOT"
-  :description "RethinkDB client"
-  :url "http://github.com/apa512/clj-rethinkdb"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :codox {:defaults {:doc/format :markdown}
-          :src-dir-uri "https://github.com/apa512/clj-rethinkdb/blob/master/"
-          :src-linenum-anchor-prefix "L"}
-  :dependencies [[org.clojure/clojure "1.7.0-beta3"]
-                 [org.clojure/data.json "0.2.6"]
-                 [org.flatland/protobuf "0.8.1"]
-                 [rethinkdb-protobuf "0.3.0"]
-                 [clj-time "0.9.0"]])
+            :description "RethinkDB client"
+            :url "http://github.com/apa512/clj-rethinkdb"
+            :license {:name "Eclipse Public License"
+                      :url  "http://www.eclipse.org/legal/epl-v10.html"}
+            :codox {:defaults                  {:doc/format :markdown}
+                    :src-dir-uri               "https://github.com/apa512/clj-rethinkdb/blob/master/"
+                    :src-linenum-anchor-prefix "L"}
+            :dependencies [[org.clojure/clojure "1.7.0-beta3"]
+                           [org.clojure/data.json "0.2.6"]
+                           [org.flatland/protobuf "0.8.1"]
+                           [rethinkdb-protobuf "0.3.0"]
+                           [clj-time "0.9.0"]
+
+                           [org.clojure/clojurescript "0.0-3211"]]
+
+            :plugins [[lein-cljsbuild "1.0.5"]]
+
+            :cljsbuild {:builds [{:id           "prod"
+                                  :source-paths ["src"]
+                                  :compiler     {:output-to     "build/prod/out.js"
+                                                 :output-dir    "build/prod/out"
+                                                 :cache-anlysis true
+                                                 :optimizations :none}}]})
