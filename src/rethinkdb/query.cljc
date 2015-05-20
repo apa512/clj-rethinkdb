@@ -3,7 +3,7 @@
                             reduce make-array distinct keys nth min max
                             do fn sync time update])
   (:require [clojure.walk :refer [postwalk postwalk-replace]]
-            [rethinkdb.net :refer [send-start-query] :as net]
+            #?(:clj [rethinkdb.net :refer [send-start-query] :as net])
             [rethinkdb.query-builder :as qb :refer [term parse-term]]))
 
 (defmacro fn [args & [body]]
