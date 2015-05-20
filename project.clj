@@ -1,4 +1,4 @@
-(defproject rethinkdb "0.7.39"
+(defproject rethinkdb "0.8.0-SNAPSHOT"
   :description "RethinkDB client"
   :url "http://github.com/apa512/clj-rethinkdb"
   :license {:name "Eclipse Public License"

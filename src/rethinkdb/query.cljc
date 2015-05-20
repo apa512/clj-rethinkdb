@@ -4,7 +4,7 @@
                             do fn sync time update])
   (:require [clojure.walk :refer [postwalk postwalk-replace]]
             [rethinkdb.net :refer [send-start-query] :as net]
-            [rethinkdb.query-builder :refer [term parse-term]]))
+            [rethinkdb.query-builder :as qb :refer [term parse-term]]))
 
 (defmacro fn [args & [body]]
   (let [new-args (into [] (clojure.core/map #(hash-map :temp-var (keyword %)) args))
@@ -906,3 +906,6 @@
 (defn run [query conn]
   (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
     (send-start-query conn token (replace-vars query))))
+
+#?(:cljs (defn build-array-query [query]
+           (qb/parse-query (replace-vars query))))
