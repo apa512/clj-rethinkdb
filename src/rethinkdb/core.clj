@@ -7,7 +7,8 @@
 (defn send-version [out]
   (let [v1 1063369270
         v2 1915781601
-        v3 1601562686]
+        v3 1601562686
+        v4 1074539808]
     (send-int out v3 4)))
 
 (defn send-protocol [out]
@@ -28,8 +29,6 @@
     (.close in)
     (.close socket)
     :closed))
-
-
 
 (defrecord Connection [conn]
   IDeref

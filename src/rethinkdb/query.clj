@@ -1,7 +1,7 @@
 (ns rethinkdb.query
   (:refer-clojure :exclude [count filter map get not mod replace merge
                             reduce make-array distinct keys nth min max
-                            do fn sync time update])
+                            or and do fn sync time update])
   (:require [clojure.data.json :as json]
             [clojure.walk :refer [postwalk postwalk-replace]]
             [rethinkdb.net :refer [send-start-query] :as net]
@@ -242,8 +242,8 @@
   for run). Sorting with an index can be done on arbitrarily large tables, or
   after a between command using the same index."
   [sel field-or-ordering]
-  (if-let [index (or (clojure.core/get field-or-ordering "index")
-                     (clojure.core/get field-or-ordering :index))]
+  (if-let [index (clojure.core/or (clojure.core/get field-or-ordering "index")
+                                  (clojure.core/get field-or-ordering :index))]
     (term :ORDER_BY [sel] {:index (parse-term index)})
     (term :ORDER_BY [sel field-or-ordering])))
 
@@ -683,15 +683,18 @@
 
 ;;; Control structure
 
-(defn all
+(defn and
   "Compute the logical \"and\" of two or more values."
   [& bools]
-  (term :ALL bools))
+  (term :AND bools))
 
-(defn any
+(defn or
   "Compute the logical \"or\" of two or more values."
   [& bools]
-  (term :ANY bools))
+  (term :OR bools))
+
+(def all and)
+(def any or)
 
 (defn do
   "Evaluate an expression and pass its values as arguments to a function or to
@@ -884,7 +887,7 @@
 (defn replace-vars [query]
   (let [var-counter (atom 0)]
     (postwalk
-      #(if (and (map? %) (= :FUNC (:rethinkdb.query-builder/term %)))
+      #(if (clojure.core/and (map? %) (= :FUNC (:rethinkdb.query-builder/term %)))
          (let [vars (first (:rethinkdb.query-builder/args %))
                new-vars (range @var-counter (+ @var-counter (clojure.core/count vars)))
                new-args (clojure.core/map

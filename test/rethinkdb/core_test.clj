@@ -176,6 +176,10 @@
       (are [term result] (= result (run term))
         (r/branch true 1 0)                         1
         (r/branch false 1 0)                        0
+        (r/or false false)                          false
+        (r/any false true)                          true
+        (r/all true true)                           true
+        (r/and true false)                          false
         (r/coerce-to [["name" "Pikachu"]] "OBJECT") {:name "Pikachu"}
         (r/type-of [1 2 3])                         "ARRAY"
         (r/type-of {:number 42})                    "OBJECT"
