@@ -885,18 +885,18 @@
   (let [var-counter (atom 0)]
     (postwalk
       #(if (and (map? %) (= :FUNC (:rethinkdb.query-builder/term %)))
-         (let [vars (first (:rethinkdb.query-builder/args %))
-               new-vars (range @var-counter (+ @var-counter (clojure.core/count vars)))
-               new-args (clojure.core/map
-                          (clojure.core/fn [arg]
-                            (term :VAR [arg]))
-                          new-vars)
-               var-replacements (zipmap vars new-args)]
-           (swap! var-counter + (clojure.core/count vars))
-           (postwalk-replace
-             var-replacements
-             (assoc-in % [:rethinkdb.query-builder/args 0] new-vars)))
-         %)
+        (let [vars (first (:rethinkdb.query-builder/args %))
+              new-vars (range @var-counter (+ @var-counter (clojure.core/count vars)))
+              new-args (clojure.core/map
+                         (clojure.core/fn [arg]
+                           (term :VAR [arg]))
+                         new-vars)
+              var-replacements (zipmap vars new-args)]
+          (swap! var-counter + (clojure.core/count vars))
+          (postwalk-replace
+            var-replacements
+            (assoc-in % [:rethinkdb.query-builder/args 0] new-vars)))
+        %)
       query)))
 
 (defn make-array [& xs]
