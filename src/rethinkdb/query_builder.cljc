@@ -1,15 +1,14 @@
 (ns rethinkdb.query-builder
-  (:require [clojure.data.json :as json]
-            [clj-time.coerce :as c]
-            [rethinkdb.types :refer [tt->int qt->int]]
-            [rethinkdb.utils :refer [snake-case]]))
+  (:require #?(:clj [clj-time.coerce :as c])
+                    [rethinkdb.types :refer [tt->int qt->int]]
+                    [rethinkdb.utils :refer [snake-case]]))
 
 (declare parse-term)
 
 (defn snake-case-keys [m]
   (into {}
-    (for [[k v] m]
-      [(snake-case k) v])))
+        (for [[k v] m]
+          [(snake-case k) v])))
 
 (defn term [term args & [optargs]]
   {::term term
@@ -17,13 +16,14 @@
    ::optargs optargs})
 
 (defmulti parse-arg
-  (fn [arg]
-    (cond
-      (::term arg) :query
-      (or (sequential? arg) (seq? arg)) :sequential
-      (map? arg) :map
-      (instance? org.joda.time.DateTime arg) :time
-      (instance? java.util.UUID arg) :uuid)))
+          (fn [arg]
+            (cond
+              (::term arg) :query
+              (or (sequential? arg) (seq? arg)) :sequential
+              (map? arg) :map
+              #?@(:clj ((instance? org.joda.time.DateTime arg) :time
+                         (instance? java.util.UUID arg) :uuid)))))
+;; TODO: handle :time and :uuid in ClojureScript
 
 (defmethod parse-arg :query [arg]
   (parse-term arg))
@@ -34,8 +34,8 @@
 (defmethod parse-arg :map [arg]
   (zipmap (keys arg) (map parse-arg (vals arg))))
 
-(defmethod parse-arg :time [arg]
-  (parse-term (term :EPOCH_TIME [(c/to-epoch arg)])))
+#?(:clj (defmethod parse-arg :time [arg]
+          (parse-term (term :EPOCH_TIME [(c/to-epoch arg)]))))
 
 (defmethod parse-arg :uuid [arg]
   (str arg))

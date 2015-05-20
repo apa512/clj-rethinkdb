@@ -2,10 +2,9 @@
   (:refer-clojure :exclude [count filter map get not mod replace merge
                             reduce make-array distinct keys nth min max
                             do fn sync time update])
-  (:require [clojure.data.json :as json]
-            [clojure.walk :refer [postwalk postwalk-replace]]
+  (:require [clojure.walk :refer [postwalk postwalk-replace]]
             [rethinkdb.net :refer [send-start-query] :as net]
-            [rethinkdb.query-builder :refer [term parse-term]]))
+            [rethinkdb.query-builder :as qb :refer [term parse-term]]))
 
 (defmacro fn [args & [body]]
   (let [new-args (into [] (clojure.core/map #(hash-map :temp-var (keyword %)) args))
@@ -15,8 +14,8 @@
 
 ;;; Cursors
 
-(defn close [cursor]
-  (net/close cursor))
+#?(:clj (defn close [cursor]
+          (net/close cursor)))
 
 ;;; Manipulating databases
 
@@ -683,6 +682,8 @@
 
 ;;; Control structure
 
+;; TODO: all and any have been deprecated in place of OR and AND in protobuf spec
+;; TODO: need to handle the old and new values when querying?
 (defn all
   "Compute the logical \"and\" of two or more values."
   [& bools]
@@ -885,18 +886,18 @@
   (let [var-counter (atom 0)]
     (postwalk
       #(if (and (map? %) (= :FUNC (:rethinkdb.query-builder/term %)))
-         (let [vars (first (:rethinkdb.query-builder/args %))
-               new-vars (range @var-counter (+ @var-counter (clojure.core/count vars)))
-               new-args (clojure.core/map
-                          (clojure.core/fn [arg]
-                            (term :VAR [arg]))
-                          new-vars)
-               var-replacements (zipmap vars new-args)]
-           (swap! var-counter + (clojure.core/count vars))
-           (postwalk-replace
-             var-replacements
-             (assoc-in % [:rethinkdb.query-builder/args 0] new-vars)))
-         %)
+        (let [vars (first (:rethinkdb.query-builder/args %))
+              new-vars (range @var-counter (+ @var-counter (clojure.core/count vars)))
+              new-args (clojure.core/map
+                         (clojure.core/fn [arg]
+                           (term :VAR [arg]))
+                         new-vars)
+              var-replacements (zipmap vars new-args)]
+          (swap! var-counter + (clojure.core/count vars))
+          (postwalk-replace
+            var-replacements
+            (assoc-in % [:rethinkdb.query-builder/args 0] new-vars)))
+        %)
       query)))
 
 (defn make-array [& xs]
@@ -905,3 +906,6 @@
 (defn run [query conn]
   (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
     (send-start-query conn token (replace-vars query))))
+
+#?(:cljs (defn build-array-query [query]
+           (qb/parse-query (replace-vars query))))
