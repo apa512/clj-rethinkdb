@@ -1,7 +1,8 @@
 (ns rethinkdb.query-builder
-  (:require #?(:clj [clj-time.coerce :as c])
-                    [rethinkdb.types :refer [tt->int qt->int]]
-                    [rethinkdb.utils :refer [snake-case]]))
+  (:require [rethinkdb.types :refer [tt->int qt->int]]
+            [rethinkdb.utils :refer [snake-case]]
+    #?(:clj
+            [clj-time.coerce :as c])))
 
 (declare parse-term)
 
@@ -11,8 +12,8 @@
           [(snake-case k) v])))
 
 (defn term [term args & [optargs]]
-  {::term term
-   ::args args
+  {::term    term
+   ::args    args
    ::optargs optargs})
 
 (defmulti parse-arg

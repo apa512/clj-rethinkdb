@@ -6,11 +6,11 @@
             #?(:clj [rethinkdb.net :refer [send-start-query] :as net])
             [rethinkdb.query-builder :as qb :refer [term parse-term]]))
 
-(defmacro fn [args & [body]]
-  (let [new-args (into [] (clojure.core/map #(hash-map :temp-var (keyword %)) args))
-        new-replacements (zipmap args new-args)
-        new-terms (postwalk-replace new-replacements body)]
-    (term :FUNC [new-args new-terms])))
+#?(:clj (defmacro fn [args & [body]]
+          (let [new-args (into [] (clojure.core/map #(hash-map :temp-var (keyword %)) args))
+                new-replacements (zipmap args new-args)
+                new-terms (postwalk-replace new-replacements body)]
+            (term :FUNC [new-args new-terms]))))
 
 ;;; Cursors
 
@@ -136,9 +136,12 @@
 
 (defn table
   "Select all documents in a table. This command can be chained with other
-  commands to do further processing on the data."
-  [db table-name]
-  (term :TABLE [db table-name]))
+  commands to do further processing on the data. If no db is provided then
+  the default database will be used"
+  ([table-name]
+    (term :TABLE [table-name]))
+  ([db table-name]
+   (term :TABLE [db table-name])))
 
 (defn get
   "Get a document by primary key.
@@ -573,14 +576,14 @@
   []
   (term :NOW []))
 
-(defn time
-  "Create a time object for a specific time."
-  [& date-time-parts]
-  (let [args (concat date-time-parts
-                     (if (instance? String (last date-time-parts))
-                       []
-                       ["+00:00"]))]
-    (term :TIME args)))
+#?(:clj (defn time
+          "Create a time object for a specific time."
+          [& date-time-parts]
+          (let [args (concat date-time-parts
+                             (if (instance? String (last date-time-parts))
+                               []
+                               ["+00:00"]))]
+            (term :TIME args))))
 
 (defn epoch-time
   "Create a time object based on seconds since epoch. The first argument is a
@@ -903,9 +906,9 @@
 (defn make-array [& xs]
   (term :MAKE_ARRAY xs))
 
-(defn run [query conn]
-  (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
-    (send-start-query conn token (replace-vars query))))
+#?(:clj (defn run [query conn]
+          (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
+            (send-start-query conn token (replace-vars query)))))
 
-#?(:cljs (defn build-array-query [query]
-           (qb/parse-query (replace-vars query))))
+(defn build-array-query [query]
+  (qb/parse-query :START (replace-vars query)))

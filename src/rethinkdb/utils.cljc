@@ -24,8 +24,8 @@
               (.put bs))
             (.getInt buf 0))))
 
-(defn pp-bytes [bs]
-  (vec (map #(format "%02x" %) bs)))
+#?(:clj (defn pp-bytes [bs]
+          (vec (map #(format "%02x" %) bs))))
 
 (defn snake-case [s]
   (string/replace (name s) #"-" "_"))

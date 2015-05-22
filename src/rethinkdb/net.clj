@@ -49,6 +49,7 @@
       (json/read-str json :key-fn keyword))))
 
 (defn send-query [conn token query]
+  (println query)
   (let [json (json/write-str query)
         {:keys [in out]} @conn
         n (count json)]
