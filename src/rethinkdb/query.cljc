@@ -906,9 +906,16 @@
 (defn make-array [& xs]
   (term :MAKE_ARRAY xs))
 
+(defn get-token [conn]
+  (:token (swap! (:conn conn) update-in [:token] inc)))
+
 #?(:clj (defn run [query conn]
-          (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
+          (let [token (get-token conn)]
             (send-start-query conn token (replace-vars query)))))
+
+#?(:clj (defn run-raw-query [query conn]
+          (let [token (get-token conn)]
+            (net/send-raw-query conn token query))))
 
 (defn build-array-query [query]
   (qb/parse-query :START (replace-vars query)))

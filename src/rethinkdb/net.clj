@@ -49,7 +49,6 @@
       (json/read-str json :key-fn keyword))))
 
 (defn send-query [conn token query]
-  (println query)
   (let [json (json/write-str query)
         {:keys [in out]} @conn
         n (count json)]
@@ -72,6 +71,9 @@
 
 (defn send-start-query [conn token query]
   (send-query conn token (parse-query :START query)))
+
+(defn send-raw-query [conn token query]
+  (send-query conn token query))
 
 (defn send-continue-query [conn token]
   (send-query conn token (parse-query :CONTINUE)))
