@@ -1,5 +1,5 @@
 (ns rethinkdb.core
-  (:require [rethinkdb.net :refer [send-int send-str read-init-response send-stop-query]])
+  (:require [rethinkdb.net :refer [send-int send-str read-init-response send-stop-query make-connection-loops close-connection-loops]])
   (:import [clojure.lang IDeref]
            [java.io Closeable DataInputStream DataOutputStream]
            [java.net Socket]))
@@ -25,6 +25,7 @@
   (let [{:keys [socket out in waiting]} @conn]
     (doseq [token waiting]
       (send-stop-query conn token))
+    (close-connection-loops conn)
     (.close out)
     (.close in)
     (.close socket)
@@ -51,17 +52,20 @@
            auth-key ""}}]
   (let [socket (Socket. host port)
         out (DataOutputStream. (.getOutputStream socket))
-        in  (DataInputStream. (.getInputStream socket))
-        conn (connection
-              {:socket socket
-               :out out
-               :in in
-               :waiting #{}
-               :token token})]
+        in  (DataInputStream. (.getInputStream socket))]
+    ;; Initialise the connection
     (send-version out)
     (send-auth-key out auth-key)
     (send-protocol out)
     (let [init-response (read-init-response in)]
       (if-not (= init-response "SUCCESS")
         (throw (Exception. init-response))))
-    conn))
+    ;; Once initialised, create the connection record
+    (connection
+      (merge
+        {:socket socket
+         :out out
+         :in in
+         :waiting #{}
+         :token token}
+        (make-connection-loops in out)))))

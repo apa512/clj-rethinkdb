@@ -4,6 +4,7 @@
             [rethinkdb.core :refer :all]
             [rethinkdb.query :as r]))
 
+
 (def conn (connect))
 (def test-db "cljrethinkdb_test")
 
