@@ -31,54 +31,48 @@
   (-> (r/db test-db)
       (r/table-list)))
 
-(defn test-query [open close]
-  (time
-    (doseq [n (range 100)]
-      (let [conn (open)]
-        (r/run query conn)
-        (close conn)))))
 
 ;; Uncomment to run test
 (deftest connection-speed-test
   (println "performance (connection per query)") 
-    (let [conn connect]
-      (test-query conn #(close %))
-      (is true))
+  (let [conn connect]
+    (time
+      (doseq [n (range 100)]
+        (with-open [conn (connect)]
+          (r/run query conn)))))
 
   (println "performance (reusing connection")
-    (let [conn (connect)]
-      (test-query (constantly conn) identity)
-      (close conn)
-      (is true))
+  (time
+    (with-open [conn (connect)]
+      (doseq [n (range 100)]
+        (r/run query conn))))
 
   (println "performance (parallel, one connection)")
-    (let [conn (connect)]
-      (time
+  (with-open [conn (connect)]
+    (time
+      (doall
         (pmap (fn [v] (r/run query conn))
-              (range 100)))
-      (is true))
+              (range 100)))))
 
   (println "performance (pooled connection")  
-    (let [conn connect]
-      ;(test-query conn identity)
-      (is true))
+  #_(with-open [conn connect]
+    nil)
     
   (println "multiple connection test") 
-    (let [conn1 (connect)
-          conn2 (connect) 
-          conn3 (connect)]
-      (r/run query conn1)
-      (future
-        (do
-          (r/run query conn2)
-          (close conn2)))
-      (future
-        (with-open [conn (connect)]
-          (r/run query conn)))
-      (future
-        (close conn1))
-      (r/run query conn3)
-      (close conn3)
-      (is true)  
-      (is true)))
+  (let [conn1 (connect)
+        conn2 (connect) 
+        conn3 (connect)]
+    (r/run query conn1)
+    (future
+      (do
+        (r/run query conn2)
+        (close conn1)))
+    (future
+      (with-open [conn (connect)]
+        (r/run query conn)))
+    (future
+      (close conn2))
+    (r/run query conn3)
+    (close conn3)
+    (is true)))
 
