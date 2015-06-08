@@ -1,4 +1,4 @@
-(defproject rethinkdb "0.8.39"
+(defproject rethinkdb "0.9.39"
   :description "RethinkDB client"
   :url "http://github.com/apa512/clj-rethinkdb"
   :license {:name "Eclipse Public License"
@@ -7,6 +7,7 @@
           :src-dir-uri "https://github.com/apa512/clj-rethinkdb/blob/master/"
           :src-linenum-anchor-prefix "L"}
   :dependencies [[org.clojure/clojure "1.6.0"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [org.clojure/data.json "0.2.6"]
                  [org.flatland/protobuf "0.8.1"]
                  [rethinkdb-protobuf "0.3.0"]
