@@ -38,38 +38,6 @@
     (.read in resp 0 4096)
     (clojure.string/replace (String. resp) #"\W*$" "")))
 
-(defn read-response [in token]
-  (let [recvd-token (byte-array 8)
-        length (byte-array 4)]
-    (.read in recvd-token 0 8)
-    (let [recvd-token (bytes->int recvd-token 8)]
-      (assert (= token recvd-token)))
-    (.read in length 0 4)
-    (let [length (bytes->int length 4)
-          json (read-str in length)]
-      (json/read-str json :key-fn keyword))))
-
-(defn send-query-sync [conn token query]
-  (let [json (json/write-str query)
-        {:keys [in out]} @conn
-        n (count json)]
-    (send-int out token 8)
-    (send-int out n 4)
-    (send-str out json)
-    (let [{type :t resp :r} (read-response in token)
-          resp (parse-response resp)]
-      (condp get type
-        #{1} (first resp)
-        #{2} (do
-               (swap! (:conn conn) update-in [:waiting] #(disj % token))
-               resp)
-        #{3 5} (if (get (:waiting @conn) token)
-                 (lazy-seq (concat resp (send-continue-query conn token)))
-                 (do
-                   (swap! (:conn conn) update-in [:waiting] #(conj % token))
-                   (Cursor. conn token resp)))
-        (throw (Exception. (first resp)))))))
-
 
 (defn read-response* [in]
   (let [recvd-token (byte-array 8)
@@ -81,12 +49,10 @@
           json (read-str in length)]
       [recvd-token json])))
 
-
-(defn send-query* [out [token json]]
+(defn write-query [out [token json]]
   (send-int out token 8)
   (send-int out (count json) 4)
   (send-str out json))
-
 
 (defn make-connection-loops [in out]
   (let [recv-chan (async/chan)
@@ -103,7 +69,7 @@
         ;; Send loop
         send-loop (async/go-loop []
                     (when-let [query (async/<! send-chan)]
-                      (send-query* out query)
+                      (write-query out query)
                       (recur)))]
     ;; Return as map to merge into connection
     {:pub pub
@@ -120,24 +86,19 @@
     ;; Close recv channel 
     (async/close! r-ch)))
 
-
-(defn send-query-async* [conn token query]
+(defn send-query* [conn token query]
   (let [chan (async/chan)
         {:keys [pub ch]} @conn]
     (async/sub pub token chan)
     (async/>!! ch [token query])
     (let [[recvd-token json] (async/<!! chan)]
-      (when-not (= recvd-token token)
-        (println "Got:" recvd-token "expected:" token)
-        (println json))
-      (assert (= recvd-token token))
+      (assert (= recvd-token token) "Must not receive response with different token")
       (async/unsub pub token chan)
       (json/read-str json :key-fn keyword))))
 
-
-(defn send-query-async [conn token query]
+(defn send-query [conn token query]
   (let [json (json/write-str query)
-        {type :t resp :r} (send-query-async* conn token json) 
+        {type :t resp :r} (send-query* conn token json) 
         resp (parse-response resp)]
     (condp get type
       #{1} (first resp)
@@ -150,10 +111,6 @@
                  (swap! (:conn conn) update-in [:waiting] #(conj % token))
                  (Cursor. conn token resp)))
       (throw (Exception. (first resp))))))
-
-
-(def send-query send-query-async)
-
 
 (defn send-start-query [conn token query]
   (send-query conn token (parse-query :START query)))
