@@ -4,7 +4,7 @@
             [rethinkdb.core :refer :all]
             [rethinkdb.query :as r]))
 
-;;; Refernece performance 
+;;; Reference performance
 ;; performance (connect)          "Elapsed time: 4021.701763 msecs"
 ;; performance reusing connection "Elapsed time: 3999.424348 msecs"
 
@@ -34,7 +34,7 @@
 
 ;; Uncomment to run test
 (deftest connection-speed-test
-  (println "performance (connection per query)") 
+  (println "performance (connection per query)")
   (let [conn connect]
     (time
       (doseq [n (range 100)]
@@ -54,13 +54,13 @@
         (pmap (fn [v] (r/run query conn))
               (range 100)))))
 
-  (println "performance (pooled connection")  
+  (println "performance (pooled connection")
   #_(with-open [conn connect]
     nil)
-    
-  (println "multiple connection test") 
+
+  (println "multiple connection test")
   (let [conn1 (connect)
-        conn2 (connect) 
+        conn2 (connect)
         conn3 (connect)]
     (r/run query conn1)
     (future
@@ -75,4 +75,3 @@
     (r/run query conn3)
     (close conn3)
     (is true)))
-
