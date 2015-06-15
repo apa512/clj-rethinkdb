@@ -82,8 +82,8 @@
     (async/unsub-all pub)
     ;; Close send channel and wait for loop to complete
     (async/close! ch)
-    (async/<!! send-loop)  
-    ;; Close recv channel 
+    (async/<!! send-loop)
+    ;; Close recv channel
     (async/close! r-ch)))
 
 (defn send-query* [conn token query]
@@ -98,14 +98,14 @@
 
 (defn send-query [conn token query]
   (let [json (json/write-str query)
-        {type :t resp :r} (send-query* conn token json) 
+        {type :t resp :r} (send-query* conn token json)
         resp (parse-response resp)]
     (condp get type
-      #{1} (first resp)
-      #{2} (do
+      #{1} (first resp) ;; Success Atom, Query returned a single RQL datatype
+      #{2} (do ;; Success Sequence, Query returned a sequence of RQL datatypes.
              (swap! (:conn conn) update-in [:waiting] #(disj % token))
              resp)
-      #{3 5} (if (get (:waiting @conn) token)
+      #{3 5} (if (get (:waiting @conn) token) ;; Success Partial, Query returned a partial sequence of RQL datatypes
                (lazy-seq (concat resp (send-continue-query conn token)))
                (do
                  (swap! (:conn conn) update-in [:waiting] #(conj % token))
