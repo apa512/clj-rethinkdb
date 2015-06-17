@@ -13,7 +13,7 @@
         v2 1915781601
         v3 1601562686
         v4 1074539808]
-    (send-int out v3 4)))
+    (send-int out v4 4)))
 
 (defn send-protocol
   "Sends protocol type to RethinkDB when establishing connection.
