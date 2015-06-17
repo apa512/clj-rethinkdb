@@ -9,7 +9,7 @@
         v2 1915781601
         v3 1601562686
         v4 1074539808]
-    (send-int out v3 4)))
+    (send-int out v4 4)))
 
 (defn send-protocol [out]
   (let [protobuf 656407617
