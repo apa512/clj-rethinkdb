@@ -971,3 +971,6 @@
 #?(:clj (defn run [query conn]
           (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
             (net/send-start-query conn token (replace-vars query)))))
+
+(defn run-chan [query conn result-chan]
+  (net/run-query-chan query conn result-chan))
