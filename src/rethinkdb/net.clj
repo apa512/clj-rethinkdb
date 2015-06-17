@@ -144,3 +144,35 @@
 (defn send-stop-query [conn token]
   (log/debugf "Sending stop query with token %d" token)
   (send-query conn token (parse-query :STOP)))
+
+;; Async
+
+(defn run-query-chan [query conn result-chan]
+  (let [token (:token (swap! (:conn conn) update-in [:token] inc))
+        payload (qb/prepare-query :START query)
+        control-chan (async/chan 10)
+        error-chan (async/chan 10)
+        chan-set {:result-chan result-chan :error-chan error-chan :control-chan control-chan}
+        pub-resp-chan (async/chan) ;; Internal channel for receiving RethinkDB responses for this query's token.
+        {:keys [pub send-chan]} @conn
+        _ (add-to-waiting conn token)]
+    (async/go-loop [payload payload]
+      (async/sub pub token pub-resp-chan)
+      (async/>! send-chan [token payload])
+      (async/alt! ;; TODO: do we want to give one of these priority?
+        pub-resp-chan ([resp] (let [[recvd-token json] resp ;; TODO: use Transducers for this section
+                                    _ (assert (= recvd-token token) "Must not receive response with different token") ;;TODO: Is this really necessary with the async/sub?
+                                    _ (async/unsub pub token pub-resp-chan)
+                                    {type :t resp :r} (json/read-str json :key-fn keyword)
+                                    resp (parse-response resp)]
+                                (condp get type
+                                  #{1 2} (do (async/onto-chan result-chan resp true) ;; 1 is a single result, 2 is a result sequence.
+                                             (remove-from-waiting conn token))
+                                  #{3} (do (async/onto-chan result-chan resp false) ;; 3 is a partial sequence.
+                                           (recur (qb/prepare-query :CONTINUE))))))
+        control-chan ([ctrl-value] (do (async/close! result-chan) ;;TODO: Is ordering correct here?
+                                       (async/close! error-chan)
+                                       (async/>! send-chan [token (qb/prepare-query :STOP)])
+                                       (async/<! pub-resp-chan)
+                                       (remove-from-waiting conn token)))))
+    chan-set))
