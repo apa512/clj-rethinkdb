@@ -4,7 +4,7 @@
                             or and do fn sync time update])
   (:require [clojure.data.json :as json]
             [clojure.walk :as walk]
-            [rethinkdb.net :refer [send-start-query] :as net]
+            [rethinkdb.net :as net]
             [rethinkdb.query-builder :as qb :refer [term]]))
 
 (defmacro fn [args & [body]]
@@ -889,4 +889,7 @@
 
 (defn run [query conn]
   (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
-    (send-start-query conn token (qb/replace-vars query))))
+    (net/send-start-query conn token (qb/replace-vars query))))
+
+(defn run-chan [query conn result-chan]
+  (net/run-query-chan query conn result-chan))
