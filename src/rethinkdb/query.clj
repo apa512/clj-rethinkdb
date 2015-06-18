@@ -137,9 +137,12 @@
 
 (defn table
   "Select all documents in a table. This command can be chained with other
-  commands to do further processing on the data."
-  [db table-name]
-  (term :TABLE [db table-name]))
+  commands to do further processing on the data. If no db is provided then
+  the default database for the connection will be used"
+  ([table-name]
+   (term :TABLE [table-name]))
+  ([db table-name]
+   (term :TABLE [db table-name])))
 
 (defn get
   "Get a document by primary key.
