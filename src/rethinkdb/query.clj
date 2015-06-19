@@ -180,8 +180,8 @@
   By default RethinkDB will ignore documents where a specified field is missing.
   Passing ```{:default (r/error)}``` as an optional argument will cause any
   non-existence error to raise an exception."
-  [sq obj-or-func]
-  (term :FILTER [sq obj-or-func]))
+  [sq obj-or-func & [optargs]]
+  (term :FILTER [sq obj-or-func] optargs))
 
 ;;; Joins
 
