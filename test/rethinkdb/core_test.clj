@@ -224,6 +224,19 @@
                                 :b (-> [1 2]
                                        (r/map (r/fn [y]
                                                 x)))})))))))
+
+    (testing "filter with default"
+      (is (= [1 3 5 6]
+             (run (-> [{:id 1, :bool false}
+                       {:id 2, :bool true}
+                       {:id 3}
+                       {:id 4, :bool true}
+                       {:id 5, :bool false}
+                       {:id 6}]
+                      (r/filter (r/fn [row]
+                                  (r/not (r/get-field row :bool)))
+                                {:default true})
+                      (r/get-field :id))))))
     (close conn)))
 
 (use-fixtures :once setup)
