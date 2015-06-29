@@ -265,4 +265,8 @@
                         (r/get-field :name)))))))
     (.close conn)))
 
+(deftest query-conn
+  (is (do (r/connect)
+          true)))
+
 (use-fixtures :once setup)

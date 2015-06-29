@@ -5,6 +5,7 @@
   (:require [clojure.data.json :as json]
             [clojure.walk :refer [postwalk postwalk-replace]]
             [rethinkdb.net :refer [send-start-query] :as net]
+            [rethinkdb.core :as core]
             [rethinkdb.query-builder :refer [term parse-term]]))
 
 (defmacro fn [args & [body]]
@@ -12,6 +13,16 @@
         new-replacements (zipmap args new-args)
         new-terms (postwalk-replace new-replacements body)]
     (term :FUNC [new-args new-terms])))
+
+;;; Import connect
+
+(def connect
+  "Creates a database connection to a RethinkDB host
+  [& {:keys [host port token auth-key]
+       :or {host \"127.0.0.1\"
+            port 28015
+            token 0
+            auth-key \"\"}}" core/connect)
 
 ;;; Cursors
 
