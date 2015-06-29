@@ -3,14 +3,14 @@
                             reduce make-array distinct keys nth min max
                             or and do fn sync time update])
   (:require [clojure.data.json :as json]
-            [clojure.walk :refer [postwalk postwalk-replace]]
-            [rethinkdb.net :refer [send-start-query] :as net]
-            [rethinkdb.query-builder :refer [term parse-term]]))
+            [clojure.walk :as walk]
+            [rethinkdb.net :as net]
+            [rethinkdb.query-builder :as qb :refer [term]]))
 
 (defmacro fn [args & [body]]
   (let [new-args (into [] (clojure.core/map #(hash-map :temp-var (keyword %)) args))
         new-replacements (zipmap args new-args)
-        new-terms (postwalk-replace new-replacements body)]
+        new-terms (walk/postwalk-replace new-replacements body)]
     (term :FUNC [new-args new-terms])))
 
 ;;; Cursors
@@ -247,7 +247,7 @@
   [sel field-or-ordering]
   (if-let [index (clojure.core/or (clojure.core/get field-or-ordering "index")
                                   (clojure.core/get field-or-ordering :index))]
-    (term :ORDER_BY [sel] {:index (parse-term index)})
+    (term :ORDER_BY [sel] {:index (qb/parse-term index)})
     (term :ORDER_BY [sel field-or-ordering])))
 
 (defn skip
@@ -887,27 +887,12 @@
 
 ;;; Run query
 
-(defn replace-vars [query]
-  (let [var-counter (atom 0)]
-    (postwalk
-      #(if (clojure.core/and (map? %) (= :FUNC (:rethinkdb.query-builder/term %)))
-         (let [vars (first (:rethinkdb.query-builder/args %))
-               new-vars (range @var-counter (+ @var-counter (clojure.core/count vars)))
-               new-args (clojure.core/map
-                          (clojure.core/fn [arg]
-                            (term :VAR [arg]))
-                          new-vars)
-               var-replacements (zipmap vars new-args)]
-           (swap! var-counter + (clojure.core/count vars))
-           (postwalk-replace
-             var-replacements
-             (assoc-in % [:rethinkdb.query-builder/args 0] new-vars)))
-         %)
-      query)))
-
 (defn make-array [& xs]
   (term :MAKE_ARRAY xs))
 
 (defn run [query conn]
   (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
-    (send-start-query conn token (replace-vars query))))
+    (net/send-start-query conn token (qb/replace-vars query))))
+
+(defn run-chan [query conn result-chan]
+  (net/run-query-chan query conn result-chan))
