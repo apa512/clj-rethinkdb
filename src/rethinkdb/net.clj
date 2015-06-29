@@ -2,6 +2,7 @@
   (:require [clojure.data.json :as json]
             [clojure.core.async :as async]
             [rethinkdb.query-builder :refer [parse-query]]
+            [rethinkdb.types :as types]
             [rethinkdb.response :refer [parse-response]]
             [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes]])
   (:import [java.io Closeable]))
@@ -97,7 +98,11 @@
       (json/read-str json :key-fn keyword))))
 
 (defn send-query [conn token query]
-  (let [json (json/write-str query)
+  (let [{:keys [db]} @conn
+        query (if db ;; TODO: Could provide other global optargs too
+                (concat query [{:db [(types/tt->int :DB) [db]]}])
+                query)
+        json (json/write-str query)
         {type :t resp :r} (send-query* conn token json)
         resp (parse-response resp)]
     (condp get type

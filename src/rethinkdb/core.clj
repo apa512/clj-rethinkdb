@@ -45,11 +45,15 @@
   (->Connection (atom m)))
 
 (defn connect
-  [& {:keys [host port token auth-key]
+  "Creates a database connection to a RethinkDB host.
+  If db is supplied, it is used in any queries where a db
+  is not explicitly set."
+  [& {:keys [host port token auth-key db]
       :or {host "127.0.0.1"
            port 28015
            token 0
-           auth-key ""}}]
+           auth-key ""
+           db nil}}]
   (let [socket (Socket. host port)
         out (DataOutputStream. (.getOutputStream socket))
         in  (DataInputStream. (.getInputStream socket))]
@@ -66,6 +70,7 @@
         {:socket socket
          :out out
          :in in
+         :db db
          :waiting #{}
          :token token}
         (make-connection-loops in out)))))

@@ -102,6 +102,15 @@
       (is (= (run (between-notional-no 80 81)) [(last pokemons)]))
       (is (= (run (with-name "Pikachu")) [(first pokemons)])))
 
+    (testing "run a query with an implicit database"
+      (with-open [conn-implicit-db (connect :db test-db)]
+        (is (= (set (-> (r/table :pokedex) (r/run conn-implicit-db)))
+               (set pokemons))))
+      (testing "precedence of db connections"
+        (with-open [conn-implicit-db (connect :db "nonexistent_db")]
+          (is (= (set (-> (r/db test-db) (r/table :pokedex) (r/run conn-implicit-db)))
+                 (set pokemons))))))
+
     (testing "aggregation"
       (are [term result] (= (run term) result)
         (r/avg [2 4]) 3
