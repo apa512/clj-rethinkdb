@@ -4,6 +4,7 @@ A RethinkDB client for Clojure. Tested with 1.16.x but should with work all vers
 
 [![Circle CI](https://circleci.com/gh/apa512/clj-rethinkdb.svg?style=svg)](https://circleci.com/gh/apa512/clj-rethinkdb)
 [![Dependencies Status](http://jarkeeper.com/apa512/clj-rethinkdb/status.svg)](http://jarkeeper.com/apa512/clj-rethinkdb)
+[![Join the chat at https://gitter.im/apa512/clj-rethinkdb](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/apa512/clj-rethinkdb?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ## Install
 
