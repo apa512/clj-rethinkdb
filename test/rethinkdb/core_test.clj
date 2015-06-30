@@ -226,17 +226,34 @@
                                                 x)))})))))))
 
     (testing "filter with default"
-      (is (= [1 3 5 6]
-             (run (-> [{:id 1, :apple "good"}
-                       {:id 2, :apple "bad"}
-                       {:id 3}
-                       {:id 4, :apple "bad"}
-                       {:id 5, :apple "good"}
-                       {:id 6}]
+      (let [twin-peaks [{:name "Cole", :job "Regional Bureau Chief"}
+                        {:name "Cooper", :job "FBI Agent"}
+                        {:name "Riley", :job "Colonel"}
+                        {:name "Briggs", :job "Major"}
+                        {:name "Harry", :job "Sheriff"}
+                        {:name "Hawk", :job "Deputy"}
+                        {:name "Andy", :job "Deputy"}
+                        {:name "Lucy", :job "Secretary"}
+                        {:name "Bobby"}]]
+        (is (= ["Hawk" "Andy" "Bobby"]
+               (run (-> twin-peaks
+                        (r/filter (r/fn [row]
+                                    (r/eq (r/get-field row :job) "Deputy"))
+                                  {:default true})
+                        (r/get-field :name)))))
+        (is (thrown?
+             Exception
+             (run (-> twin-peaks
                       (r/filter (r/fn [row]
-                                  (r/ne (r/get-field row :apple) "bad"))
-                                {:default true})
-                      (r/get-field :id))))))
+                                  (r/eq (r/get-field row :job) "Deputy"))
+                                {:default (r/error)})
+                      (r/get-field :name)))))
+        (is (= ["Hawk" "Andy"]
+               (run (-> twin-peaks
+                        (r/filter (r/fn [row]
+                                    (r/eq (r/get-field row :job) "Deputy"))
+                                  {:default false})
+                        (r/get-field :name)))))))
     (close conn)))
 
 (use-fixtures :once setup)
