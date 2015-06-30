@@ -16,13 +16,18 @@ A RethinkDB client for Clojure. Tested with 1.16.x but should with work all vers
 (require '[rethinkdb.core :refer [connect close]])
 (require '[rethinkdb.query :as r])
 
-(with-open [conn (connect :host "127.0.0.1" :port 28015)]
+(with-open [conn (connect :host "127.0.0.1" :port 28015 :db "test")]
   (r/run (r/db-create "test") conn)
 
   (-> (r/db "test")
       (r/table-create "authors")
       (r/run conn))
-
+       
+  (comment "This is equivalent to the previous query; db on connection is implicitly
+  used if no db is provided.
+  (-> (r/table-create "authors")
+      (r/run conn)))
+      
   ;; Create an index on the field "genre".
   (-> (r/db "test")
       (r/table "authors")
