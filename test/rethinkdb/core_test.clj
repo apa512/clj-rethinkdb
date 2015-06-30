@@ -227,14 +227,14 @@
 
     (testing "filter with default"
       (is (= [1 3 5 6]
-             (run (-> [{:id 1, :bool false}
-                       {:id 2, :bool true}
+             (run (-> [{:id 1, :apple "good"}
+                       {:id 2, :apple "bad"}
                        {:id 3}
-                       {:id 4, :bool true}
-                       {:id 5, :bool false}
+                       {:id 4, :apple "bad"}
+                       {:id 5, :apple "good"}
                        {:id 6}]
                       (r/filter (r/fn [row]
-                                  (r/not (r/get-field row :bool)))
+                                  (r/ne (r/get-field row :apple) "bad"))
                                 {:default true})
                       (r/get-field :id))))))
     (close conn)))
