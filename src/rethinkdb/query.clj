@@ -180,9 +180,15 @@
   of elements. The return type is the same as the type on which the function
   was called on.
 
-  By default RethinkDB will ignore documents where a specified field is missing.
-  Passing ```{:default (r/error)}``` as an optional argument will cause any
-  non-existence error to raise an exception."
+  Passing a ```:default``` optional argument can change the handling of
+  documents with missing fields.
+
+  - ```{:default true}``` will return documents with missing fields,
+    rather than ignore them.
+  - ```{:default (r/error))``` will cause any non-existence error to
+    raise an exception.
+  - ```{:default false}``` (the default) will ignore documents where
+    a specified field is missing."
   [sq obj-or-func & [optargs]]
   (term :FILTER [sq obj-or-func] optargs))
 
