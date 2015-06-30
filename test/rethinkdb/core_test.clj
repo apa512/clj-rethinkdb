@@ -224,6 +224,36 @@
                                 :b (-> [1 2]
                                        (r/map (r/fn [y]
                                                 x)))})))))))
+
+    (testing "filter with default"
+      (let [twin-peaks [{:name "Cole", :job "Regional Bureau Chief"}
+                        {:name "Cooper", :job "FBI Agent"}
+                        {:name "Riley", :job "Colonel"}
+                        {:name "Briggs", :job "Major"}
+                        {:name "Harry", :job "Sheriff"}
+                        {:name "Hawk", :job "Deputy"}
+                        {:name "Andy", :job "Deputy"}
+                        {:name "Lucy", :job "Secretary"}
+                        {:name "Bobby"}]]
+        (is (= ["Hawk" "Andy" "Bobby"]
+               (run (-> twin-peaks
+                        (r/filter (r/fn [row]
+                                    (r/eq (r/get-field row :job) "Deputy"))
+                                  {:default true})
+                        (r/get-field :name)))))
+        (is (thrown?
+             Exception
+             (run (-> twin-peaks
+                      (r/filter (r/fn [row]
+                                  (r/eq (r/get-field row :job) "Deputy"))
+                                {:default (r/error)})
+                      (r/get-field :name)))))
+        (is (= ["Hawk" "Andy"]
+               (run (-> twin-peaks
+                        (r/filter (r/fn [row]
+                                    (r/eq (r/get-field row :job) "Deputy"))
+                                  {:default false})
+                        (r/get-field :name)))))))
     (close conn)))
 
 (use-fixtures :once setup)
