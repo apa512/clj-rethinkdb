@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file. This change
 - Add alias for `rethinkdb.core/connect` into `rethinkdb.query/connect` so you don't need to import the `rethinkdb.core` namespace. [#44](https://github.com/apa512/clj-rethinkdb/pull/44)
 - Add CHANGELOG.md [#47](https://github.com/apa512/clj-rethinkdb/pull/47)
 
+### Changed
+- Add new arity for the queries `table-drop`, and `table-list` which doesn't require a db. [#54](https://github.com/apa512/clj-rethinkdb/pull/54/files)
+- Add docstring to `rethinkdb.query` ns explaining DB priority [#54](https://github.com/apa512/clj-rethinkdb/pull/54/files)
+
 ### Fixed
 - Fix close method on Connection record [#50](https://github.com/apa512/clj-rethinkdb/pull/50)
 - Fix handling of sending CONTINUE queries to RethinkDB when using an implicit db on the connection. Affects any query that returns a Cursor. [#52](https://github.com/apa512/clj-rethinkdb/pull/52)
