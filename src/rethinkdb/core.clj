@@ -21,7 +21,10 @@
     (send-int out n 4)
     (send-str out auth-key)))
 
-(defn close [conn]
+(defn close
+  "Closes RethinkDB database connection, stops all running queries
+  and waits for response before returning"
+  [conn]
   (let [{:keys [socket out in waiting]} @conn]
     (doseq [token waiting]
       (send-stop-query conn token))
