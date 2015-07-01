@@ -1,11 +1,10 @@
 (ns rethinkdb.core-test
   (:require [clj-time.core :as t]
             [clojure.test :refer :all]
-            [rethinkdb.core :refer :all]
             [rethinkdb.query :as r]))
 
 
-(def conn (connect))
+(def conn (r/connect))
 (def test-db "cljrethinkdb_test")
 
 (defmacro db-run [& body]
@@ -54,7 +53,7 @@
                   (r/eq (r/get-field row :name) name)))))
 
 (deftest core-test
-  (with-open [conn (connect)]
+  (with-open [conn (r/connect)]
     (testing "manipulating databases"
       (is (= 1 (:dbs_created (r/run (r/db-create "cljrethinkdb_tmp") conn))))
       (is (= 1 (:dbs_dropped (r/run (r/db-drop "cljrethinkdb_tmp") conn))))
@@ -103,11 +102,11 @@
       (is (= (run (with-name "Pikachu")) [(first pokemons)])))
 
     (testing "run a query with an implicit database"
-      (with-open [conn-implicit-db (connect :db test-db)]
+      (with-open [conn-implicit-db (r/connect :db test-db)]
         (is (= (set (-> (r/table :pokedex) (r/run conn-implicit-db)))
                (set pokemons))))
       (testing "precedence of db connections"
-        (with-open [conn-implicit-db (connect :db "nonexistent_db")]
+        (with-open [conn-implicit-db (r/connect :db "nonexistent_db")]
           (is (= (set (-> (r/db test-db) (r/table :pokedex) (r/run conn-implicit-db)))
                  (set pokemons))))))
 
@@ -119,7 +118,7 @@
         (r/sum [3 4]) 7))
 
     (testing "feeds"
-      (let [tmp-conn (connect)
+      (let [tmp-conn (r/connect)
             changes (future
                       (-> (r/db test-db)
                           (r/table :pokedex)
@@ -264,5 +263,9 @@
                                   {:default false})
                         (r/get-field :name)))))))
     (.close conn)))
+
+(deftest query-conn
+  (is (do (r/connect)
+          true)))
 
 (use-fixtures :once setup)

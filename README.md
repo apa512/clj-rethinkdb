@@ -13,10 +13,9 @@ A RethinkDB client for Clojure. Tested with 1.16.x but should with work all vers
 ## Usage
 
 ```clojure
-(require '[rethinkdb.core :refer [connect close]])
 (require '[rethinkdb.query :as r])
 
-(with-open [conn (connect :host "127.0.0.1" :port 28015 :db "test")]
+(with-open [conn (r/connect :host "127.0.0.1" :port 28015 :db "test")]
   (r/run (r/db-create "test") conn)
 
   (-> (r/db "test")
