@@ -20,9 +20,8 @@
   Closeable
   (close [this] (and (send-stop-query conn token) :closed))
   clojure.lang.Seqable
-  (seq [this] (do
-                (Thread/sleep 250)
-                (lazy-seq (concat coll (send-continue-query conn token))))))
+  (seq [this]
+    (lazy-seq (concat coll (send-continue-query conn token)))))
 
 (defn send-int [^OutputStream out i n]
   (.write out (int->bytes i n) 0 n))
