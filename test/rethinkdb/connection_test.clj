@@ -66,12 +66,12 @@
     (future
       (do
         (r/run query conn2)
-        (close conn1)))
+        (.close conn1)))
     (future
       (with-open [conn (connect)]
         (r/run query conn)))
     (future
-      (close conn2))
+      (.close conn2))
     (r/run query conn3)
-    (close conn3)
+    (.close conn3)
     (is true)))

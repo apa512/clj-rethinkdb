@@ -35,7 +35,7 @@
   IDeref
   (deref [_] @conn)
   Closeable
-  (close [_] (close conn)))
+  (close [this] (close this)))
 
 (defmethod print-method Connection
   [r writer]

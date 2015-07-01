@@ -129,7 +129,7 @@
         (db-run (-> (r/table :pokedex)
                     (r/insert (take 10000 (repeat {:name "Test"})))))
         (is (= "Test" ((comp :name :new_val) (first @changes))))
-        (close tmp-conn)))
+        (.close tmp-conn)))
 
     (testing "document manipulation"
       (is (= (db-run (-> (r/table :pokedex)
@@ -263,6 +263,6 @@
                                     (r/eq (r/get-field row :job) "Deputy"))
                                   {:default false})
                         (r/get-field :name)))))))
-    (close conn)))
+    (.close conn)))
 
 (use-fixtures :once setup)
