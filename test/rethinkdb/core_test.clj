@@ -3,7 +3,7 @@
             [clojure.test :refer :all]
             [rethinkdb.query :as r]
             [rethinkdb.core :as core]
-            [clojure.core.async :as async]))
+            [clojure.core.async :as async]
             [rethinkdb.net :as net]))
 
 (def test-db "cljrethinkdb_test")
@@ -370,6 +370,16 @@
           [v p] (async/alts!! [error-chan result-chan] :priority true)]
       (is (= "Database `cljrethinkdb_nonexistentdb` does not exist." v))
       (is (= p error-chan)))))
+
+(deftest close-chan
+  (with-open [conn (r/connect :db test-db)]
+    (let [{:keys [waiting]} conn
+          {:keys [control-chan token]} (r/run-chan (-> (r/db test-db) (r/table test-table) (r/changes)) conn (async/chan 10))]
+      (is (not (contains? waiting token)))
+      (is (contains? (:waiting @conn) token))
+      (async/put! control-chan :stop)
+      (Thread/sleep 200) ;; TODO: need a better way to do it than this, wait on control chan?
+      (is (not (contains? (:waiting @conn) token))))))
 
 (deftest query-conn
   (is (do (r/connect)
