@@ -151,7 +151,7 @@
         payload (qb/prepare-query :START query)
         control-chan (async/chan 10)
         error-chan (async/chan 10)
-        chan-set {:result-chan result-chan :error-chan error-chan :control-chan control-chan}
+        chan-set {:result-chan result-chan :error-chan error-chan :control-chan control-chan :token token}
         pub-resp-chan (async/chan) ;; Internal channel for receiving RethinkDB responses for this query's token.
         {:keys [pub send-chan]} @conn
         _ (add-to-waiting conn token)]
