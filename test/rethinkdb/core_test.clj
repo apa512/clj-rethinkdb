@@ -3,6 +3,7 @@
             [clojure.test :refer :all]
             [rethinkdb.query :as r]
             [rethinkdb.core :as core]
+            [clojure.core.async :as async]))
             [rethinkdb.net :as net]))
 
 (def test-db "cljrethinkdb_test")
@@ -329,6 +330,17 @@
                                   {:default false})
                         (r/get-field :name))
                     conn))))))
+
+(deftest run-async-chan
+  (with-open [conn (r/connect :db test-db)]
+    (let [{:keys [error-chan result-chan]} (r/run-chan (r/db-list) conn (async/chan 10))
+          [v p] (async/alts!! [error-chan result-chan] :priority true)]
+      (is (some #{test-db} v))
+      (is (= p result-chan)))
+    (let [{:keys [error-chan result-chan]} (r/run-chan (r/db-drop "cljrethinkdb_nonexistentdb") conn (async/chan 10))
+          [v p] (async/alts!! [error-chan result-chan] :priority true)]
+      (is (= "Database `cljrethinkdb_nonexistentdb` does not exist." v))
+      (is (= p error-chan)))))
 
 (deftest query-conn
   (is (do (r/connect)
