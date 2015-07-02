@@ -99,7 +99,8 @@
 
 (defn send-query [conn token query]
   (let [{:keys [db]} @conn
-        query (if db ;; TODO: Could provide other global optargs too
+        query (if (and db (= 2 (count query))) ;; If there's only 1 element in query then this is a continue or stop query.
+                ;; TODO: Could provide other global optargs too
                 (concat query [{:db [(types/tt->int :DB) [db]]}])
                 query)
         json (json/write-str query)
