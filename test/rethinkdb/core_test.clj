@@ -56,10 +56,11 @@
   (with-open [conn (r/connect :db test-db)]
     (are [term result] (contains? (set (split-map (r/run term conn))) result)
       (r/table-create (r/db test-db) :tmp) {:tables_created 1}
+      (r/table-create (r/db test-db) :tmp2) {:tables_created 1}
       (-> (r/table :tmp)
           (r/insert {:id (java.util.UUID/randomUUID)})) {:inserted 1}
-      (r/table-drop :tmp) {:tables_dropped 1}
-
+      (r/table-drop (r/db test-db) :tmp) {:tables_dropped 1}
+      (r/table-drop :tmp2) {:tables_dropped 1}
       (-> (r/table test-table) (r/index-create :tmp (r/fn [row] 1))) {:created 1}
       (-> (r/table test-table)
           (r/index-create :type (r/fn [row]
