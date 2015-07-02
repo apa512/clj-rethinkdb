@@ -168,7 +168,8 @@
                                   #{1 2} (do (async/onto-chan result-chan resp true) ;; 1 is a single result, 2 is a result sequence.
                                              (remove-from-waiting conn token))
                                   #{3} (do (async/onto-chan result-chan resp false) ;; 3 is a partial sequence.
-                                           (recur (qb/prepare-query :CONTINUE))))))
+                                           (recur (qb/prepare-query :CONTINUE)))
+                                  (async/onto-chan error-chan resp true))))
         control-chan ([ctrl-value] (do (async/close! result-chan) ;;TODO: Is ordering correct here?
                                        (async/close! error-chan)
                                        (async/>! send-chan [token (qb/prepare-query :STOP)])
