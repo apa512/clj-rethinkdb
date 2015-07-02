@@ -296,7 +296,8 @@
 
 (deftest query-conn
   (is (do (r/connect)
-          true)))
+          true))
+  (is (thrown? clojure.lang.ExceptionInfo (r/connect :port 1))))
 
 (use-fixtures :each setup-each)
 (use-fixtures :once setup-once)
