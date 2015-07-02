@@ -1,12 +1,24 @@
 (ns rethinkdb.query
+  "Public interface to clj-rethinkdb. You should only need to require this namespace.
+
+  Priority of databases used in queries:
+  1. If a database is explicitly specified as part of a query it will always be used.
+  2. If there is no database used in the query AND a database is set on the database
+     at connection time (with the :db parameter), then this will be used.
+  3. If there is no database in the query or connection, then RethinkDB will fall back
+     to using the \"test\" database (You probably don't want this).
+
+  N.B. Database names are validated at query time, not connection time."
   (:refer-clojure :exclude [count filter map get not mod replace merge
                             reduce make-array distinct keys nth min max
                             or and do fn sync time update])
   (:require [clojure.data.json :as json]
             [clojure.walk :refer [postwalk postwalk-replace]]
+            [clojure.test :as test]
             [rethinkdb.net :refer [send-start-query] :as net]
             [rethinkdb.core :as core]
-            [rethinkdb.query-builder :refer [term parse-term]]))
+            [rethinkdb.query-builder :refer [term parse-term]])
+  (:import (rethinkdb.core Connection)))
 
 (defmacro fn [args & [body]]
   (let [new-args (into [] (clojure.core/map #(hash-map :temp-var (keyword %)) args))
@@ -18,11 +30,12 @@
 
 (def connect
   "Creates a database connection to a RethinkDB host
-  [& {:keys [host port token auth-key]
+  [& {:keys [host port token auth-key db]
        :or {host \"127.0.0.1\"
             port 28015
             token 0
-            auth-key \"\"}}" core/connect)
+            auth-key \"\"
+            db nil}}" core/connect)
 
 ;;; Cursors
 
@@ -32,13 +45,12 @@
 ;;; Manipulating databases
 
 (defn db-create
-  "Create a database. Note that you can only use alphanumeric characters and
-  underscores for the database name."
+  "Creates a database."
   [db-name]
   (term :DB_CREATE [db-name]))
 
 (defn db-drop
-  "Drop a database."
+  "Drops a database."
   [db-name]
   (term :DB_DROP [db-name]))
 
@@ -55,14 +67,20 @@
   (term :TABLE_CREATE [db table-name] optargs))
 
 (defn table-drop
-  "Drop a table."
-  [db table-name]
-  (term :TABLE_DROP [db table-name]))
+  "Drop a table. If no db is provided then precedence follows the
+  order given in the rethinkdb.query ns documentation."
+  ([table-name]
+   (term :TABLE_DROP [table-name]))
+  ([db table-name]
+   (term :TABLE_DROP [db table-name])))
 
 (defn table-list
-  "List all table names in a database."
-  [db]
-  (term :TABLE_LIST [db]))
+  "List all table names in a database. If no db is provided then precedence
+  follows the order given in the rethinkdb.query ns documentation."
+  ([]
+   (term :TABLE_LIST []))
+  ([db]
+   (term :TABLE_LIST [db])))
 
 (defn index-create
   "Create a new secondary index on a table."
@@ -148,8 +166,8 @@
 
 (defn table
   "Select all documents in a table. This command can be chained with other
-  commands to do further processing on the data. If no db is provided then
-  the default database for the connection will be used"
+  commands to do further processing on the data. If no db is provided then precedence
+  follows the order given in the rethinkdb.query ns documentation."
   ([table-name]
    (term :TABLE [table-name]))
   ([db table-name]
