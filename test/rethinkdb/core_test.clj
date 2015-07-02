@@ -102,12 +102,12 @@
       (is (= (run (with-name "Pikachu")) [(first pokemons)])))
 
     (testing "run a query with an implicit database"
-      (with-open [conn-implicit-db (r/connect :db test-db)]
-        (is (= (set (-> (r/table :pokedex) (r/run conn-implicit-db)))
+      (with-open [conn (r/connect :db test-db)]
+        (is (= (set (-> (r/table :pokedex) (r/run conn)))
                (set pokemons))))
       (testing "precedence of db connections"
-        (with-open [conn-implicit-db (r/connect :db "nonexistent_db")]
-          (is (= (set (-> (r/db test-db) (r/table :pokedex) (r/run conn-implicit-db)))
+        (with-open [conn (r/connect :db "nonexistent_db")]
+          (is (= (set (-> (r/db test-db) (r/table :pokedex) (r/run conn)))
                  (set pokemons))))))
 
     (testing "aggregation"
@@ -118,7 +118,7 @@
         (r/sum [3 4]) 7))
 
     (testing "feeds"
-      (let [tmp-conn (r/connect)
+      (let [tmp-conn (r/connect :db test-db)
             changes (future
                       (-> (r/db test-db)
                           (r/table :pokedex)
