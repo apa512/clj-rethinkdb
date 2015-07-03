@@ -1,7 +1,7 @@
 (ns rethinkdb.query-builder
-  (:require [clj-time.coerce :as c]
-            [rethinkdb.types :refer [tt->int qt->int]]
-            [rethinkdb.utils :refer [snake-case]]))
+  (:require #?@(:clj [[rethinkdb.types :refer [tt->int qt->int]]
+                      [clj-time.coerce :as c]])
+                      [rethinkdb.utils :refer [snake-case]]))
 
 (declare parse-term)
 
@@ -21,8 +21,8 @@
       (::term arg) :query
       (or (sequential? arg) (seq? arg)) :sequential
       (map? arg) :map
-      (instance? org.joda.time.DateTime arg) :time
-      (instance? java.util.UUID arg) :uuid)))
+      #?@(:clj ((instance? org.joda.time.DateTime arg) :time
+                 (instance? java.util.UUID arg) :uuid)))))
 
 (defmethod parse-arg :query [arg]
   (parse-term arg))

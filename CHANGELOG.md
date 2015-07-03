@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file. This change
 - Add docstring to `rethinkdb.query` ns explaining DB priority [#54](https://github.com/apa512/clj-rethinkdb/pull/54)
 - Exceptions thrown when connecting are more descriptive, and are now of type `clojure.lang.ExceptionInfo`. [#41](https://github.com/apa512/clj-rethinkdb/issues/41) [#56](https://github.com/apa512/clj-rethinkdb/pull/56)
 - Add docstrings to many functions [#56](https://github.com/apa512/clj-rethinkdb/pull/56)
+- The query parts of this library have been converted to use Clojure 1.7 Reader Conditionals. This means that you can generate queries in ClojureScript and run them on the server (be very careful with this!).
 
 ### Fixed
 - Fix close method on Connection record [#50](https://github.com/apa512/clj-rethinkdb/pull/50)
