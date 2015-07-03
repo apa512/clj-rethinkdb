@@ -25,7 +25,7 @@
   "Closes RethinkDB database connection, stops all running queries
   and waits for response before returning"
   [conn]
-  (let [{:keys [socket out in waiting]} @conn]
+  (let [{:keys [^Socket socket ^DataOutputStream out ^DataInputStream in waiting]} @conn]
     (doseq [token waiting]
       (send-stop-query conn token))
     (close-connection-loops conn)
@@ -47,11 +47,11 @@
 (defn connection [m]
   (->Connection (atom m)))
 
-(defn connect
+(defn ^Connection connect
   "Creates a database connection to a RethinkDB host.
   If db is supplied, it is used in any queries where a db
   is not explicitly set."
-  [& {:keys [host port token auth-key db]
+  [& {:keys [^String host ^int port token auth-key db]
       :or {host "127.0.0.1"
            port 28015
            token 0

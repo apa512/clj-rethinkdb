@@ -5,7 +5,7 @@
             [rethinkdb.types :as types]
             [rethinkdb.response :refer [parse-response]]
             [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes]])
-  (:import [java.io Closeable]))
+  (:import [java.io Closeable InputStream OutputStream DataInputStream]))
 
 (declare send-continue-query send-stop-query)
 
@@ -22,25 +22,25 @@
                 (Thread/sleep 250)
                 (lazy-seq (concat coll (send-continue-query conn token))))))
 
-(defn send-int [out i n]
+(defn send-int [^OutputStream out i n]
   (.write out (int->bytes i n) 0 n))
 
-(defn send-str [out s]
+(defn send-str [^OutputStream out s]
   (let [n (count s)]
     (.write out (str->bytes s) 0 n)))
 
-(defn read-str [in n]
+(defn read-str [^DataInputStream in n]
   (let [resp (byte-array n)]
     (.readFully in resp 0 n)
     (String. resp)))
 
-(defn read-init-response [in]
+(defn ^String read-init-response [^InputStream in]
   (let [resp (byte-array 4096)]
     (.read in resp 0 4096)
     (clojure.string/replace (String. resp) #"\W*$" "")))
 
 
-(defn read-response* [in]
+(defn read-response* [^InputStream in]
   (let [recvd-token (byte-array 8)
         length (byte-array 4)]
     (.read in recvd-token 0 8)
@@ -116,7 +116,7 @@
                (do
                  (swap! (:conn conn) update-in [:waiting] #(conj % token))
                  (Cursor. conn token resp)))
-      (throw (Exception. (first resp))))))
+      (throw (Exception. (str (first resp)))))))
 
 (defn send-start-query [conn token query]
   (send-query conn token (parse-query :START query)))
