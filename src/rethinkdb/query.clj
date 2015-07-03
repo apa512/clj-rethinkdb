@@ -28,7 +28,7 @@
 
 ;;; Import connect
 
-(def connect
+(def ^Connection connect
   "Creates a database connection to a RethinkDB host
   [& {:keys [host port token auth-key db]
        :or {host \"127.0.0.1\"

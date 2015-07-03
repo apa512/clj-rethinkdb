@@ -9,14 +9,14 @@
       (.putInt i))
     (.array buf)))
 
-(defn str->bytes [s]
+(defn str->bytes [^String s]
   (let [n (count s)
         buf (ByteBuffer/allocate n)]
     (doto buf
       (.put (.getBytes s)))
     (.array buf)))
 
-(defn bytes->int [bs n]
+(defn bytes->int [^bytes bs n]
   (let  [buf (ByteBuffer/allocate (or n 4))]
     (doto buf
       (.order ByteOrder/LITTLE_ENDIAN)
