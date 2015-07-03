@@ -10,7 +10,9 @@ All notable changes to this project will be documented in this file. This change
 
 ### Changed
 - Add new arity for the queries `table-drop`, and `table-list` which doesn't require a db. [#54](https://github.com/apa512/clj-rethinkdb/pull/54/files)
-- Add docstring to `rethinkdb.query` ns explaining DB priority [#54](https://github.com/apa512/clj-rethinkdb/pull/54/files)
+- Add docstring to `rethinkdb.query` ns explaining DB priority [#54](https://github.com/apa512/clj-rethinkdb/pull/54)
+- Exceptions thrown when connecting are more descriptive, and are now of type `clojure.lang.ExceptionInfo`. [#41](https://github.com/apa512/clj-rethinkdb/issues/41) [#56](https://github.com/apa512/clj-rethinkdb/pull/56)
+- Add docstrings to many functions [#56](https://github.com/apa512/clj-rethinkdb/pull/56)
 
 ### Fixed
 - Fix close method on Connection record [#50](https://github.com/apa512/clj-rethinkdb/pull/50)

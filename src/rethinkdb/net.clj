@@ -78,7 +78,8 @@
      :r-ch recv-chan
      :ch send-chan}))
 
-(defn close-connection-loops [conn]
+(defn close-connection-loops
+  [conn]
   (let [{:keys [pub ch r-ch] [recv-loop send-loop] :loops} @conn]
     (async/unsub-all pub)
     ;; Close send channel and wait for loop to complete

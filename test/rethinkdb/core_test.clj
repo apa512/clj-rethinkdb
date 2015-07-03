@@ -1,7 +1,9 @@
 (ns rethinkdb.core-test
   (:require [clj-time.core :as t]
             [clojure.test :refer :all]
-            [rethinkdb.query :as r]))
+            [rethinkdb.query :as r]
+            [rethinkdb.core :as core]
+            [rethinkdb.net :as net]))
 
 (def test-db "cljrethinkdb_test")
 (def test-table :pokedex)
@@ -296,7 +298,10 @@
 
 (deftest query-conn
   (is (do (r/connect)
-          true)))
+          true))
+  (is (thrown? clojure.lang.ExceptionInfo (r/connect :port 1)))
+  (with-redefs-fn {#'core/send-version (fn [out] (net/send-int out 168696 4))}
+    #(is (thrown? clojure.lang.ExceptionInfo (r/connect)))))
 
 (use-fixtures :each setup-each)
 (use-fixtures :once setup-once)
