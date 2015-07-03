@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file. This change
 ### Fixed
 - Fix close method on Connection record [#50](https://github.com/apa512/clj-rethinkdb/pull/50)
 - Fix handling of sending CONTINUE queries to RethinkDB when using an implicit db on the connection. Affects any query that returns a Cursor. [#52](https://github.com/apa512/clj-rethinkdb/pull/52)
+- Fix reflection warnings [#58](https://github.com/apa512/clj-rethinkdb/pull/58)
 
 ## [0.9.40]
 ### Changed
