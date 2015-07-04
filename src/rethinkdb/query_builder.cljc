@@ -21,7 +21,7 @@
       (::term arg) :query
       (or (sequential? arg) (seq? arg)) :sequential
       (map? arg) :map
-      #?@(:clj ((instance? org.joda.time.DateTime arg) :time
+      #?@(:clj ((instance? org.joda.time.DateTime arg) :time ;; TODO: Handle these in ClojureScript
                  (instance? java.util.UUID arg) :uuid)))))
 
 (defmethod parse-arg :query [arg]
