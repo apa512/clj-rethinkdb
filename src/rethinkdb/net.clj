@@ -147,8 +147,10 @@
 ;; Async
 
 (defn run-query-chan [query conn result-chan]
-  (let [token (:token (swap! (:conn conn) update-in [:token] inc))
-        payload (qb/prepare-query :START query)
+  (let [{:keys [db]} @conn
+        token (:token (swap! (:conn conn) update-in [:token] inc))
+        global-optargs (when db [{:db [(types/tt->int :DB) [db]]}])
+        payload (qb/prepare-query :START query global-optargs)
         control-chan (async/chan 10)
         error-chan (async/chan 10)
         chan-set {:result-chan result-chan :error-chan error-chan :control-chan control-chan :token token}
