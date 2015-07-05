@@ -340,7 +340,15 @@
     (let [{:keys [error-chan result-chan]} (r/run-chan (r/db-drop "cljrethinkdb_nonexistentdb") conn (async/chan 10))
           [v p] (async/alts!! [error-chan result-chan] :priority true)]
       (is (= "Database `cljrethinkdb_nonexistentdb` does not exist." v))
-      (is (= p error-chan)))))
+      (is (= p error-chan)))
+    (let [{:keys [result-chan error-chan]} (r/run-chan (-> (r/table test-table) (r/insert {:name "Charizard"})) conn (async/chan 10))
+          [v p] (async/alts!! [error-chan result-chan] :priority true)]
+      (is (= p result-chan))
+      (is (= 1 (:inserted v))))
+    (let [{:keys [result-chan error-chan]} (r/run-chan (-> (r/table test-table)) conn (async/chan 10))
+          [v p] (async/alts!! [error-chan result-chan] :priority true)]
+      (is (= p result-chan))
+      (is (= "Charizard" (:name v))))))
 
 (deftest close-chan
   (with-open [conn (r/connect :db test-db)]
