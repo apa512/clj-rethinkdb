@@ -1,6 +1,6 @@
 # clj-rethinkdb
 
-A RethinkDB client for Clojure. Tested with 1.16.x but should with work all versions that support the JSON protocol (i.e. >= 1.13).
+A RethinkDB client for Clojure. Tested and supported on RethinkDB 2.0.x but should with work all versions that support the JSON protocol (i.e. >= 1.13).
 
 [![Circle CI](https://circleci.com/gh/apa512/clj-rethinkdb.svg?style=svg)](https://circleci.com/gh/apa512/clj-rethinkdb)
 [![Dependencies Status](http://jarkeeper.com/apa512/clj-rethinkdb/status.svg)](http://jarkeeper.com/apa512/clj-rethinkdb)
@@ -9,6 +9,10 @@ A RethinkDB client for Clojure. Tested with 1.16.x but should with work all vers
 ## Install
 
 [![Clojars Project](http://clojars.org/rethinkdb/latest-version.svg)](http://clojars.org/rethinkdb)
+
+## Changes
+
+All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, 0.10.x is the last release track supporting Clojure 1.6 and below.
 
 ## Usage
 
@@ -36,7 +40,7 @@ A RethinkDB client for Clojure. Tested with 1.16.x but should with work all vers
 
   (-> (r/db "test")
       (r/table "authors")
-      (r/insert [{:name "E.L. Jamas"
+      (r/insert [{:name "E.L. James"
                   :genre "crap"
                   :country "UK"
                   :books ["Fifty Shades of Grey"
@@ -62,8 +66,8 @@ A RethinkDB client for Clojure. Tested with 1.16.x but should with work all vers
       (r/table "authors")
       ;; Filter the table (one would normally use an index for that).
       (r/filter (r/fn [author]
-                  (r/eq "E.L. Jamas" (r/get-field author :name))))
-      ;; Update the books for all authors mathing the above filter by appending a new title to the array field :books.
+                  (r/eq "E.L. James" (r/get-field author :name))))
+      ;; Update the books for all authors matching the above filter by appending a new title to the array field :books.
       (r/update (r/fn [author]
                   {:books (-> author (r/get-field :books) (r/append "Fifty More Gray Books"))}))
       (r/run conn))
@@ -75,7 +79,7 @@ A RethinkDB client for Clojure. Tested with 1.16.x but should with work all vers
                   {:number-of-books (-> author (r/get-field :books) (r/count))}))
       (r/run conn))
 
-  ;; Create a compound index on coutry and genre.
+  ;; Create a compound index on country and genre.
   (-> (r/db "test")
       (r/table "authors")
       (r/index-create "country-genre" (r/fn [row]
