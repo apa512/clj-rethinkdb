@@ -40,7 +40,7 @@ All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, 
 
   (-> (r/db "test")
       (r/table "authors")
-      (r/insert [{:name "E.L. Jamas"
+      (r/insert [{:name "E.L. James"
                   :genre "crap"
                   :country "UK"
                   :books ["Fifty Shades of Grey"
@@ -66,8 +66,8 @@ All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, 
       (r/table "authors")
       ;; Filter the table (one would normally use an index for that).
       (r/filter (r/fn [author]
-                  (r/eq "E.L. Jamas" (r/get-field author :name))))
-      ;; Update the books for all authors mathing the above filter by appending a new title to the array field :books.
+                  (r/eq "E.L. James" (r/get-field author :name))))
+      ;; Update the books for all authors matching the above filter by appending a new title to the array field :books.
       (r/update (r/fn [author]
                   {:books (-> author (r/get-field :books) (r/append "Fifty More Gray Books"))}))
       (r/run conn))
@@ -79,7 +79,7 @@ All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, 
                   {:number-of-books (-> author (r/get-field :books) (r/count))}))
       (r/run conn))
 
-  ;; Create a compound index on coutry and genre.
+  ;; Create a compound index on country and genre.
   (-> (r/db "test")
       (r/table "authors")
       (r/index-create "country-genre" (r/fn [row]
