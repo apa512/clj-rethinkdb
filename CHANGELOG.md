@@ -3,10 +3,13 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com).
 
 ## [Unreleased]
+
+## [0.10.0] - 2015-07-08
 ### Added
 - Add docstring for `rethinkdb.core/close`. [#44](https://github.com/apa512/clj-rethinkdb/pull/44)
 - Add alias for `rethinkdb.core/connect` into `rethinkdb.query/connect` so you don't need to import the `rethinkdb.core` namespace. [#44](https://github.com/apa512/clj-rethinkdb/pull/44)
 - Add CHANGELOG.md [#47](https://github.com/apa512/clj-rethinkdb/pull/47)
+- Added explicit support for RethinkDB 2.0 (It worked before but wasn't documented as such).
 
 ### Changed
 - Add new arity for the queries `table-drop`, and `table-list` which doesn't require a db. [#54](https://github.com/apa512/clj-rethinkdb/pull/54/files)
@@ -18,6 +21,9 @@ All notable changes to this project will be documented in this file. This change
 - Fix close method on Connection record [#50](https://github.com/apa512/clj-rethinkdb/pull/50)
 - Fix handling of sending CONTINUE queries to RethinkDB when using an implicit db on the connection. Affects any query that returns a Cursor. [#52](https://github.com/apa512/clj-rethinkdb/pull/52)
 - Fix reflection warnings [#58](https://github.com/apa512/clj-rethinkdb/pull/58)
+
+### Deprecated
+- `0.10.0` is the last release that will support Clojure 1.6. Future release will require Clojure 1.7 or above. This is to allow the use of cljc Reader Conditionals.
 
 ## [0.9.40]
 ### Changed
