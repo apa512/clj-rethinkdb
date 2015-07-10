@@ -10,6 +10,5 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [org.clojure/data.json "0.2.6"]
-                 [org.flatland/protobuf "0.8.1"]
-                 [rethinkdb-protobuf "0.3.0"]
+                 [rethinkdb-protobuf "2.0.5"]
                  [clj-time "0.9.0"]])
