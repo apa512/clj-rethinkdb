@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
-## [0.10.0] - 2015-07-08
+## [0.10.1] - 2015-07-08
 ### Added
 - Add docstring for `rethinkdb.core/close`. [#44](https://github.com/apa512/clj-rethinkdb/pull/44)
 - Add alias for `rethinkdb.core/connect` into `rethinkdb.query/connect` so you don't need to import the `rethinkdb.core` namespace. [#44](https://github.com/apa512/clj-rethinkdb/pull/44)
@@ -23,7 +23,9 @@ All notable changes to this project will be documented in this file. This change
 - Fix reflection warnings [#58](https://github.com/apa512/clj-rethinkdb/pull/58)
 
 ### Deprecated
-- `0.10.0` is the last release that will support Clojure 1.6. Future release will require Clojure 1.7 or above. This is to allow the use of cljc Reader Conditionals.
+- `0.10.1` is the last release that will support Clojure 1.6. Future release will require Clojure 1.7 or above. This is to allow the use of cljc Reader Conditionals.
+
+NB `0.10.0` was partly released but due to a Clojars snafu `0.10.1` is the recommended release to use.
 
 ## [0.9.40]
 ### Changed
