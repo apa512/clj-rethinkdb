@@ -12,9 +12,7 @@
   (:refer-clojure :exclude [count filter map get not mod replace merge
                             reduce make-array distinct keys nth min max
                             or and do fn sync time update])
-  (:require [clojure.data.json :as json]
-            [clojure.walk :refer [postwalk postwalk-replace]]
-            [clojure.test :as test]
+  (:require [clojure.walk :refer [postwalk postwalk-replace]]
             [rethinkdb.net :refer [send-start-query] :as net]
             [rethinkdb.core :as core]
             [rethinkdb.query-builder :refer [term parse-term]])
