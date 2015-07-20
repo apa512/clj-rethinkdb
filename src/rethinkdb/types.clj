@@ -1,6 +1,6 @@
 (ns rethinkdb.types
   (:import [rethinkdb Ql2$Query$QueryType Ql2$Term$TermType]
-           (com.google.protobuf ProtocolMessageEnum)))
+           [com.google.protobuf ProtocolMessageEnum]))
 
 (defn qt->int
   "Takes a RethinkDB Query type and returns its protocol buffer representation."
