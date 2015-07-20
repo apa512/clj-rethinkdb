@@ -33,4 +33,4 @@
           (vec (map #(format "%02x" %) bs))))
 
 (defn snake-case [s]
-  (string/replace (name s) #"-" "_"))
+  (string/replace (name s) \- \_))
