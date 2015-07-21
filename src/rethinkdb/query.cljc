@@ -12,33 +12,36 @@
   (:refer-clojure :exclude [count filter map get not mod replace merge
                             reduce make-array distinct keys nth min max
                             or and do fn sync time update])
-  (:require [clojure.walk :refer [postwalk postwalk-replace]]
-            [rethinkdb.net :refer [send-start-query] :as net]
-            [rethinkdb.core :as core]
-            [rethinkdb.query-builder :refer [term parse-term]])
-  (:import (rethinkdb.core Connection)))
+  (:require [clojure.walk :as walk]
+            [rethinkdb.query-builder :as qb :refer [term]]
+    #?(:clj
+            [rethinkdb.net :as net])
+    #?(:clj
+            [rethinkdb.core :as core]))
+  #?(:clj
+     (:import [rethinkdb.core Connection])))
 
-(defmacro fn [args & [body]]
-  (let [new-args (into [] (clojure.core/map #(hash-map :temp-var (keyword %)) args))
-        new-replacements (zipmap args new-args)
-        new-terms (postwalk-replace new-replacements body)]
-    (term :FUNC [new-args new-terms])))
+#?(:clj (defmacro fn [args & [body]]
+          (let [new-args (into [] (clojure.core/map #(hash-map :temp-var (keyword %)) args))
+                new-replacements (zipmap args new-args)
+                new-terms (walk/postwalk-replace new-replacements body)]
+            (term :FUNC [new-args new-terms]))))
 
 ;;; Import connect
 
-(def ^Connection connect
-  "Creates a database connection to a RethinkDB host
-  [& {:keys [host port token auth-key db]
-       :or {host \"127.0.0.1\"
-            port 28015
-            token 0
-            auth-key \"\"
-            db nil}}" core/connect)
+#?(:clj (def ^Connection connect
+          "Creates a database connection to a RethinkDB host
+          [& {:keys [host port token auth-key db]
+               :or {host \"127.0.0.1\"
+                    port 28015
+                    token 0
+                    auth-key \"\"
+                    db nil}}" core/connect))
 
 ;;; Cursors
 
-(defn close [cursor]
-  (net/close cursor))
+#?(:clj (defn close [cursor]
+          (net/close cursor)))
 
 ;;; Manipulating databases
 
@@ -268,20 +271,20 @@
   [sel func]
   (term :CONCAT_MAP [sel func]))
 
-(defn order-by
-  "Sort the sequence by document values of the given key(s). To specify the
-  ordering, wrap the attribute with either ```r.asc``` or ```r.desc``` (defaults to
-  ascending).
+#?(:clj (defn order-by
+          "Sort the sequence by document values of the given key(s). To specify the
+          ordering, wrap the attribute with either ```r.asc``` or ```r.desc``` (defaults to
+          ascending).
 
-  Sorting without an index requires the server to hold the sequence in memory,
-  and is limited to 100,000 documents (or the setting of the ```array-limit``` option
-  for run). Sorting with an index can be done on arbitrarily large tables, or
-  after a between command using the same index."
-  [sel field-or-ordering]
-  (if-let [index (clojure.core/or (clojure.core/get field-or-ordering "index")
-                                  (clojure.core/get field-or-ordering :index))]
-    (term :ORDER_BY [sel] {:index (parse-term index)})
-    (term :ORDER_BY [sel field-or-ordering])))
+          Sorting without an index requires the server to hold the sequence in memory,
+          and is limited to 100,000 documents (or the setting of the ```array-limit``` option
+          for run). Sorting with an index can be done on arbitrarily large tables, or
+          after a between command using the same index."
+          [sel field-or-ordering]
+          (if-let [index (clojure.core/or (clojure.core/get field-or-ordering "index")
+                                          (clojure.core/get field-or-ordering :index))]
+            (term :ORDER_BY [sel] {:index (qb/parse-term index)})
+            (term :ORDER_BY [sel field-or-ordering]))))
 
 (defn skip
   "Skip a number of elements from the head of the sequence."
@@ -610,14 +613,14 @@
   []
   (term :NOW []))
 
-(defn time
-  "Create a time object for a specific time."
-  [& date-time-parts]
-  (let [args (concat date-time-parts
-                     (if (instance? String (last date-time-parts))
-                       []
-                       ["+00:00"]))]
-    (term :TIME args)))
+#?(:clj (defn time
+          "Create a time object for a specific time."
+          [& date-time-parts]
+          (let [args (concat date-time-parts
+                             (if (instance? String (last date-time-parts))
+                               []
+                               ["+00:00"]))]
+            (term :TIME args))))
 
 (defn epoch-time
   "Create a time object based on seconds since epoch. The first argument is a
@@ -922,25 +925,25 @@
 
 (defn replace-vars [query]
   (let [var-counter (atom 0)]
-    (postwalk
+    (walk/postwalk
       #(if (clojure.core/and (map? %) (= :FUNC (:rethinkdb.query-builder/term %)))
-         (let [vars (first (:rethinkdb.query-builder/args %))
-               new-vars (range @var-counter (+ @var-counter (clojure.core/count vars)))
-               new-args (clojure.core/map
-                          (clojure.core/fn [arg]
-                            (term :VAR [arg]))
-                          new-vars)
-               var-replacements (zipmap vars new-args)]
-           (swap! var-counter + (clojure.core/count vars))
-           (postwalk-replace
-             var-replacements
-             (assoc-in % [:rethinkdb.query-builder/args 0] new-vars)))
-         %)
+        (let [vars (first (:rethinkdb.query-builder/args %))
+              new-vars (range @var-counter (+ @var-counter (clojure.core/count vars)))
+              new-args (clojure.core/map
+                         (clojure.core/fn [arg]
+                           (term :VAR [arg]))
+                         new-vars)
+              var-replacements (zipmap vars new-args)]
+          (swap! var-counter + (clojure.core/count vars))
+          (walk/postwalk-replace
+            var-replacements
+            (assoc-in % [:rethinkdb.query-builder/args 0] new-vars)))
+        %)
       query)))
 
 (defn make-array [& xs]
   (term :MAKE_ARRAY xs))
 
-(defn run [query conn]
-  (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
-    (send-start-query conn token (replace-vars query))))
+#?(:clj (defn run [query conn]
+          (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
+            (net/send-start-query conn token (replace-vars query)))))
