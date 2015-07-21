@@ -13,16 +13,19 @@
                             reduce make-array distinct keys nth min max
                             or and do fn sync time update])
   (:require [clojure.walk :as walk]
-            [rethinkdb.net :as net]
-            [rethinkdb.core :as core]
-            [rethinkdb.query-builder :refer [term parse-term]])
-  (:import (rethinkdb.core Connection)))
+            [rethinkdb.query-builder :as qb :refer [term]]
+    #?(:clj
+            [rethinkdb.net :as net])
+    #?(:clj
+            [rethinkdb.core :as core]))
+  #?(:clj
+     (:import [rethinkdb.core Connection])))
 
-(defmacro fn [args & [body]]
-  (let [new-args (into [] (clojure.core/map #(hash-map :temp-var (keyword %)) args))
-        new-replacements (zipmap args new-args)
-        new-terms (walk/postwalk-replace new-replacements body)]
-    (term :FUNC [new-args new-terms])))
+#?(:clj (defmacro fn [args & [body]]
+          (let [new-args (into [] (clojure.core/map #(hash-map :temp-var (keyword %)) args))
+                new-replacements (zipmap args new-args)
+                new-terms (walk/postwalk-replace new-replacements body)]
+            (term :FUNC [new-args new-terms]))))
 
 ;;; Import connect
 
@@ -268,20 +271,20 @@
   [sel func]
   (term :CONCAT_MAP [sel func]))
 
-(defn order-by
-  "Sort the sequence by document values of the given key(s). To specify the
-  ordering, wrap the attribute with either ```r.asc``` or ```r.desc``` (defaults to
-  ascending).
+#?(:clj (defn order-by
+          "Sort the sequence by document values of the given key(s). To specify the
+          ordering, wrap the attribute with either ```r.asc``` or ```r.desc``` (defaults to
+          ascending).
 
-  Sorting without an index requires the server to hold the sequence in memory,
-  and is limited to 100,000 documents (or the setting of the ```array-limit``` option
-  for run). Sorting with an index can be done on arbitrarily large tables, or
-  after a between command using the same index."
-  [sel field-or-ordering]
-  (if-let [index (clojure.core/or (clojure.core/get field-or-ordering "index")
-                                  (clojure.core/get field-or-ordering :index))]
-    (term :ORDER_BY [sel] {:index (parse-term index)})
-    (term :ORDER_BY [sel field-or-ordering])))
+          Sorting without an index requires the server to hold the sequence in memory,
+          and is limited to 100,000 documents (or the setting of the ```array-limit``` option
+          for run). Sorting with an index can be done on arbitrarily large tables, or
+          after a between command using the same index."
+          [sel field-or-ordering]
+          (if-let [index (clojure.core/or (clojure.core/get field-or-ordering "index")
+                                          (clojure.core/get field-or-ordering :index))]
+            (term :ORDER_BY [sel] {:index (qb/parse-term index)})
+            (term :ORDER_BY [sel field-or-ordering]))))
 
 (defn skip
   "Skip a number of elements from the head of the sequence."
@@ -610,14 +613,14 @@
   []
   (term :NOW []))
 
-(defn time
-  "Create a time object for a specific time."
-  [& date-time-parts]
-  (let [args (concat date-time-parts
-                     (if (instance? String (last date-time-parts))
-                       []
-                       ["+00:00"]))]
-    (term :TIME args)))
+#?(:clj (defn time
+          "Create a time object for a specific time."
+          [& date-time-parts]
+          (let [args (concat date-time-parts
+                             (if (instance? String (last date-time-parts))
+                               []
+                               ["+00:00"]))]
+            (term :TIME args))))
 
 (defn epoch-time
   "Create a time object based on seconds since epoch. The first argument is a
