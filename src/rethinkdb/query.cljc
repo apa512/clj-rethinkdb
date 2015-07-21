@@ -613,14 +613,14 @@
   []
   (term :NOW []))
 
-#?(:clj (defn time
-          "Create a time object for a specific time."
-          [& date-time-parts]
-          (let [args (concat date-time-parts
-                             (if (instance? String (last date-time-parts))
-                               []
-                               ["+00:00"]))]
-            (term :TIME args))))
+(defn time
+   "Create a time object for a specific time."
+        [& date-time-parts]
+   (let [args (concat date-time-parts
+                      (if (string? (last date-time-parts))
+                        []
+                        ["+00:00"]))]
+     (term :TIME args)))
 
 (defn epoch-time
   "Create a time object based on seconds since epoch. The first argument is a
