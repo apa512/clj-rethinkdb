@@ -947,30 +947,12 @@
 
 ;;; Run query
 
-(defn replace-vars [query]
-  (let [var-counter (atom 0)]
-    (walk/postwalk
-      #(if (clojure.core/and (map? %) (= :FUNC (:rethinkdb.query-builder/term %)))
-        (let [vars (first (:rethinkdb.query-builder/args %))
-              new-vars (range @var-counter (+ @var-counter (clojure.core/count vars)))
-              new-args (clojure.core/map
-                         (clojure.core/fn [arg]
-                           (term :VAR [arg]))
-                         new-vars)
-              var-replacements (zipmap vars new-args)]
-          (swap! var-counter + (clojure.core/count vars))
-          (walk/postwalk-replace
-            var-replacements
-            (assoc-in % [:rethinkdb.query-builder/args 0] new-vars)))
-        %)
-      query)))
-
 (defn make-array [& xs]
   (term :MAKE_ARRAY xs))
 
 #?(:clj (defn run [query conn]
           (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
-            (net/send-start-query conn token (replace-vars query)))))
+            (net/send-start-query conn token (qb/replace-vars query)))))
 
 (defn run-chan
   "Runs query on conn and puts results on result-chan. Returns a map of channels and the query token
