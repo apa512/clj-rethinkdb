@@ -76,8 +76,8 @@
                       (write-query out query)
                       (recur)))]
     ;; Return as map to merge into connection
-    {:pub       pub
-     :loops     [recv-loop send-loop]
+    {:pub pub
+     :loops [recv-loop send-loop]
      :recv-chan recv-chan
      :send-chan send-chan}))
 
@@ -146,7 +146,7 @@
 
 ;; Async
 
-(defn run-query-chan [query conn result-chan]
+(defn run-query-chan [query conn result-chan] ;; TODO: chan set instead of just result-chan?
   (let [{:keys [db]} @conn
         token (:token (swap! (:conn conn) update-in [:token] inc))
         global-optargs (when db [{:db [(types/tt->int :DB) [db]]}])
@@ -158,23 +158,34 @@
         {:keys [pub send-chan]} @conn
         _ (add-to-waiting conn token)]
     (async/go-loop [payload payload]
-      (async/sub pub token pub-resp-chan)
+      (async/sub pub token pub-resp-chan) ;; Subscribe to connection publication channel for our query token
       (async/>! send-chan [token payload])
-      (async/alt! ;; TODO: do we want to give one of these priority?
-        pub-resp-chan ([resp] (let [[recvd-token json] resp ;; TODO: use Transducers for this section
-                                    _ (assert (= recvd-token token) "Must not receive response with different token") ;;TODO: Is this really necessary with the async/sub?
-                                    _ (async/unsub pub token pub-resp-chan)
-                                    {type :t resp :r} (json/read-str json :key-fn keyword)
-                                    resp (parse-response resp)]
-                                (condp get type
-                                  #{1 2} (do (async/onto-chan result-chan resp true) ;; 1 is a single result, 2 is a result sequence.
-                                             (remove-from-waiting conn token))
-                                  #{3} (do (async/onto-chan result-chan resp false) ;; 3 is a partial sequence.
-                                           (recur (qb/prepare-query :CONTINUE)))
-                                  (async/onto-chan error-chan resp true))))
+      (async/alt!
+        :priority true
         control-chan ([ctrl-value] (do (async/close! result-chan) ;;TODO: Is ordering correct here?
                                        (async/close! error-chan)
                                        (async/>! send-chan [token (qb/prepare-query :STOP)])
                                        (async/<! pub-resp-chan)
-                                       (remove-from-waiting conn token)))))
+                                       (remove-from-waiting conn token)))
+        pub-resp-chan ([resp] (let [[recvd-token json] resp ;; TODO: use Transducers for this section
+                                    _ (assert (= recvd-token token)
+                                              "Must not receive response for different token") ;;TODO: Is this really necessary with the async/sub?
+                                    _ (async/unsub pub token pub-resp-chan)
+                                    {type :t resp :r :as msg} (json/read-str json :key-fn keyword)
+                                    parsed-resp {:type type :resp (parse-response resp)}]
+                                (println msg)
+                                (case (int type)
+                                  ;; 1 is a single result, 2 is a result sequence.
+                                  (1 2) (do (async/>! result-chan parsed-resp)
+                                            (async/close! result-chan)
+                                            (remove-from-waiting conn token))
+                                  ;; 3 is a partial sequence.
+                                  3 (do (async/>! result-chan parsed-resp)
+                                        ;; Recur with a continue query, same token will be used
+                                        (recur (qb/prepare-query :CONTINUE)))
+                                  ;; else an error occurred
+                                  (do (async/>! error-chan parsed-resp)
+                                      (async/close! error-chan)))))
+
+        ))
     chan-set))
