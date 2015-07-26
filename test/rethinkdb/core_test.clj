@@ -142,28 +142,28 @@
       (r/sum [3 4]) 7)))
 
 #_(deftest changefeeds
-  (with-open [conn (r/connect)]
-    (let [changes (future
-                    (-> (r/db test-db)
-                        (r/table test-table)
-                        r/changes
-                        (r/run conn)))]
-      (Thread/sleep 500)
-      (r/run (-> (r/db test-db)
-                 (r/table test-table)
-                 (r/insert (take 2 (repeat {:name "Test"})))) conn)
-      (is (= "Test" ((comp :name :new_val) (first @changes))))))
-  (with-open [conn (r/connect :db test-db)]
-    (let [changes (future
-                    (-> (r/db test-db)
-                        (r/table test-table)
-                        r/changes
-                        (r/run conn)))]
-      (Thread/sleep 500)
-      (r/run (-> (r/table test-table)
-                 (r/insert (take 2 (repeat {:name "Test"}))))
-             conn)
-      (is (= "Test" ((comp :name :new_val) (first @changes)))))))
+    (with-open [conn (r/connect)]
+      (let [changes (future
+                      (-> (r/db test-db)
+                          (r/table test-table)
+                          r/changes
+                          (r/run conn)))]
+        (Thread/sleep 500)
+        (r/run (-> (r/db test-db)
+                   (r/table test-table)
+                   (r/insert (take 2 (repeat {:name "Test"})))) conn)
+        (is (= "Test" ((comp :name :new_val) (first @changes))))))
+    (with-open [conn (r/connect :db test-db)]
+      (let [changes (future
+                      (-> (r/db test-db)
+                          (r/table test-table)
+                          r/changes
+                          (r/run conn)))]
+        (Thread/sleep 500)
+        (r/run (-> (r/table test-table)
+                   (r/insert (take 2 (repeat {:name "Test"}))))
+               conn)
+        (is (= "Test" ((comp :name :new_val) (first @changes)))))))
 
 (deftest document-manipulation
   (with-open [conn (r/connect :db test-db)]
@@ -360,24 +360,38 @@
                         (r/get-field :name))
                     conn))))))
 
+(defn test-query-chan-raw
+  "Executes query on conn. Returns the first raw result from the connection either from the
+  result channel or error channel, and whether the query was successful."
+  [query conn]
+  (let [{:keys [error-chan result-chan]} (r/run-chan query conn (async/chan 10))
+        [v p] (async/alts!! [error-chan result-chan] :priority true)]
+    [v (= p result-chan)]))
+
+(defn test-query-chan
+  "Like test-query-chan-raw, but unwraps the raw result and returns only the response and success value"
+  [query conn]
+  (let [[{:keys [resp]} success?] (test-query-chan-raw query conn)]
+    [resp success?]))
+
 (deftest run-async-chan
   (with-open [conn (r/connect :db test-db)]
-    (let [{:keys [error-chan result-chan]} (r/run-chan (r/db-list) conn (async/chan 10))
-          [v p] (async/alts!! [error-chan result-chan] :priority true)]
-      (is (some #{test-db} v))
-      (is (= p result-chan)))
-    (let [{:keys [error-chan result-chan]} (r/run-chan (r/db-drop "cljrethinkdb_nonexistentdb") conn (async/chan 10))
-          [v p] (async/alts!! [error-chan result-chan] :priority true)]
-      (is (= "Database `cljrethinkdb_nonexistentdb` does not exist." v))
-      (is (= p error-chan)))
-    (let [{:keys [result-chan error-chan]} (r/run-chan (-> (r/table test-table) (r/insert {:name "Charizard"})) conn (async/chan 10))
-          [v p] (async/alts!! [error-chan result-chan] :priority true)]
-      (is (= p result-chan))
-      (is (= 1 (:inserted v))))
-    (let [{:keys [result-chan error-chan]} (r/run-chan (-> (r/table test-table)) conn (async/chan 10))
-          [v p] (async/alts!! [error-chan result-chan] :priority true)]
-      (is (= p result-chan))
-      (is (= "Charizard" (:name v))))))
+
+    (let [[resp success?] (test-query-chan (r/db-drop "cljrethinkdb_nonexistentdb") conn)]
+      (is (= ["Database `cljrethinkdb_nonexistentdb` does not exist."] resp))
+      (is (not success?)))
+
+    (let [[resp success?] (test-query-chan (r/db-list) conn)]
+      (is (some #{test-db} (first resp)))
+      (is success?))
+
+    (let [[resp success?] (test-query-chan (-> (r/table test-table) (r/insert [{:name "Charizard"} {:name "Squirtle"}])) conn)]
+      (is (= 2 (:inserted (first resp))))
+      (is success?))
+
+    (let [[resp success?] (test-query-chan (-> (r/table test-table) (r/order-by :name)) conn)]
+      (is (= "Charizard" (:name (first (first resp)))))
+      (is success?))))
 
 (deftest close-chan
   (with-open [conn (r/connect :db test-db)]
