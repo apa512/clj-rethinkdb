@@ -1,5 +1,6 @@
 (ns rethinkdb.core
-  (:require [rethinkdb.net :refer [send-int send-str read-init-response send-stop-query make-connection-loops close-connection-loops]])
+  (:require [rethinkdb.net :refer [send-int send-str read-init-response send-stop-query make-connection-loops close-connection-loops]]
+            [clojure.tools.logging :as log])
   (:import [clojure.lang IDeref]
            [java.io Closeable DataInputStream DataOutputStream]
            [java.net Socket]))
@@ -91,4 +92,5 @@
            :token token}
           (make-connection-loops in out))))
     (catch Exception e
+      (log/error e "Error connecting to RethinkDB database")
       (throw (ex-info "Error connecting to RethinkDB database" {:host host :port port :auth-key auth-key :db db} e)))))
