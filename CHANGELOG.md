@@ -15,13 +15,13 @@ All notable changes to this project will be documented in this file. This change
 - Update docstring for `rethinkdb.query/without`.
 - Update arity and docstring for `rethinkdb.query/merge` to support merging any number of objects.
 - Add new arity to `rethinkdb.query/index-create` to allow creating simple indexes from field names. [#86](https://github.com/apa512/clj-rethinkdb/pull/86)
+- Add core.async channel API for executing queries [#37](https://github.com/apa512/clj-rethinkdb/pull/37)
 
 ## [0.10.1] - 2015-07-08
 ### Added
 - Add docstring for `rethinkdb.core/close`. [#44](https://github.com/apa512/clj-rethinkdb/pull/44)
 - Add alias for `rethinkdb.core/connect` into `rethinkdb.query/connect` so you don't need to import the `rethinkdb.core` namespace. [#44](https://github.com/apa512/clj-rethinkdb/pull/44)
 - Add CHANGELOG.md [#47](https://github.com/apa512/clj-rethinkdb/pull/47)
-- Add core.async channel API for executing queries [#37](https://github.com/apa512/clj-rethinkdb/pull/37)
 - Added explicit support for RethinkDB 2.0 (It worked before but wasn't documented as such).
 
 ### Changed
