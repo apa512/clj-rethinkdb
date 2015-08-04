@@ -17,7 +17,8 @@
             [rethinkdb.query-builder :as qb :refer [term]]
     #?@(:clj [
             [rethinkdb.net :as net]
-            [rethinkdb.core :as core]]))
+            [rethinkdb.core :as core]
+            [clojure.core.async :as async]]))
   #?(:clj
      (:import [rethinkdb.core Connection])))
 
