@@ -987,9 +987,10 @@
           (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
             (net/send-start-query conn token (qb/replace-vars query)))))
 
-(defn run-chan
-  "Runs query on conn and puts results on result-chan. Returns a map of channels and the query token
-  {:result-chan <> :error-chan <> :control-chan <> :token <>}. Results will be put on result-chan,
-  errors will be put on error-chan, queries can be stopped by putting :STOP on control-chan"
-  [query conn result-chan]
-  (net/run-query-chan query conn result-chan))
+#?(:clj (defn run-chan
+          "Runs query on conn and puts results on result-chan. Returns a map of channels and the query token
+          {:result-chan <> :error-chan <> :control-in-chan <> :control-out-chan <> :token <>}.
+          Results will be put on result-chan, errors will be put on error-chan, queries can be stopped
+          by putting :stop on control-in-chan"
+          [query conn result-chan]
+          (net/run-query-chan query conn result-chan)))
