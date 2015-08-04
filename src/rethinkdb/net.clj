@@ -185,7 +185,7 @@
             (case (int type)
               ;; 1 is a single result, 2 is a result sequence. However they are both wrapped in a vector
               ;; so onto-chan works correctly for both.
-              (1 2) (do (async/onto-chan result-chan parsed-resp true)
+              (1 2) (do (async/<! (async/onto-chan result-chan parsed-resp true)) ;; Need to wait for all values to go onto chan before closing
                         (clean-up :closed))
               ;; 3 is a partial sequence.
               3 (do (async/onto-chan result-chan parsed-resp false)
