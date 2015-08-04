@@ -1,9 +1,9 @@
 (ns rethinkdb.query-builder
   (:require [rethinkdb.utils :refer [snake-case]]
             [clojure.walk :as walk]
-            [clojure.data.json :as json]
     #?@(:clj [
             [rethinkdb.types :refer [tt->int qt->int]]
+            [clojure.data.json :as json]
             [clj-time.coerce :as c]])))
 
 (defn term [term args & [optargs]]
