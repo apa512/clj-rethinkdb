@@ -1,13 +1,14 @@
 (ns rethinkdb.core
   (:require [rethinkdb.net :refer [send-int send-str read-init-response send-stop-query make-connection-loops close-connection-loops]]
-            [clojure.tools.logging :as log])
+            [clojure.tools.logging :as log]
+            [clojure.core.async :as async])
   (:import [clojure.lang IDeref]
            [java.io Closeable DataInputStream DataOutputStream]
            [java.net Socket]))
 
 (defn send-version
   "Sends protocol version to RethinkDB when establishing connection.
-  Hard coded to use v3."
+  Hard coded to use v4."
   [out]
   (let [v1 1063369270
         v2 1915781601
@@ -34,9 +35,23 @@
   "Closes RethinkDB database connection, stops all running queries
   and waits for response before returning."
   [conn]
-  (let [{:keys [^Socket socket ^DataOutputStream out ^DataInputStream in waiting]} @conn]
-    (doseq [token waiting]
-      (send-stop-query conn token))
+  (let [{:keys [^Socket socket ^DataOutputStream out ^DataInputStream in waiting]} @conn
+        async-query-control-chans (map :control-in-chan (filter identity waiting))]
+    (doseq [[token chanset] waiting]
+      (if chanset
+        (async/>!! (:control-in-chan chanset) :stop))
+        (send-stop-query conn token))
+    (Thread/sleep 500) ;; Gross
+    #_(doseq [[token chanset] waiting
+            :when (some? chanset)] ;; TODO, take first cab off rank, not process tokens in serial.
+      (async/alt!!
+        (:control-out-chan chanset) ()
+        (async/timeout 1000) (println "Query" token "didn't respond in time"))) ;; TODO: proper logging
+    #_(loop [chans async-query-control-chans]
+      (let [[v p] (async/alts!! chans)
+            new-chans (remove #(= p %) chans)]
+        (when (not-empty new-chans)
+          (recur new-chans))))
     (close-connection-loops conn)
     (.close out)
     (.close in)
@@ -88,7 +103,7 @@
            :out out
            :in in
            :db db
-           :waiting #{}
+           :waiting {}
            :token token}
           (make-connection-loops in out))))
     (catch Exception e

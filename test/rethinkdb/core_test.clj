@@ -331,19 +331,13 @@
                         (r/get-field :name))
                     conn))))))
 
-(defn test-query-chan-raw
-  "Executes query on conn. Returns the first raw result from the connection either from the
-  result channel or error channel, and whether the query was successful."
+(defn test-query-chan
+  "Executes query on conn. Returns a vector of the first raw result from the connection
+   from either the result or error channel, and whether the query was successful."
   [query conn]
   (let [{:keys [error-chan result-chan]} (r/run-chan query conn (async/chan 10))
         [v p] (async/alts!! [error-chan result-chan] :priority true)]
     [v (= p result-chan)]))
-
-(defn test-query-chan
-  "Like test-query-chan-raw, but unwraps the raw result and returns only the response and success value"
-  [query conn]
-  (let [[{:keys [resp]} success?] (test-query-chan-raw query conn)]
-    [resp success?]))
 
 (deftest run-async-chan
   (with-open [conn (r/connect :db test-db)]
@@ -353,24 +347,24 @@
       (is (not success?)))
 
     (let [[resp success?] (test-query-chan (r/db-list) conn)]
-      (is (some #{test-db} (first resp)))
+      (is (some #{test-db} resp))
       (is success?))
 
     (let [[resp success?] (test-query-chan (-> (r/table test-table) (r/insert [{:name "Charizard"} {:name "Squirtle"}])) conn)]
-      (is (= 2 (:inserted (first resp))))
+      (is (= 2 (:inserted resp)))
       (is success?))
 
     (let [[resp success?] (test-query-chan (-> (r/table test-table) (r/order-by :name)) conn)]
-      (is (= "Charizard" (:name (first (first resp)))))
+      (is (= "Charizard" (:name (first resp))))
       (is success?))))
 
 (deftest close-chan
   (with-open [conn (r/connect :db test-db)]
     (let [{:keys [waiting]} conn
-          {:keys [control-chan token]} (r/run-chan (-> (r/db test-db) (r/table test-table) (r/changes)) conn (async/chan 10))]
+          {:keys [control-in-chan token]} (r/run-chan (-> (r/db test-db) (r/table test-table) (r/changes)) conn (async/chan 10))]
       (is (not (contains? waiting token)))
       (is (contains? (:waiting @conn) token))
-      (async/put! control-chan :stop)
+      (async/put! control-in-chan :stop)
       (Thread/sleep 200) ;; TODO: need a better way to do it than this, wait on control chan?
       (is (not (contains? (:waiting @conn) token))))))
 
