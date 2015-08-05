@@ -358,6 +358,14 @@
       (is (= "Charizard" (:name (first resp))))
       (is success?))))
 
+(deftest stress-test-chan
+  (with-open [conn (r/connect :db test-db)]
+    (r/run (-> (r/table test-table) (r/insert {:name "Squirtle"})) conn)
+    (let [queries (repeatedly 100 #(r/run-chan (r/table test-table) conn (async/chan 1)))]
+      (is (= 100 (count (into []
+                          (comp (map :result-chan) (map async/<!!) (filter identity))
+                          queries)))))))
+
 (deftest close-chan
   (with-open [conn (r/connect :db test-db)]
     (let [{:keys [waiting]} conn
