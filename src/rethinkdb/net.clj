@@ -1,6 +1,7 @@
 (ns rethinkdb.net
   (:require [clojure.data.json :as json]
             [clojure.core.async :as async]
+            [clojure.tools.logging :as log]
             [rethinkdb.query-builder :refer [parse-query]]
             [rethinkdb.types :as types]
             [rethinkdb.response :refer [parse-response]]
@@ -63,13 +64,16 @@
         recv-loop (async/go-loop []
                     (when (try
                             (let [resp (read-response* in)]
+                              (log/trace "Received raw response %s" resp)
                               (async/>! recv-chan resp))
                             (catch java.net.SocketException e
+                              (log/error e "Error while receiving response, closing recv-loop.")
                               false))
                       (recur)))
         ;; Send loop
         send-loop (async/go-loop []
                     (when-let [query (async/<! send-chan)]
+                      (log/trace "Sending raw query %s")
                       (write-query out query)
                       (recur)))]
     ;; Return as map to merge into connection
@@ -105,7 +109,7 @@
                 (concat query [{:db [(types/tt->int :DB) [db]]}])
                 query)
         json (json/write-str query)
-        {type :t resp :r} (send-query* conn token json)
+        {type :t resp :r :as json-resp} (send-query* conn token json)
         resp (parse-response resp)]
     (condp get type
       #{1} (first resp) ;; Success Atom, Query returned a single RQL datatype
@@ -117,13 +121,18 @@
                (do
                  (swap! (:conn conn) update-in [:waiting] #(conj % token))
                  (Cursor. conn token resp)))
-      (throw (Exception. (str (first resp)))))))
+      (let [ex (ex-info (str (first resp)) json-resp)]
+        (log/error ex)
+        (throw ex)))))
 
 (defn send-start-query [conn token query]
+  (log/debugf "Sending start query with token %d, query: %s" token query)
   (send-query conn token (parse-query :START query)))
 
 (defn send-continue-query [conn token]
+  (log/debugf "Sending continue query with token %d" token)
   (send-query conn token (parse-query :CONTINUE)))
 
 (defn send-stop-query [conn token]
+  (log/debugf "Sending stop query with token %d" token)
   (send-query conn token (parse-query :STOP)))
