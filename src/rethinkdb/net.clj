@@ -67,7 +67,6 @@
                               (log/trace "Received raw response %s" resp)
                               (async/>! recv-chan resp))
                             (catch java.net.SocketException e
-                              (log/error e "Error while receiving response, closing recv-loop.")
                               false))
                       (recur)))
         ;; Send loop
