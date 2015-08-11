@@ -41,7 +41,7 @@
       (if chanset
         (async/>!! (:control-in-chan chanset) :stop))
         (send-stop-query conn token))
-    (Thread/sleep 500) ;; Gross
+    (Thread/sleep 500) ;; FIXME: Gross
     #_(doseq [[token chanset] waiting
             :when (some? chanset)] ;; TODO, take first cab off rank, not process tokens in serial.
       (async/alt!!
