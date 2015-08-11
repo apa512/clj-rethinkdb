@@ -160,7 +160,7 @@
         _ (add-to-waiting conn token chan-set)
         clean-up (fn [close-type]
                    (async/>!! control-out-chan close-type)
-                   (utils/close-chans [result-chan error-chan control-in-chan])
+                   (utils/close-chans [result-chan error-chan control-in-chan]) ;; TODO: close control-out-chan too?
                    (remove-from-waiting conn token))]
     (async/go-loop [payload payload]
       (async/sub pub token pub-resp-chan) ;; Subscribe to connection publication channel for our query token
