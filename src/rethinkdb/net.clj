@@ -170,7 +170,7 @@
 
         control-in-chan
         ([ctrl-value]
-          (do ;; Can't close channel, see http://dev.clojure.org/jira/browse/ASYNC-135, need another way to express this pattern
+          (do ;; Can't close channel, as we'll always alt! onto the closed channel. Need another way to express this pattern.
             #_(async/close! control-in-chan) ;; Shut the door on the way out, don't want to send a STOP query twice.
             (recur (qb/prepare-query :STOP))))
 
@@ -188,7 +188,7 @@
               (1 2) (do (async/<! (async/onto-chan result-chan parsed-resp true)) ;; Need to wait for all values to go onto chan before closing
                         (clean-up :closed))
               ;; 3 is a partial sequence.
-              3 (do (async/onto-chan result-chan parsed-resp false)
+              3 (do (async/<! (async/onto-chan result-chan parsed-resp false)) ;; Need to wait for all values to go onto chan before recurring to preserve backpressure
                     ;; Recur with a continue query, same token will be used.
                     (recur (qb/prepare-query :CONTINUE)))
               ;; else an error occurred
