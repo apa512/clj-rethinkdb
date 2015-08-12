@@ -271,20 +271,20 @@
   [sel func]
   (term :CONCAT_MAP [sel func]))
 
-#?(:clj (defn order-by
-          "Sort the sequence by document values of the given key(s). To specify the
-          ordering, wrap the attribute with either ```r.asc``` or ```r.desc``` (defaults to
-          ascending).
+(defn order-by
+  "Sort the sequence by document values of the given key(s). To specify the
+  ordering, wrap the attribute with either ```r.asc``` or ```r.desc``` (defaults to
+  ascending).
 
-          Sorting without an index requires the server to hold the sequence in memory,
-          and is limited to 100,000 documents (or the setting of the ```array-limit``` option
-          for run). Sorting with an index can be done on arbitrarily large tables, or
-          after a between command using the same index."
-          [sel field-or-ordering]
-          (if-let [index (clojure.core/or (clojure.core/get field-or-ordering "index")
-                                          (clojure.core/get field-or-ordering :index))]
-            (term :ORDER_BY [sel] {:index (qb/parse-term index)})
-            (term :ORDER_BY [sel field-or-ordering]))))
+  Sorting without an index requires the server to hold the sequence in memory,
+  and is limited to 100,000 documents (or the setting of the ```array-limit``` option
+  for run). Sorting with an index can be done on arbitrarily large tables, or
+  after a between command using the same index."
+  [sel field-or-ordering]
+  (if-let [index (clojure.core/or (clojure.core/get field-or-ordering "index")
+                                  (clojure.core/get field-or-ordering :index))]
+    (term :ORDER_BY [sel] {:index (qb/parse-term index)})
+    (term :ORDER_BY [sel field-or-ordering])))
 
 (defn skip
   "Skip a number of elements from the head of the sequence."
