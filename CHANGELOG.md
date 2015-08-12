@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. This change
 ## [Unreleased]
 ### Added
 - Added clojure.tools.logging support. [#72](https://github.com/apa512/clj-rethinkdb/pull/72)
+- Added `fn` macro to ClojureScript `rethinkdb.query` namespace. [#64](https://github.com/apa512/clj-rethinkdb/issues/64)
 
 ### Changed
 - Update dependency to Clojure 1.7. [#59](https://github.com/apa512/clj-rethinkdb/pull/59)

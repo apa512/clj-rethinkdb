@@ -12,6 +12,7 @@
   (:refer-clojure :exclude [count filter map get not mod replace merge
                             reduce make-array distinct keys nth min max
                             or and do fn sync time update])
+  #?(:cljs (:use-macros [rethinkdb.query :only [fn]]))
   (:require [clojure.walk :as walk]
             [rethinkdb.query-builder :as qb :refer [term]]
     #?(:clj
