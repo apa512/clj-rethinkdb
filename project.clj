@@ -16,11 +16,5 @@
                  [com.google.protobuf/protobuf-java "2.6.1"]
                  [clj-time "0.10.0"]]
   :profiles {:dev {:dependencies [[ch.qos.logback/logback-classic "1.1.3"]]}}
-  :release-tasks [["vcs" "assert-committed"]
-                  ["change" "version" "leiningen.release/bump-version" "release"]
-                  ["vcs" "commit"]
-                  ["vcs" "tag"]
-                  ["deploy" "clojars"]
-                  ["change" "version" "leiningen.release/bump-version"]
-                  ["vcs" "commit"]
-                  ["vcs" "push"]])
+  :deploy-repositories [["releases" :clojars]
+                        ["snapshots" :clojars]])
