@@ -15,10 +15,9 @@
   #?(:cljs (:use-macros [rethinkdb.query :only [fn]]))
   (:require [clojure.walk :as walk]
             [rethinkdb.query-builder :as qb :refer [term]]
-    #?(:clj
-            [rethinkdb.net :as net])
-    #?(:clj
-            [rethinkdb.core :as core]))
+    #?@(:clj [
+            [rethinkdb.net :as net]
+            [rethinkdb.core :as core]]))
   #?(:clj
      (:import [rethinkdb.core Connection])))
 
