@@ -1,9 +1,8 @@
 (ns rethinkdb.query-builder
   (:require [rethinkdb.utils :refer [snake-case]]
-    #?(:clj
-            [rethinkdb.types :refer [tt->int qt->int]])
-    #?(:clj
-            [clj-time.coerce :as c])))
+    #?@(:clj [
+            [rethinkdb.types :refer [tt->int qt->int]]
+            [clj-time.coerce :as c]])))
 
 (defn term [term args & [optargs]]
   {::term term
@@ -25,8 +24,8 @@
            (::term arg) :query
            (or (sequential? arg) (seq? arg)) :sequential
            (map? arg) :map
-           #?@(:clj ((instance? org.joda.time.DateTime arg) :time ;; TODO: Handle these in ClojureScript
-                      (instance? java.util.UUID arg) :uuid)))))
+           (= (type arg) #?(:clj org.joda.time.DateTime :cljs js/Date)) :time
+           (= (type arg) #?(:clj java.util.UUID :cljs UUID)) :uuid)))
 
      (defmethod parse-arg :query [arg]
        (parse-term arg))
