@@ -4,15 +4,16 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 ### Added
-- Added clojure.tools.logging support. [#72](https://github.com/apa512/clj-rethinkdb/pull/72)
-- Added `fn` macro to ClojureScript `rethinkdb.query` namespace. [#64](https://github.com/apa512/clj-rethinkdb/issues/64)
-- Added `rethinkdb.query/order-by` function to ClojureScript. [#65](https://github.com/apa512/clj-rethinkdb/issues/65)
+- clojure.tools.logging support. [#72](https://github.com/apa512/clj-rethinkdb/pull/72)
+- `fn` macro to ClojureScript `rethinkdb.query` namespace. [#64](https://github.com/apa512/clj-rethinkdb/issues/64)
+- `rethinkdb.query/order-by` function to ClojureScript. [#65](https://github.com/apa512/clj-rethinkdb/issues/65)
 
 ### Changed
 - Update dependency to Clojure 1.7. [#59](https://github.com/apa512/clj-rethinkdb/pull/59)
 - The query parts of this library have been converted to use Clojure 1.7 Reader Conditionals. This means that you can generate queries in ClojureScript and run them on the server (be very careful with this!). [#59](https://github.com/apa512/clj-rethinkdb/pull/59)
-- Updated protobuf support to RethinkDB 2.1.0.
-- Updated docstring for `rethinkdb.query/without`.
+- Update protobuf support to RethinkDB 2.1.0.
+- Update docstring for `rethinkdb.query/without`.
+- Update arity and docstring for `rethinkdb.query/merge` to support merging any number of objects.
 
 ## [0.10.1] - 2015-07-08
 ### Added
