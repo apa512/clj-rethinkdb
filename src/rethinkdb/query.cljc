@@ -408,10 +408,13 @@
   (term :PLUCK [obj-or-sq x]))
 
 (defn without
-  "The opposite of pluck; takes an object or a sequence of objects, and returns
-  them with the specified paths removed."
-  [obj-or-sq fields]
-  (term :WITHOUT (concat [obj-or-sq] fields)))
+  "The opposite of pluck; takes an object or a sequence of objects, and
+  a sequence of selectors, and returns them with the specified paths removed.
+  Selectors can either be a single field, or a nested path to a field.
+  See http://rethinkdb.com/api/javascript/without/ for selector examples."
+  ;; TODO: provide docs for selectors.
+  [obj-or-sq selectors]
+  (term :WITHOUT (concat [obj-or-sq] selectors)))
 
 (defn merge
   "Merge two objects together to construct a new object with properties from
