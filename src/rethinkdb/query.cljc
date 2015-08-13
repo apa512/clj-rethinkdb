@@ -417,11 +417,11 @@
   (term :WITHOUT (concat [obj-or-sq] selectors)))
 
 (defn merge
-  "Merge two objects together to construct a new object with properties from
-  both. Gives preference to attributes from the second object when there is a
-  conflict."
-  [obj-or-sq1 obj-or-sq2]
-  (term :MERGE [obj-or-sq1 obj-or-sq2]))
+  "Merge one or more objects together to construct a new object with properties from all.
+  If a key occurs in more than one ojbect, the mapping from the latter (left-to-right)
+  will be the mapping in the result."
+  [& objs]
+  (term :MERGE objs))
 
 (defn append
   "Append a value to an array."

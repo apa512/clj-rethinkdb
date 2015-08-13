@@ -93,6 +93,14 @@
                                          (r/get-field row :national_no))))
                             conn))))
 
+    (testing "merging values"
+      (are [term result] (= (r/run term conn) result)
+        (r/merge {:a {:b :c}}) {:a {:b "c"}}
+        (r/merge {:a {:b :c}} {:a {:f :g}}) {:a {:b "c" :f "g"}}
+        (r/merge {:a {:b :c}} {:a {:b :x}}) {:a {:b "x"}}
+        (r/merge {:a 1} {:b 2} {:c 3}) {:a 1 :b 2 :c 3}))
+    ;; TODO: test with the other types that merge can take
+
     (testing "selecting data"
       (is (= (set (r/run (r/table test-table) conn)) (set pokemons)))
       (is (= (r/run (-> (r/table test-table) (r/get 25)) conn) (first pokemons)))
