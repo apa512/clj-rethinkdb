@@ -27,7 +27,7 @@ All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, 
       (r/run conn))
        
   (comment "This is equivalent to the previous query; db on connection is implicitly
-  used if no db is provided.
+  used if no db is provided."
   (-> (r/table-create "authors")
       (r/run conn)))
       
