@@ -607,6 +607,23 @@
   [n1 n2 & [optargs]]
   (term :RANDOM [n1 n2] optargs))
 
+(defn round
+  "Rounds the given value to the nearest whole integer.
+  Less than n.5 rounds down, n.5 and greater rounds up."
+  [n]
+  (term :ROUND [n]))
+
+(defn ceil
+  "Rounds the given value up, returning the smallest integer value
+  greater than or equal to the given value (the value’s ceiling)."
+  [n]
+  (term :CEIL [n]))
+
+(defn floor
+  "Rounds the given value down, returning the largest integer value less than or equal to the given value (the value’s floor)."
+  [n]
+  (term :FLOOR [n]))
+
 ;;; Dates and times
 
 (defn now

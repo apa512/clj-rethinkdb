@@ -12,15 +12,15 @@
   (map (fn [[k v]] {k v}) m))
 
 (def pokemons [{:national_no 25
-                :name "Pikachu"
-                :type ["Electric"]}
+                :name        "Pikachu"
+                :type        ["Electric"]}
                {:national_no 81
-                :name "Magnemite"
-                :type ["Electric" "Steel"]}])
+                :name        "Magnemite"
+                :type        ["Electric" "Steel"]}])
 
 (def bulbasaur {:national_no 1
-                :name "Bulbasaur"
-                :type ["Grass" "Poison"]})
+                :name        "Bulbasaur"
+                :type        ["Grass" "Poison"]})
 
 (defn ensure-table
   "Ensures that an empty table \"table-name\" exists"
@@ -220,11 +220,36 @@
 
 (deftest math-and-logic
   (with-open [conn (r/connect)]
-    (is (< (r/run (r/random 0 2) conn) 2))
+    (is (<= 0 (r/run (r/random 0 2) conn) 2))
     (are [term result] (= (r/run term conn) result)
       (r/add 2 2 2) 6
       (r/add "Hello " "from " "Tokyo") "Hello from Tokyo"
-      (r/add [1 2] [3 4]) [1 2 3 4])))
+      (r/add [1 2] [3 4]) [1 2 3 4])
+
+    (are [args lt-le-eq-ne-ge-gt] (= (r/run (r/make-array
+                                              (apply r/lt args)
+                                              (apply r/le args)
+                                              (apply r/eq args)
+                                              (apply r/ne args)
+                                              (apply r/ge args)
+                                              (apply r/gt args)) conn)
+                                     lt-le-eq-ne-ge-gt)
+      [1 1] [false true true false true false]
+      [0 1] [true true false true false false]
+      [0 1 2 3] [true true false true false false]
+      [0 1 1 2] [false true false true false false]
+      [5 4 3] [false false false true true true]
+      [5 4 4 3] [false false false true true false])
+
+    (are [n floor-round-ceil] (= (r/run (r/make-array (r/floor n) (r/round n) (r/ceil n)) conn) floor-round-ceil)
+      0 [0 0 0]
+      0.1 [0 0 1]
+      1.499999999 [1 1 2]
+      1.5 [1 2 2]
+      1.5M [1 2 2]
+      3.99999999 [3 4 4]
+      -5.1 [-6 -5 -5]
+      1/2 [0 1 1])))
 
 (deftest geospatial-commands
   (with-open [conn (r/connect)]
