@@ -418,7 +418,7 @@
 
 (defn merge
   "Merge one or more objects together to construct a new object with properties from all.
-  If a key occurs in more than one ojbect, the mapping from the latter (left-to-right)
+  If a key occurs in more than one object, the mapping from the latter (left-to-right)
   will be the mapping in the result."
   [& objs]
   (term :MERGE objs))
