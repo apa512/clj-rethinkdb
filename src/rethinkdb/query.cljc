@@ -84,9 +84,13 @@
    (term :TABLE_LIST [db])))
 
 (defn index-create
-  "Create a new secondary index on a table."
-  [table index-name func & [optargs]]
-  (term :INDEX_CREATE [table index-name func] optargs))
+  "Create a new secondary index on a table. To create a simple index based on the
+  value of a single field, pass the field as the index-name. If you need to
+  pass optargs without a function, then set func to nil."
+  [table index-name & [func optargs]]
+  (if (some? func)
+    (term :INDEX_CREATE [table index-name func] optargs)
+    (term :INDEX_CREATE [table index-name] optargs)))
 
 (defn index-drop
   "Delete a previously created secondary index."
@@ -634,13 +638,13 @@
   (term :NOW []))
 
 (defn time
-   "Create a time object for a specific time."
-        [& date-time-parts]
-   (let [args (concat date-time-parts
-                      (if (string? (last date-time-parts))
-                        []
-                        ["+00:00"]))]
-     (term :TIME args)))
+  "Create a time object for a specific time."
+  [& date-time-parts]
+  (let [args (concat date-time-parts
+                     (if (string? (last date-time-parts))
+                       []
+                       ["+00:00"]))]
+    (term :TIME args)))
 
 (defn epoch-time
   "Create a time object based on seconds since epoch. The first argument is a

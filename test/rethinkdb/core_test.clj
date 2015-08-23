@@ -63,13 +63,14 @@
           (r/insert {:id (java.util.UUID/randomUUID)})) {:inserted 1}
       (r/table-drop (r/db test-db) :tmp) {:tables_dropped 1}
       (r/table-drop :tmp2) {:tables_dropped 1}
+      (-> (r/table test-table) (r/index-create :name)) {:created 1}
       (-> (r/table test-table) (r/index-create :tmp (r/fn [row] 1))) {:created 1}
       (-> (r/table test-table)
           (r/index-create :type (r/fn [row]
                                   (r/get-field row :type)))) {:created 1}
       (-> (r/table test-table) (r/index-rename :tmp :xxx)) {:renamed 1}
       (-> (r/table test-table) (r/index-drop :xxx)) {:dropped 1})
-    (is (= ["type"] (r/run (-> (r/table test-table) r/index-list) conn)))))
+    (is (= ["name" "type"] (r/run (-> (r/table test-table) r/index-list) conn)))))
 
 (deftest manipulating-data
   (with-open [conn (r/connect :db test-db)]
