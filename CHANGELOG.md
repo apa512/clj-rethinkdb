@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file. This change
 - Update protobuf support to RethinkDB 2.1.0.
 - Update docstring for `rethinkdb.query/without`.
 - Update arity and docstring for `rethinkdb.query/merge` to support merging any number of objects.
+- Add new arity to `rethinkdb.query/index-create` to allow creating simple indexes from field names. [#86](https://github.com/apa512/clj-rethinkdb/pull/86)
 
 ## [0.10.1] - 2015-07-08
 ### Added
