@@ -1,7 +1,7 @@
 (ns rethinkdb.query-builder
   (:require [rethinkdb.utils :refer [snake-case]]
-    #?@(:clj [
             [rethinkdb.types :refer [tt->int qt->int]]
+    #?@(:clj [
             [clj-time.coerce :as c]])))
 
 (defn term [term args & [optargs]]
