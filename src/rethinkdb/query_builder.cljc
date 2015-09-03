@@ -77,17 +77,17 @@
         %)
       query)))
 
-(defn prepare-query
-  "If only type is provided, then the query is assumed to be a
-  :STOP or :CONTINUE query. global-optargs may be nil."
-  ([type]
-   (->> (parse-query type)
-        (json/write-str)))
-  ([type term]
-   (prepare-query type term nil))
-  ([type term global-optargs]
-   (as-> term $
-         (replace-vars $)
-         (parse-query type $)
-         (concat $ global-optargs)
-         (json/write-str $))))
+#?(:clj (defn prepare-query
+          "If only type is provided, then the query is assumed to be a
+          :STOP or :CONTINUE query. global-optargs may be nil."
+          ([type]
+           (->> (parse-query type)
+                (json/write-str)))
+          ([type term]
+           (prepare-query type term nil))
+          ([type term global-optargs]
+           (as-> term $
+                 (replace-vars $)
+                 (parse-query type $)
+                 (concat $ global-optargs)
+                 (json/write-str $)))))
