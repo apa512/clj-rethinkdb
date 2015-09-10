@@ -192,6 +192,7 @@
                     ;; Recur with a continue query, same token will be used.
                     (recur (qb/prepare-query :CONTINUE)))
               ;; else an error occurred
-              (do (async/>! error-chan parsed-resp)
-                  (clean-up :error)))))))
+              (let [ex (ex-info (str (first resp)) msg)]
+                (async/>! error-chan ex)
+                (clean-up :error)))))))
     chan-set))
