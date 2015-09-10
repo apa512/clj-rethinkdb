@@ -372,7 +372,7 @@
   (with-open [conn (r/connect :db test-db)]
 
     (let [[resp success?] (test-query-chan (r/db-drop "cljrethinkdb_nonexistentdb") conn)]
-      (is (= ["Database `cljrethinkdb_nonexistentdb` does not exist."] resp))
+      (is (= "Database `cljrethinkdb_nonexistentdb` does not exist." (.getMessage resp)))
       (is (not success?)))
 
     (let [[resp success?] (test-query-chan (r/db-list) conn)]
