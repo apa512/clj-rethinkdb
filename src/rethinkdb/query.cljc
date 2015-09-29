@@ -12,13 +12,11 @@
   (:refer-clojure :exclude [count filter map get not mod replace merge
                             reduce make-array distinct keys nth min max
                             or and do fn sync time update uuid])
-  #?(:cljs (:use-macros [rethinkdb.query :only [fn]]))
   (:require [clojure.walk :as walk]
             [rethinkdb.query-builder :as qb :refer [term]]
     #?@(:clj [
             [rethinkdb.net :as net]
-            [rethinkdb.core :as core]
-            [clojure.core.async :as async]]))
+            [rethinkdb.core :as core]]))
   #?(:clj
      (:import [rethinkdb.core Connection])))
 
