@@ -21,11 +21,23 @@
   #?(:clj
      (:import [rethinkdb.core Connection])))
 
+(defn func
+  "Unsweetened alternative to fn. The fn macro has the benefit of
+  providing a syntax that mirrors the native clojure fn, but
+  oftentimes it's necessary to have the added versatility of a
+  definition that accepts pure data.
+
+  Args is a vector of keywords. Terms is a term map.
+  e.g. (func [::my-arg] terms)"
+  [args terms]
+  (term :FUNC [args terms]))
+
 #?(:clj (defmacro fn [args & [body]]
-          (let [new-args (into [] (clojure.core/map #(hash-map :temp-var (keyword %)) args))
+          (let [new-args (into [] (clojure.core/map
+                                   #(hash-map :temp-var (keyword %)) args))
                 new-replacements (zipmap args new-args)
                 new-terms (walk/postwalk-replace new-replacements body)]
-            (term :FUNC [new-args new-terms]))))
+            (func new-args new-terms))))
 
 ;;; Import connect
 

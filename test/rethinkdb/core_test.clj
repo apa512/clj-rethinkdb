@@ -303,6 +303,25 @@
                                                 x)))})))
                   conn)))))
 
+(deftest unsweetened-fns
+  (with-open [conn (r/connect)]
+    (is (= [{:a {:foo "bar"}
+             :b [1 2]}]
+           (r/run (-> [{:foo "bar"}]
+                      (r/map (r/func [::x]
+                               {:a ::x
+                                :b (-> [1 2]
+                                       (r/map (r/func [::x] ::x)))})))
+                  conn)))
+    (is (= [{:a {:foo "bar"}
+             :b [{:foo "bar"} {:foo "bar"}]}]
+           (r/run (-> [{:foo "bar"}]
+                      (r/map (r/func [::x]
+                               {:a ::x
+                                :b (-> [1 2]
+                                       (r/map (r/func [::y] ::x)))})))
+                  conn)))))
+
 (deftest filter-with-default
   (with-open [conn (r/connect)]
     (let [twin-peaks [{:name "Cole", :job "Regional Bureau Chief"}
