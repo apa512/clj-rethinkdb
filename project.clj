@@ -16,6 +16,8 @@
                  [rethinkdb-protobuf "2.1.0"]
                  [com.google.protobuf/protobuf-java "2.6.1"]
                  [clj-time "0.10.0"]]
-  :profiles {:dev {:dependencies [[ch.qos.logback/logback-classic "1.1.3"]]}}
+  :profiles {:dev {:resource-paths ["test-resources"]
+                   :dependencies [[ch.qos.logback/logback-classic "1.1.3"]]}}
+  :jvm-opts ["-Xmx512m"]
   :deploy-repositories [["releases" :clojars]
                         ["snapshots" :clojars]])
