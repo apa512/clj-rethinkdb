@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file. This change
 - clojure.tools.logging support. [#72](https://github.com/apa512/clj-rethinkdb/pull/72)
 - `fn` macro to ClojureScript `rethinkdb.query` namespace. [#64](https://github.com/apa512/clj-rethinkdb/issues/64)
 - `rethinkdb.query/order-by` function to ClojureScript. [#65](https://github.com/apa512/clj-rethinkdb/issues/65)
+- `rethinkdb.query/default` function, for supplying a default value/function for missing values.
 
 ### Changed
 - Update dependency to Clojure 1.7. [#59](https://github.com/apa512/clj-rethinkdb/pull/59)

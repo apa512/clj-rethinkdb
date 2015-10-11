@@ -113,7 +113,14 @@
       (is (= (r/run (-> (r/db test-db)
                         (r/table test-table)
                         (r/filter (r/fn [row]
-                                    (r/eq (r/get-field row :name) "Pikachu")))) conn) [(first pokemons)])))))
+                                    (r/eq (r/get-field row :name) "Pikachu")))) conn) [(first pokemons)]))
+      (is (= 1 (r/run (r/get-field {:a 1} :a) conn))))
+
+    (testing "default values"
+      (is (= "not found" (r/run (-> (r/get-field {:a 1} :b) (r/default "not found")) conn)))
+      (is (= "not found" (r/run (-> (r/max [nil]) (r/default "not found")) conn)))
+      (is (= "Cannot take the average of an empty stream.  (If you passed `avg` a field name, it may be that no elements of the stream had that field.)"
+             (r/run (-> (r/avg [nil]) (r/default (r/fn [row] row))) conn))))))
 
 (deftest db-in-connection
   (testing "run a query with an implicit database"

@@ -781,6 +781,15 @@
   ([] (term :ERROR []))
   ([s] (term :ERROR [s])))
 
+(defn default
+  "Provide a default value in case of non-existence errors. default evaluates its
+  first argument (the value it’s chained to). If that argument returns null or a
+  non-existence error is thrown in evaluation, then default returns its second argument.
+  The second argument is usually a default value, but it can be a RethinkDB function that
+  returns a value."
+  [any default]
+  (term :DEFAULT [any default]))
+
 (defn coerce-to
   "Convert a value of one type into another."
   [x s]
