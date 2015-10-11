@@ -120,7 +120,7 @@
                (do
                  (swap! (:conn conn) update-in [:waiting] #(conj % token))
                  (Cursor. conn token resp)))
-      (let [ex (ex-info (str (first resp)) json-resp)]
+      (let [ex (ex-info (str "RethinkDB server: " (first resp)) json-resp)]
         (log/error ex)
         (throw ex)))))
 

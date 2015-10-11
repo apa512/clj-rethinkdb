@@ -3,7 +3,8 @@
             [clojure.test :refer :all]
             [rethinkdb.query :as r]
             [rethinkdb.core :as core]
-            [rethinkdb.net :as net]))
+            [rethinkdb.net :as net])
+  (:import (clojure.lang ExceptionInfo)))
 
 (def test-db "cljrethinkdb_test")
 (def test-table :pokedex)
@@ -359,12 +360,22 @@
                         (r/get-field :name))
                     conn))))))
 
+(deftest throwing-server-exceptions
+  (with-open [conn (r/connect :db test-db)]
+    (is (thrown? ExceptionInfo (r/run (r/table :nope) conn)))
+    (try (r/run (r/table :nope) conn)
+         (catch ExceptionInfo ex
+           (let [{:keys [r]} (ex-data ex)
+                 msg (.getMessage ex)]
+             (is (= r ["Table `cljrethinkdb_test.nope` does not exist."]))
+             (is (= "RethinkDB server: Table `cljrethinkdb_test.nope` does not exist." msg)))))))
+
 (deftest query-conn
   (is (do (r/connect)
           true))
-  (is (thrown? clojure.lang.ExceptionInfo (r/connect :port 1)))
+  (is (thrown? ExceptionInfo (r/connect :port 1)))
   (with-redefs-fn {#'core/send-version (fn [out] (net/send-int out 168696 4))}
-    #(is (thrown? clojure.lang.ExceptionInfo (r/connect)))))
+    #(is (thrown? ExceptionInfo (r/connect)))))
 
 (use-fixtures :each setup-each)
 (use-fixtures :once setup-once)
