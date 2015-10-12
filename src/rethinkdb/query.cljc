@@ -650,13 +650,25 @@
   (term :NOW []))
 
 (defn time
-  "Create a time object for a specific time."
-  [& date-time-parts]
-  (let [args (concat date-time-parts
-                     (if (string? (last date-time-parts))
-                       []
-                       ["+00:00"]))]
-    (term :TIME args)))
+  "Create a time object for a specific time.
+
+  - year is an integer between 1400 and 9999.
+  - month is an integer between 1 and 12.
+  - day is an integer between 1 and 31.
+  - hour is an integer.
+  - minutes is an integer.
+  - seconds is a double. Its value will be rounded to three decimal places (millisecond-precision).
+  timezone can be 'Z' (for UTC) or a string with the format ±[hh]:[mm].
+
+  If tz is not supplied then UTC is used."
+  ([year month day]
+    (time year month day "Z"))
+  ([year month day tz]
+    (term :TIME [year month day tz]))
+  ([year month day hour minute second]
+    (time year month day hour minute second "Z"))
+  ([year month day hour minute second tz]
+    (term :TIME [year month day hour minute second tz])))
 
 (defn epoch-time
   "Create a time object based on seconds since epoch. The first argument is a

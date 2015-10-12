@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file. This change
 - Update docstring for `rethinkdb.query/without`.
 - Update arity and docstring for `rethinkdb.query/merge` to support merging any number of objects.
 - Add new arity to `rethinkdb.query/index-create` to allow creating simple indexes from field names. [#86](https://github.com/apa512/clj-rethinkdb/pull/86)
+- Update `rethinkdb.query/time` arity to only allow 3, 4, 6, and 7 arguments. Also update docstring to make usage clearer. This was already enforced on the server, but will now be enforced by the client library too. [#87](https://github.com/apa512/clj-rethinkdb/issues/87)
 
 ## [0.10.1] - 2015-07-08
 ### Added
