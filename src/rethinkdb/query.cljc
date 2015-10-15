@@ -44,12 +44,13 @@
 
 #?(:clj (def ^Connection connect
           "Creates a database connection to a RethinkDB host
-          [& {:keys [host port token auth-key db]
+          [& {:keys [host port token auth-key db close-timeout-ms]
                :or {host \"127.0.0.1\"
                     port 28015
                     token 0
                     auth-key \"\"
-                    db nil}}" core/connect))
+                    db nil
+                    close-timeout-ms 5000}}" core/connect))
 
 ;;; Cursors
 
@@ -77,8 +78,10 @@
 
 (defn table-create
   "Create a table."
-  [db table-name & [optargs]]
-  (term :TABLE_CREATE [db table-name] optargs))
+  ([table-name]
+    (term :TABLE_CREATE [table-name]))
+  ([db table-name & [optargs]]
+   (term :TABLE_CREATE [db table-name] optargs)))
 
 (defn table-drop
   "Drop a table. If no db is provided then precedence follows the
@@ -994,4 +997,4 @@
           Results will be put on result-chan, errors will be put on error-chan, queries can be stopped
           by putting :stop on control-in-chan"
           [query conn result-chan]
-          (net/run-query-chan query conn result-chan)))
+          (net/send-query-chan query conn result-chan)))

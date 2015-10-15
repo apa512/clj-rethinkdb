@@ -7,7 +7,8 @@
             [rethinkdb.response :refer [parse-response]]
             [rethinkdb.utils :as utils :refer [str->bytes int->bytes bytes->int pp-bytes]]
             [rethinkdb.query-builder :as qb])
-  (:import [java.io Closeable InputStream OutputStream DataInputStream]))
+  (:import [java.io Closeable InputStream OutputStream DataInputStream]
+           (java.util.concurrent TimeoutException)))
 
 (declare send-continue-query send-stop-query)
 
@@ -64,7 +65,7 @@
         recv-loop (async/go-loop []
                     (when (try
                             (let [resp (read-response* in)]
-                              (log/trace "Received raw response %s" resp)
+                              (log/tracef "Received raw response %s" resp)
                               (async/>! recv-chan resp))
                             (catch java.net.SocketException e
                               false))
@@ -72,7 +73,7 @@
         ;; Send loop
         send-loop (async/go-loop []
                     (when-let [query (async/<! send-chan)]
-                      (log/trace "Sending raw query %s")
+                      (log/tracef "Sending raw query %s" query)
                       (write-query out query)
                       (recur)))]
     ;; Return as map to merge into connection
@@ -87,14 +88,18 @@
     (async/unsub-all pub)
     ;; Close send channel and wait for loop to complete
     (async/close! send-chan)
-    (async/<!! send-loop)
+    (async/<!! send-loop)                                   ;; TODO: should this be drain?
     ;; Close recv channel
     (async/close! recv-chan)))
 
-(defn add-to-waiting [conn token chan-set]
-  (swap! (:conn conn) assoc-in [:waiting token] chan-set))
+(defn add-to-waiting
+  ([conn token]
+    (add-to-waiting conn token nil))
+  ([conn token chan-set]
+   (swap! (:conn conn) assoc-in [:waiting token] chan-set)))
 
 (defn remove-from-waiting [conn token]
+  (log/tracef "Removing query %d" token)
   (swap! (:conn conn) utils/dissoc-in [:waiting token]))
 
 ;; Sync
@@ -105,7 +110,7 @@
     (async/sub pub token query-resp-chan)
     (async/>!! send-chan [token query])
     (let [[recvd-token json] (async/<!! query-resp-chan)]
-      (assert (= recvd-token token) "Must not receive response with different token")
+      (assert (= recvd-token token) (format "Must not receive response with different token %d != %d" recvd-token token))
       (async/unsub pub token query-resp-chan)
       (json/read-str json :key-fn keyword))))
 
@@ -126,7 +131,7 @@
       #{3 5} (if (get (:waiting @conn) token) ;; Success Partial, Query returned a partial sequence of RQL datatypes.
                (lazy-seq (concat resp (send-continue-query conn token)))
                (do
-                 (add-to-waiting conn token nil)
+                 (add-to-waiting conn token)
                  (Cursor. conn token resp)))
       (let [ex (ex-info (str (first resp)) json-resp)]
         (log/error ex)
@@ -146,53 +151,79 @@
 
 ;; Async
 
-(defn run-query-chan [query conn result-chan] ;; TODO: chan set instead of just result-chan?
-  (let [{:keys [db]} @conn
+(defn send-query-chan [query conn out-ch] ;; TODO: chan set instead of just result-chan?
+  (let [{:keys [db close-timeout-ms]} @conn
         token (:token (swap! (:conn conn) update-in [:token] inc))
         global-optargs (when db [{:db [(types/tt->int :DB) [db]]}])
         payload (qb/prepare-query :START query global-optargs)
-        control-in-chan (async/chan 10)
-        control-out-chan (async/chan 10)
-        error-chan (async/chan 10)
-        chan-set {:result-chan result-chan :error-chan error-chan :control-in-chan control-in-chan :control-out-chan control-out-chan :token token}
+        ctrl-in-ch (async/chan 10)
+        ctrl-out-ch (async/chan 10)                         ;; TODO: do we need this?
+        err-ch (async/chan 10)
+        clean-up-fn (fn []
+                      (log/debugf "Cleaning up %d" token)
+                      (utils/close-chans [out-ch err-ch ctrl-out-ch]) ;; TODO: close control-out-chan too?
+                      (remove-from-waiting conn token)
+                      nil)
+        chan-set {:out-ch out-ch :err-ch err-ch :ctrl-in-ch ctrl-in-ch :ctrl-out-ch ctrl-out-ch :token token :clean-up-fn clean-up-fn}
         pub-resp-chan (async/chan) ;; Internal channel for receiving RethinkDB responses for this query's token.
         {:keys [pub send-chan]} @conn
-        _ (add-to-waiting conn token chan-set)
-        clean-up (fn [close-type]
-                   (async/>!! control-out-chan close-type)
-                   (utils/close-chans [result-chan error-chan control-in-chan]) ;; TODO: close control-out-chan too?
-                   (remove-from-waiting conn token))]
+        _ (add-to-waiting conn token chan-set)]
     (async/go-loop [payload payload]
       (async/sub pub token pub-resp-chan) ;; Subscribe to connection publication channel for our query token
       (async/>! send-chan [token payload])
       (async/alt!
         :priority true
 
-        control-in-chan
+        ctrl-in-ch
         ([ctrl-value]
           (do ;; Can't close channel, as we'll always alt! onto the closed channel. Need another way to express this pattern.
-            #_(async/close! control-in-chan) ;; Shut the door on the way out, don't want to send a STOP query twice.
+            #_(async/close! ctrl-in-ch) ;; Shut the door on the way out, don't want to send a STOP query twice.
+            (log/debugf "Closing query %d" token)
             (recur (qb/prepare-query :STOP))))
 
         pub-resp-chan
         ([resp]
           (let [[recvd-token json] resp ;; TODO: use Transducers for this section
                 _ (assert (= recvd-token token)
-                          "Must not receive response for different token") ;;TODO: Is this really necessary with the async/sub?
+                          (format "Must not receive response for different token %d != %d" recvd-token token)) ;;TODO: Is this really necessary with the async/sub?
                 _ (async/unsub pub token pub-resp-chan)
                 {type :t resp :r :as msg} (json/read-str json :key-fn keyword)
                 parsed-resp (parse-response resp)]
+            (log/debugf "Parsed type: %s response: %s" type parsed-resp)
             (case (int type)
-              ;; 1 is a single result, 2 is a result sequence. However they are both wrapped in a vector
-              ;; so onto-chan works correctly for both.
-              (1 2) (do (async/<! (async/onto-chan result-chan parsed-resp true)) ;; Need to wait for all values to go onto chan before closing
-                        (clean-up :closed))
-              ;; 3 is a partial sequence.
-              3 (do (async/<! (async/onto-chan result-chan parsed-resp false)) ;; Need to wait for all values to go onto chan before recurring to preserve backpressure
+              ;; 1 is a single result
+              1 (let [data (first parsed-resp)]
+                  (if (sequential? data)                    ;; Same idea as https://github.com/rethinkdb/rethinkdb/blob/v2.1.5/drivers/javascript/net.coffee#L408-L409
+                    (async/<! (async/onto-chan out-ch data true))
+                    (async/>! out-ch data))
+                  (clean-up-fn))
+              ;; 2 is a result sequence
+              2 (do (async/<! (async/onto-chan out-ch parsed-resp true)) ;; Need to wait for all values to go onto chan before closing
+                    (clean-up-fn))
+              ;; 3 is a partial sequence
+              3 (do (async/<! (async/onto-chan out-ch parsed-resp false)) ;; Need to wait for all values to go onto chan before recurring to preserve backpressure
                     ;; Recur with a continue query, same token will be used.
                     (recur (qb/prepare-query :CONTINUE)))
               ;; else an error occurred
               (let [ex (ex-info (str (first resp)) msg)]
-                (async/>! error-chan ex)
-                (clean-up :error)))))))
-    chan-set))
+                (async/>! err-ch ex)
+                (clean-up-fn)))))))
+    {:out-ch  out-ch
+     :err-ch  err-ch
+     :stop-fn (fn stop-fn
+                ([]
+                 (stop-fn close-timeout-ms))
+                ([timeout-ms]
+                 (async/alt!!
+                   :priority true
+                   (async/go
+                     (async/>! ctrl-in-ch :stop)
+                     (async/<! ctrl-out-ch))
+                   ([v]
+                     nil)
+
+                   (async/timeout timeout-ms)
+                   ([v]
+                     (clean-up-fn)
+                     (throw (TimeoutException.
+                              (format "Timed out after %d ms waiting for RethinkDB to respond to close query request. Query was force closed." timeout-ms)))))))}))
