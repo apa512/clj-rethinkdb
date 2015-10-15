@@ -186,7 +186,7 @@
           (let [[recvd-token json] resp ;; TODO: use Transducers for this section
                 _ (assert (= recvd-token token)
                           (format "Must not receive response for different token %d != %d" recvd-token token)) ;;TODO: Is this really necessary with the async/sub?
-                _ (async/unsub pub token pub-resp-chan)
+                _ (async/unsub-all pub token)
                 {type :t resp :r :as msg} (json/read-str json :key-fn keyword)
                 parsed-resp (parse-response resp)]
             (log/debugf "Parsed type: %s response: %s" type parsed-resp)
