@@ -98,7 +98,7 @@
     (async/>!! ch [token query])
     (let [[recvd-token json] (async/<!! chan)]
       (assert (= recvd-token token) "Must not receive response with different token")
-      (async/unsub pub token chan)
+      (async/unsub-all pub token)
       (json/read-str json :key-fn keyword))))
 
 (defn send-query [conn token query]
