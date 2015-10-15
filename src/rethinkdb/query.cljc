@@ -17,7 +17,8 @@
             [rethinkdb.query-builder :as qb :refer [term]]
     #?@(:clj [
             [rethinkdb.net :as net]
-            [rethinkdb.core :as core]]))
+            [rethinkdb.core :as core]
+            [clojure.core.async :as async]]))
   #?(:clj
      (:import [rethinkdb.core Connection])))
 
@@ -43,12 +44,13 @@
 
 #?(:clj (def ^Connection connect
           "Creates a database connection to a RethinkDB host
-          [& {:keys [host port token auth-key db]
+          [& {:keys [host port token auth-key db close-timeout-ms]
                :or {host \"127.0.0.1\"
                     port 28015
                     token 0
                     auth-key \"\"
-                    db nil}}" core/connect))
+                    db nil
+                    close-timeout-ms 5000}}" core/connect))
 
 ;;; Cursors
 
@@ -76,8 +78,10 @@
 
 (defn table-create
   "Create a table."
-  [db table-name & [optargs]]
-  (term :TABLE_CREATE [db table-name] optargs))
+  ([table-name]
+    (term :TABLE_CREATE [table-name]))
+  ([db table-name & [optargs]]
+   (term :TABLE_CREATE [db table-name] optargs)))
 
 (defn table-drop
   "Drop a table. If no db is provided then precedence follows the
@@ -980,27 +984,17 @@
 
 ;;; Run query
 
-(defn replace-vars [query]
-  (let [var-counter (atom 0)]
-    (walk/postwalk
-      #(if (clojure.core/and (map? %) (= :FUNC (:rethinkdb.query-builder/term %)))
-        (let [vars (first (:rethinkdb.query-builder/args %))
-              new-vars (range @var-counter (+ @var-counter (clojure.core/count vars)))
-              new-args (clojure.core/map
-                         (clojure.core/fn [arg]
-                           (term :VAR [arg]))
-                         new-vars)
-              var-replacements (zipmap vars new-args)]
-          (swap! var-counter + (clojure.core/count vars))
-          (walk/postwalk-replace
-            var-replacements
-            (assoc-in % [:rethinkdb.query-builder/args 0] new-vars)))
-        %)
-      query)))
-
 (defn make-array [& xs]
   (term :MAKE_ARRAY xs))
 
 #?(:clj (defn run [query conn]
           (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
-            (net/send-start-query conn token (replace-vars query)))))
+            (net/send-start-query conn token (qb/replace-vars query)))))
+
+#?(:clj (defn run-chan
+          "Runs query on conn and puts results on result-chan. Returns a map of channels and the query token
+          {:result-chan <> :error-chan <> :control-in-chan <> :control-out-chan <> :token <>}.
+          Results will be put on result-chan, errors will be put on error-chan, queries can be stopped
+          by putting :stop on control-in-chan"
+          [query conn result-chan]
+          (net/send-query-chan query conn result-chan)))

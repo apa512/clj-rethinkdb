@@ -1,5 +1,6 @@
 (ns rethinkdb.utils
-  (:require [clojure.string :as string])
+  (:require [clojure.string :as string]
+    #?@(:clj [[clojure.core.async :as async]]))
   #?(:clj (:import [java.nio ByteOrder ByteBuffer])))
 
 #?(:clj (defn int->bytes
@@ -34,3 +35,23 @@
 
 (defn snake-case [s]
   (string/replace (name s) \- \_))
+
+#?(:clj (defn close-chans
+          "Closes all chans in the collection. Returns nil."
+          [chans]
+          (doseq [chan chans]
+            (async/close! chan))))
+
+(defn dissoc-in
+  "Dissociates an entry from a nested associative structure returning a new
+  nested structure. keys is a sequence of keys. Any empty maps that result
+  will not be present in the new structure."
+  [m [k & ks :as keys]]
+  (if ks
+    (if-let [nextmap (clojure.core/get m k)]
+      (let [newmap (dissoc-in nextmap ks)]
+        (if (seq newmap)
+          (assoc m k newmap)
+          (dissoc m k)))
+      m)
+    (dissoc m k)))

@@ -4,12 +4,13 @@
         <!-- encoders are assigned the type
              ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
         <encoder>
-            <pattern>%highlight(%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36}) - %msg%n</pattern>
+            <pattern>%highlight(%d{HH:mm:ss.SSS} %-5level %logger{36}) - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <root level="ERROR">
+    <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>
-    <logger name="rethinkdb.net" level="INFO"/>
+    <logger name="rethinkdb.net" level="TRACE"/>
+    <logger name="rethinkdb.core" level="DEBUG"/>
 </configuration>
