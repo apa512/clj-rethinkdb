@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. This change
 - `rethinkdb.query/default` function, for supplying a default value/function for missing values. [90b58cd](https://github.com/apa512/clj-rethinkdb/commit/90b58cd14179fb4eec6e8a28387fe4eda1397adb)
 
 ### Changed
+- Change Maven Group ID from `rethinkdb` to `com.apa512`. [#102](https://github.com/apa512/clj-rethinkdb/pull/102), [#92](https://github.com/apa512/clj-rethinkdb/issues/92)
 - Update dependency to Clojure 1.7. [#59](https://github.com/apa512/clj-rethinkdb/pull/59)
 - The query parts of this library have been converted to use Clojure 1.7 Reader Conditionals. This means that you can generate queries in ClojureScript and run them on the server (be very careful with this!). [#59](https://github.com/apa512/clj-rethinkdb/pull/59)
 - Update protobuf support to RethinkDB 2.1.0.

@@ -8,7 +8,7 @@ A RethinkDB client for Clojure. Tested and supported on RethinkDB 2.0.x but shou
 
 ## Install
 
-[![Clojars Project](http://clojars.org/rethinkdb/latest-version.svg)](http://clojars.org/rethinkdb)
+[![Clojars Project](http://clojars.org/com.apa512/rethinkdb/latest-version.svg)](http://clojars.org/com.apa512/rethinkdb)
 
 ## Changes
 
@@ -25,12 +25,12 @@ All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, 
   (-> (r/db "test")
       (r/table-create "authors")
       (r/run conn))
-       
+
   (comment "This is equivalent to the previous query; db on connection is implicitly
   used if no db is provided."
   (-> (r/table-create "authors")
       (r/run conn)))
-      
+
   ;; Create an index on the field "genre".
   (-> (r/db "test")
       (r/table "authors")
