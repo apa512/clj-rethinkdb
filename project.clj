@@ -1,4 +1,4 @@
-(defproject com.apa512/rethinkdb "0.11.0"
+(defproject com.apa512/rethinkdb "snapshot-json-parsing"
   :description "RethinkDB client"
   :url "http://github.com/apa512/clj-rethinkdb"
   :license {:name "Eclipse Public License"
@@ -11,7 +11,7 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.48" :scope "provided"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-                 [org.clojure/data.json "0.2.6"]
+                 [cheshire "5.5.0"]
                  [org.clojure/tools.logging "0.3.1"]
                  [rethinkdb-protobuf "2.1.0"]
                  [com.google.protobuf/protobuf-java "2.6.1"]
