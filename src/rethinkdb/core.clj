@@ -74,6 +74,8 @@
     (let [socket (Socket. host port)
           out (DataOutputStream. (.getOutputStream socket))
           in (DataInputStream. (.getInputStream socket))]
+      ;; Disable Nagle's algorithm on the socket
+      (.setTcpNoDelay socket true)
       ;; Initialise the connection
       (send-version out)
       (send-auth-key out auth-key)
