@@ -1,12 +1,38 @@
 (ns rethinkdb.net
-  (:require [clojure.data.json :as json]
+  (:require [cheshire.core :as cheshire]
             [clojure.core.async :as async]
             [clojure.tools.logging :as log]
+            [manifold.stream :as s]
             [rethinkdb.query-builder :refer [parse-query]]
             [rethinkdb.types :as types]
             [rethinkdb.response :refer [parse-response]]
-            [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes]])
-  (:import [java.io Closeable InputStream OutputStream DataInputStream]))
+            [rethinkdb.utils :refer [str->bytes
+                                      int->bytes bytes->int
+                                      pp-bytes]]
+            [gloss.core :as gloss]
+            [gloss.io :as io])
+  (:import [java.io Closeable]))
+
+(gloss/defcodec query-frame (gloss/compile-frame
+                               (gloss/finite-frame
+                              (gloss/prefix :int32-le)
+                              (gloss/string :utf-8))
+            cheshire/generate-string
+            #(cheshire/parse-string % true)))
+
+(gloss/defcodec id :int64-le)
+(gloss/defcodec msg-protocol [id query-frame])
+
+(defn wrap-duplex-stream
+  [s]
+  (let [out (s/stream)]
+    (s/connect
+      (s/map #(io/encode msg-protocol %) out)
+      s)
+
+    (s/splice
+      out
+      (io/decode-stream s msg-protocol))))
 
 (declare send-continue-query send-stop-query)
 
@@ -21,94 +47,56 @@
   clojure.lang.Seqable
   (seq [this] (do
                 (Thread/sleep 250)
-                (lazy-seq (concat coll (send-continue-query conn token))))))
+                (lazy-seq (concat coll
+                  (send-continue-query conn token))))))
 
-(defn send-int [^OutputStream out i n]
-  (.write out (int->bytes i n) 0 n))
+(defn read-init-response [resp]
+  (-> resp
+   String.
+   (clojure.string/replace  #"\W*$" "")))
 
-(defn send-str [^OutputStream out s]
-  (let [n (count s)]
-    (.write out (str->bytes s) 0 n)))
+(defn handshake [version auth proto client]
+  (let [auth-bytes (if (some? auth)
+            (str->bytes auth)
+            (int->bytes 0 4))
+         msg-bytes (byte-array (concat
+            (int->bytes version 4)
+            auth-bytes
+            (int->bytes proto 4)))]
+  @(s/put! client msg-bytes)
+  (read-init-response @(s/take! client))))
 
-(defn read-str [^DataInputStream in n]
-  (let [resp (byte-array n)]
-    (.readFully in resp 0 n)
-    (String. resp)))
+(defn make-connection-loops [client]
+ (let [parsed-in (async/chan (async/sliding-buffer 100))
+       pub (async/pub parsed-in first)
+        publish-loop
+        (async/go-loop []
+        (when-let [result @(s/take! @client)]
+          (async/>! parsed-in result)
+          (recur)))]
+  {:loops [publish-loop]
+   :parsed-in parsed-in
+   :pub pub}))
 
-(defn ^String read-init-response [^InputStream in]
-  (let [resp (byte-array 4096)]
-    (.read in resp 0 4096)
-    (clojure.string/replace (String. resp) #"\W*$" "")))
-
-
-(defn read-response* [^InputStream in]
-  (let [recvd-token (byte-array 8)
-        length (byte-array 4)]
-    (.read in recvd-token 0 8)
-    (.read in length 0 4)
-    (let [recvd-token (bytes->int recvd-token 8)
-          length (bytes->int length 4)
-          json (read-str in length)]
-      [recvd-token json])))
-
-(defn write-query [out [token json]]
-  (send-int out token 8)
-  (send-int out (count json) 4)
-  (send-str out json))
-
-(defn make-connection-loops [in out]
-  (let [recv-chan (async/chan)
-        send-chan (async/chan)
-        pub       (async/pub recv-chan first)
-        ;; Receive loop
-        recv-loop (async/go-loop []
-                    (when (try
-                            (let [resp (read-response* in)]
-                              (log/trace "Received raw response %s" resp)
-                              (async/>! recv-chan resp))
-                            (catch java.net.SocketException e
-                              false))
-                      (recur)))
-        ;; Send loop
-        send-loop (async/go-loop []
-                    (when-let [query (async/<! send-chan)]
-                      (log/trace "Sending raw query %s")
-                      (write-query out query)
-                      (recur)))]
-    ;; Return as map to merge into connection
-    {:pub pub
-     :loops [recv-loop send-loop]
-     :r-ch recv-chan
-     :ch send-chan}))
-
-(defn close-connection-loops
-  [conn]
-  (let [{:keys [pub ch r-ch] [recv-loop send-loop] :loops} @conn]
-    (async/unsub-all pub)
-    ;; Close send channel and wait for loop to complete
-    (async/close! ch)
-    (async/<!! send-loop)
-    ;; Close recv channel
-    (async/close! r-ch)))
-
-(defn send-query* [conn token query]
-  (let [chan (async/chan)
-        {:keys [pub ch]} @conn]
+(defn send-query* [{:keys [client pub] :as conn}
+                    token query]
+  (let [chan (async/chan)]
     (async/sub pub token chan)
-    (async/>!! ch [token query])
-    (let [[recvd-token json] (async/<!! chan)]
-      (assert (= recvd-token token) "Must not receive response with different token")
-      (async/unsub-all pub token)
-      (json/read-str json :key-fn keyword))))
+    (s/put! @client [token query])
+    (let [[recvd-token json]
+          (async/<!! chan)]
+    (assert (= recvd-token token)
+      "Must not receive response with different token")
+    (async/unsub pub token chan)
+    json)))
 
 (defn send-query [conn token query]
   (let [{:keys [db]} @conn
-        query (if (and db (= 2 (count query))) ;; If there's only 1 element in query then this is a continue or stop query.
+        json (if (and db (= 2 (count query))) ;; If there's only 1 element in query then this is a continue or stop query.
                 ;; TODO: Could provide other global optargs too
                 (concat query [{:db [(types/tt->int :DB) [db]]}])
                 query)
-        json (json/write-str query)
-        {type :t resp :r :as json-resp} (send-query* conn token json)
+        {type :t resp :r :as json-resp} (send-query* @conn token json)
         resp (parse-response resp)]
     (condp get type
       #{1} (first resp) ;; Success Atom, Query returned a single RQL datatype

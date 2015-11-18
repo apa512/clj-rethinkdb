@@ -1,46 +1,33 @@
 (ns rethinkdb.core
-  (:require [rethinkdb.net :refer [send-int send-str read-init-response send-stop-query make-connection-loops close-connection-loops]]
-            [clojure.tools.logging :as log])
+  (:require [rethinkdb.net :refer [read-init-response send-stop-query make-connection-loops
+                                   wrap-duplex-stream handshake]]
+            [clojure.tools.logging :as log]
+            [manifold.deferred :as d]
+            [manifold.stream :as s]
+            [aleph.tcp :as tcp]
+            [clojure.core.async :as async])
   (:import [clojure.lang IDeref]
-           [java.io Closeable DataInputStream DataOutputStream]
-           [java.net Socket]))
+           [java.io Closeable]))
 
-(defn send-version
-  "Sends protocol version to RethinkDB when establishing connection.
-  Hard coded to use v3."
-  [out]
-  (let [v1 1063369270
-        v2 1915781601
-        v3 1601562686
-        v4 1074539808]
-    (send-int out v3 4)))
+(def versions
+  {:v1 1063369270
+   :v2 1915781601
+   :v3 1601562686
+   :v4 1074539808})
 
-(defn send-protocol
-  "Sends protocol type to RethinkDB when establishing connection.
-  Hard coded to use JSON protocol."
-  [out]
-  (let [protobuf 656407617
-        json 2120839367]
-    (send-int out json 4)))
-
-(defn send-auth-key
-  "Sends auth-key to RethinkDB when establishing connection."
-  [out auth-key]
-  (let [n (count auth-key)]
-    (send-int out n 4)
-    (send-str out auth-key)))
+(def protocols
+  {:protobuf 656407617
+   :json 2120839367})
 
 (defn close
   "Closes RethinkDB database connection, stops all running queries
   and waits for response before returning."
   [conn]
-  (let [{:keys [^Socket socket ^DataOutputStream out ^DataInputStream in waiting]} @conn]
+  (let [{:keys [client waiting parsed-in]} @conn]
     (doseq [token waiting]
       (send-stop-query conn token))
-    (close-connection-loops conn)
-    (.close out)
-    (.close in)
-    (.close socket)
+     (s/close! @client)
+     (async/close! parsed-in)
     :closed))
 
 (defrecord Connection [conn]
@@ -53,6 +40,11 @@
   [r writer]
   (print-method (:conn r) writer))
 
+(defn wrap-client
+  [client]
+  (d/chain  (d/chain client
+    #(wrap-duplex-stream %))))
+
 (defn connection [m]
   (->Connection (atom m)))
 
@@ -62,35 +54,28 @@
   is not explicitly set. Default values are used for any parameters
   not provided.
 
-  (connect :host \"dbserver1.local\")
-  "
-  [& {:keys [^String host ^int port token auth-key db]
+  (connect :host \"dbserver1.local\")"
+  [& {:keys [^String host ^int port token auth-key db version protocol]
       :or {host "127.0.0.1"
            port 28015
            token 0
-           auth-key ""
+           version :v3
+           protocol :json
            db nil}}]
   (try
-    (let [socket (Socket. host port)
-          out (DataOutputStream. (.getOutputStream socket))
-          in (DataInputStream. (.getInputStream socket))]
-      ;; Initialise the connection
-      (send-version out)
-      (send-auth-key out auth-key)
-      (send-protocol out)
-      (let [init-response (read-init-response in)]
+    (let [client (tcp/client {:host host :port port})
+          init-response (handshake (version versions) auth-key (protocol protocols) @client)]
         (if-not (= init-response "SUCCESS")
-          (throw (ex-info init-response {:host host :port port :auth-key auth-key :db db}))))
+          (throw (ex-info init-response {:host host :port port :auth-key auth-key :db db})))
       ;; Once initialised, create the connection record
+      (let [wrapped-client (wrap-client client)]
       (connection
         (merge
-          {:socket socket
-           :out out
-           :in in
+          {:client wrapped-client
            :db db
            :waiting #{}
            :token token}
-          (make-connection-loops in out))))
+      (make-connection-loops wrapped-client)))))
     (catch Exception e
       (log/error e "Error connecting to RethinkDB database")
       (throw (ex-info "Error connecting to RethinkDB database" {:host host :port port :auth-key auth-key :db db} e)))))

@@ -30,33 +30,35 @@
   (-> (r/db test-db)
       (r/table-list)))
 
-
 ;; Uncomment to run test
-(deftest connection-speed-test
+(deftest connection-speed-test-single
   (println "performance (connection per query)")
-  (let [conn r/connect]
     (time
       (doseq [n (range 100)]
         (with-open [conn (r/connect)]
           (r/run query conn)))))
 
+(deftest connection-speed-test-reuse
   (println "performance (reusing connection")
   (time
     (with-open [conn (r/connect)]
       (doseq [n (range 100)]
-        (r/run query conn))))
+        (r/run query conn)))))
 
+(deftest connection-speed-test-parallel
   (println "performance (parallel, one connection)")
   (with-open [conn (r/connect)]
     (time
       (doall
         (pmap (fn [v] (r/run query conn))
-              (range 100)))))
+              (range 100))))))
 
+(deftest connection-speed-test-pooled
   (println "performance (pooled connection")
   #_(with-open [conn connect]
-    nil)
+    nil))
 
+(deftest connection-speed-test-multiple 
   (println "multiple connection test")
   (let [conn1 (r/connect)
         conn2 (r/connect)

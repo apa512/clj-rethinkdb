@@ -137,8 +137,8 @@
 (defn changes
   "Return an infinite stream of objects representing changes to a table or a
   document."
-  [table]
-  (term :CHANGES [table]))
+  [table & [optargs]]
+  (term :CHANGES [table] optargs))
 
 ;;; Writing data
 
