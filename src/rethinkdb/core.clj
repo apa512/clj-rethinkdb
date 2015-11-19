@@ -70,30 +70,32 @@
            token 0
            auth-key ""
            db nil}}]
-  (try
-    (let [socket (Socket. host port)
-          out (DataOutputStream. (.getOutputStream socket))
-          in (DataInputStream. (.getInputStream socket))]
-      ;; Disable Nagle's algorithm on the socket
-      (.setTcpNoDelay socket true)
-      ;; Initialise the connection
-      (send-version out)
-      (send-auth-key out auth-key)
-      (send-protocol out)
-      (let [init-response (read-init-response in)]
-        (log/trace "Initial response while establishing RethinkDB connection:" init-response)
-        (when-not (= init-response "SUCCESS")
-          (throw (ex-info init-response {:host host :port port :auth-key auth-key :db db}))))
-      ;; Once initialised, create the connection record
-      (connection
-        (merge
-          {:socket socket
-           :out out
-           :in in
-           :db db
-           :waiting #{}
-           :token token}
-          (make-connection-loops in out))))
-    (catch Exception e
-      (log/error e "Error connecting to RethinkDB database")
-      (throw (ex-info "Error connecting to RethinkDB database" {:host host :port port :auth-key auth-key :db db} e)))))
+  (let [auth-key-printable (if (= "" auth-key) "" "<auth key provided but hidden>")]
+    (try
+      (let [socket (Socket. host port)
+            out (DataOutputStream. (.getOutputStream socket))
+            in (DataInputStream. (.getInputStream socket))]
+        ;; Disable Nagle's algorithm on the socket
+        (.setTcpNoDelay socket true)
+        ;; Initialise the connection
+        (send-version out)
+        (send-auth-key out auth-key)
+        (send-protocol out)
+        (let [init-response (read-init-response in)]
+          (log/trace "Initial response while establishing RethinkDB connection:" init-response)
+          (when-not (= init-response "SUCCESS")
+            (throw (ex-info init-response {:host host :port port :auth-key auth-key-printable :db db}))))
+        ;; Once initialised, create the connection record
+        (connection
+          (merge
+            {:socket  socket
+             :out     out
+             :in      in
+             :db      db
+             :waiting #{}
+             :token   token}
+            (make-connection-loops in out))))
+      (catch Exception e
+        (log/error e "Error connecting to RethinkDB database")
+        (throw (ex-info "Error connecting to RethinkDB database"
+                        {:host host :port port :auth-key auth-key-printable :db db} e))))))

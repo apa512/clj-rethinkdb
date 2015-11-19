@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file. This change
 - Added a new arity to `changes` that allows you to pass optargs. [#112](https://github.com/apa512/clj-rethinkdb/issues/112)
 - Renamed changes arg from `table` to `xs`. [#76](https://github.com/apa512/clj-rethinkdb/issues/76)
 - Prefix RethinkDB server exceptions with `RethinkDB server:`. [#100](https://github.com/apa512/clj-rethinkdb/pull/100)
+- Mask auth-key when logging connection exceptions [#90](https://github.com/apa512/clj-rethinkdb/issues/90)
 
 
 ## [0.11.0] - 2015-10-19

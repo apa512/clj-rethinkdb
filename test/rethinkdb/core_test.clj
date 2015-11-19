@@ -377,5 +377,15 @@
   (with-redefs-fn {#'core/send-version (fn [out] (net/send-int out 168696 4))}
     #(is (thrown? ExceptionInfo (r/connect)))))
 
+(deftest dont-leak-auth-key
+  (try (r/connect :port 28016 :auth-key "super secret")
+       (catch ExceptionInfo e
+         (is (= "<auth key provided but hidden>"
+                (:auth-key (ex-data e))))))
+  (try (r/connect :port 28016)
+       (catch ExceptionInfo e
+         (is (= ""
+                (:auth-key (ex-data e)))))))
+
 (use-fixtures :each setup-each)
 (use-fixtures :once setup-once)
