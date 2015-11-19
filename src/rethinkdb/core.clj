@@ -81,7 +81,8 @@
       (send-auth-key out auth-key)
       (send-protocol out)
       (let [init-response (read-init-response in)]
-        (if-not (= init-response "SUCCESS")
+        (log/trace "Initial response while establishing RethinkDB connection:" init-response)
+        (when-not (= init-response "SUCCESS")
           (throw (ex-info init-response {:host host :port port :auth-key auth-key :db db}))))
       ;; Once initialised, create the connection record
       (connection
