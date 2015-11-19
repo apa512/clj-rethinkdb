@@ -1,5 +1,5 @@
 (ns rethinkdb.net
-  (:require [clojure.data.json :as json]
+  (:require [cheshire.core :as json]
             [clojure.core.async :as async]
             [clojure.tools.logging :as log]
             [rethinkdb.query-builder :refer [parse-query]]
@@ -99,7 +99,7 @@
     (let [[recvd-token json] (async/<!! chan)]
       (assert (= recvd-token token) "Must not receive response with different token")
       (async/unsub-all pub token)
-      (json/read-str json :key-fn keyword))))
+      (json/parse-string-strict json true))))
 
 (defn send-query [conn token query]
   (let [{:keys [db]} @conn
@@ -107,7 +107,7 @@
                 ;; TODO: Could provide other global optargs too
                 (concat query [{:db [(types/tt->int :DB) [db]]}])
                 query)
-        json (json/write-str query)
+        json (json/generate-string query)
         {type :t resp :r :as json-resp} (send-query* conn token json)
         resp (parse-response resp)]
     (condp get type
