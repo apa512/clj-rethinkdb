@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com).
 
 ## [Unreleased]
+### Changed
+- Disable Nagle's algorithm (set TCP NO_DELAY to true). This provides a speedup of around 30-40x for small queries on Linux. [#114](https://github.com/apa512/clj-rethinkdb/pull/114)
 
 
 ## [0.11.0] - 2015-10-19
