@@ -3,6 +3,9 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com).
 
 ## [Unreleased]
+
+
+## [0.11.0] - 2015-10-19
 ### Added
 - clojure.tools.logging support. [#72](https://github.com/apa512/clj-rethinkdb/pull/72)
 - `fn` macro to ClojureScript `rethinkdb.query` namespace. [#64](https://github.com/apa512/clj-rethinkdb/issues/64)
