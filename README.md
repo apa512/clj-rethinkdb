@@ -16,6 +16,8 @@ All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, 
 
 ## Usage
 
+The clj-rethinkdb query API aims to match the [JavaScript](http://rethinkdb.com/api/javascript/) API as much as possible. The docstrings in `rethinkdb.query` show basic usage, but more advanced usage and optarg specs can be found in the official [RethinkDB docs](http://rethinkdb.com/api/javascript/).
+
 ```clojure
 (require '[rethinkdb.query :as r])
 
@@ -118,4 +120,34 @@ All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, 
       (r/run conn)))
 ```
 
+### Optargs
+
+Many query terms take an `optargs` parameter. This is a map of `:snake-cased` keywords (or string keys if you prefer) to values. Keyword values are converted to strings. In the JavaScript driver you could write
+
+```js
+r.db("artists").table("singers").insert({:id 1 :name "Carly Rae"}, {durability: "hard", returnChanges: false, conflict: "error"}]).run(conn)
+```
+
+In Clojure this would be
+
+```clj
+(-> (r/db "test")
+    (r/table "authors")
+    (r/insert {:id 1 :name "Carly Rae"} 
+              {:conflict :update :return-changes true :durability :hard})
+    (r/run conn)))
+=>
+{:changes [{:new_val {:id 1, :name "Carly Rae"}, :old_val {:id 1}}],
+ :deleted 0,
+ :errors 0,
+ :inserted 0,
+ :replaced 1,
+ :skipped 0,
+ :unchanged 0}
+```
+
+note particularly that `returnChanges` is written as `:return-changes` in Clojure.
+
+
 See full documentation at http://apa512.github.io/clj-rethinkdb/ (work in progress).
+
