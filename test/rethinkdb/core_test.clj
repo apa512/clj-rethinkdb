@@ -134,29 +134,29 @@
       (r/max [4 6]) 6
       (r/sum [3 4]) 7)))
 
-#_(deftest changefeeds
-    (with-open [conn (r/connect)]
-      (let [changes (future
-                      (-> (r/db test-db)
-                          (r/table test-table)
-                          r/changes
-                          (r/run conn)))]
-        (Thread/sleep 500)
-        (r/run (-> (r/db test-db)
-                   (r/table test-table)
-                   (r/insert (take 2 (repeat {:name "Test"})))) conn)
-        (is (= "Test" ((comp :name :new_val) (first @changes))))))
-    (with-open [conn (r/connect :db test-db)]
-      (let [changes (future
-                      (-> (r/db test-db)
-                          (r/table test-table)
-                          r/changes
-                          (r/run conn)))]
-        (Thread/sleep 500)
-        (r/run (-> (r/table test-table)
-                   (r/insert (take 2 (repeat {:name "Test"}))))
-               conn)
-        (is (= "Test" ((comp :name :new_val) (first @changes)))))))
+(deftest changefeeds
+  (with-open [conn (r/connect)]
+    (let [changes (future
+                    (-> (r/db test-db)
+                        (r/table test-table)
+                        r/changes
+                        (r/run conn)))]
+      (Thread/sleep 500)
+      (r/run (-> (r/db test-db)
+                 (r/table test-table)
+                 (r/insert (take 2 (repeat {:name "Test"})))) conn)
+      (is (= "Test" (get-in (first @changes) [:new_val :name])))))
+  (with-open [conn (r/connect :db test-db)]
+    (let [changes (future
+                    (-> (r/db test-db)
+                        (r/table test-table)
+                        (r/changes {:include-states true})
+                        (r/run conn)))]
+      (Thread/sleep 500)
+      (r/run (-> (r/table test-table)
+                 (r/insert (take 2 (repeat {:name "Test"}))))
+             conn)
+      (is (= {:state "ready"} (first @changes))))))
 
 (deftest document-manipulation
   (with-open [conn (r/connect :db test-db)]

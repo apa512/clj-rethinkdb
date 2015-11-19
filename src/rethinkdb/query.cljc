@@ -122,10 +122,12 @@
   (term :INDEX_WAIT (concat [table] index-names)))
 
 (defn changes
-  "Return an infinite stream of objects representing changes to a table or a
-  document."
-  [table]
-  (term :CHANGES [table]))
+  "Return an infinite stream of objects representing changes to a table, sequence,
+   or a document."
+  ([xs]
+   (term :CHANGES [xs]))
+  ([xs optargs]
+   (term :CHANGES [xs] optargs)))
 
 ;;; Writing data
 
