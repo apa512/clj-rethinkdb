@@ -845,9 +845,12 @@
 
 (defn uuid
   "Return a UUID (universally unique identifier), a string that can be used as
-  a unique ID."
-  []
-  (term :UUID []))
+  a unique ID. If a string is passed, a UUID is generated based on a SHA-1 hash
+  of the string."
+  ([]
+   (term :UUID []))
+  ([string]
+   (term :UUID [string])))
 
 ;;; Sorting
 

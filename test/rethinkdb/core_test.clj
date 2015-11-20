@@ -4,7 +4,8 @@
             [rethinkdb.query :as r]
             [rethinkdb.core :as core]
             [rethinkdb.net :as net])
-  (:import (clojure.lang ExceptionInfo)))
+  (:import (clojure.lang ExceptionInfo)
+           (java.util UUID)))
 
 (def test-db "cljrethinkdb_test")
 (def test-table :pokedex)
@@ -61,7 +62,7 @@
       (r/table-create (r/db test-db) :tmp) {:tables_created 1}
       (r/table-create (r/db test-db) :tmp2) {:tables_created 1}
       (-> (r/table :tmp)
-          (r/insert {:id (java.util.UUID/randomUUID)})) {:inserted 1}
+          (r/insert {:id (UUID/randomUUID)})) {:inserted 1}
       (r/table-drop (r/db test-db) :tmp) {:tables_dropped 1}
       (r/table-drop :tmp2) {:tables_dropped 1}
       (-> (r/table test-table) (r/index-create :name)) {:created 1}
@@ -181,7 +182,12 @@
       (r/split "split,this string" ",") ["split" "this string"]
       (r/split "split this string" " " 1) ["split" "this string"]
       (r/upcase "Shouting") "SHOUTING"
-      (r/downcase "Whispering") "whispering")))
+      (r/downcase "Whispering") "whispering"
+
+      ;; UUID's
+      (r/uuid "slava@example.com") "90691cbc-b5ea-5826-ae98-951e30fc3b2d"
+      (r/uuid "a") "d0333a3b-39b1-5201-b37a-7bfbf6542b5f")
+    (is (instance? UUID (UUID/fromString (r/run (r/uuid) conn))))))
 
 (deftest dates-and-times
   (with-open [conn (r/connect)]
