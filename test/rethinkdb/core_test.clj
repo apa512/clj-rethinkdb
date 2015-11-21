@@ -189,6 +189,12 @@
       (r/uuid "a") "d0333a3b-39b1-5201-b37a-7bfbf6542b5f")
     (is (instance? UUID (UUID/fromString (r/run (r/uuid) conn))))))
 
+(deftest literal-values
+  (with-open [conn (r/connect)]
+    (is (= (r/run (r/object :a 1) conn) {:a 1}))
+    (is (= (r/run (r/keys (r/object :a 1)) conn) ["a"]))
+    (is (= (r/run (r/values (r/object :a 1)) conn) [1]))))
+
 (deftest dates-and-times
   (with-open [conn (r/connect)]
     (are [term result] (= (r/run term conn) result)
