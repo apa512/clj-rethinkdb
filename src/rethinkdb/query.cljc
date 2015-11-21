@@ -512,6 +512,14 @@
   [obj]
   (term :KEYS [obj]))
 
+(defn values
+  "Return an array containing all of an object’s values.
+  values guarantees the values will come out in the same order as keys."
+  [obj]
+  ;; TODO: stop using VALUESX, see https://github.com/rethinkdb/rethinkdb/issues/5121
+  ;; for more details.
+  (term :VALUESX [obj]))
+
 (defn literal
   "Replace an object in a field instead of merging it with an existing object
   in a merge or update operation."
