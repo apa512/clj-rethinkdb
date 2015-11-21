@@ -514,7 +514,8 @@
 
 (defn values
   "Return an array containing all of an object’s values.
-  values guarantees the values will come out in the same order as keys."
+  values guarantees the values will come out in the same order as keys.
+  Only supported by RethinkDB 2.2 and up."
   [obj]
   ;; TODO: stop using VALUESX, see https://github.com/rethinkdb/rethinkdb/issues/5121
   ;; for more details.
@@ -854,7 +855,7 @@
 (defn uuid
   "Return a UUID (universally unique identifier), a string that can be used as
   a unique ID. If a string is passed, a UUID is generated based on a SHA-1 hash
-  of the string."
+  of the string. Passing a string is only supported by RethinkDB 2.2 and up."
   ([]
    (term :UUID []))
   ([string]
@@ -1017,3 +1018,10 @@
 #?(:clj (defn run [query conn]
           (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
             (net/send-start-query conn token (replace-vars query)))))
+
+#?(:clj (defn server
+          "Returns the server name and server UUID being used by a connection.
+          Only supported by RethinkDB 2.2 and up"
+          [conn]
+          (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
+            (net/send-server-query conn token))))

@@ -14,6 +14,11 @@ All notable changes to this project will be documented in this file. This change
 - Added a new arity to `changes` that allows you to pass optargs. [#112](https://github.com/apa512/clj-rethinkdb/issues/112)
 - Added new arity to `uuid` to allow you to pass a string. The string is then SHA-1 hashed to a UUID. Only valid in RethinkDB >= 2.2. [#109](https://github.com/apa512/clj-rethinkdb/issues/109)
 - Added new RethinkDB term `values`. This is analogous to Clojure's `vals` function. Only valid in RethinkDB >= 2.2. [#110](https://github.com/apa512/clj-rethinkdb/issues/110)
+- Added new RethinkDB query term `server`. This is used to retrieve information about the server you are connected to. [#111](https://github.com/apa512/clj-rethinkdb/issues/111)
+
+### Removed
+- Support for RethinkDB < 2.0. [Changes](https://github.com/rethinkdb/rethinkdb/issues/5124) in RethinkDB 2.2 mean we can't (easily) support changefeeds in versions older than 2.0. The rest of the driver commands should work, but explicit support is being removed.
+
 
 ## [0.11.0] - 2015-10-19
 ### Added
@@ -31,6 +36,9 @@ All notable changes to this project will be documented in this file. This change
 - Update arity and docstring for `rethinkdb.query/merge` to support merging any number of objects.
 - Add new arity to `rethinkdb.query/index-create` to allow creating simple indexes from field names. [#86](https://github.com/apa512/clj-rethinkdb/pull/86)
 - Update `rethinkdb.query/time` arity to only allow 3, 4, 6, and 7 arguments. Also update docstring to make usage clearer. This was already enforced on the server, but will now be enforced by the client library too. [#87](https://github.com/apa512/clj-rethinkdb/issues/87)
+
+### Removed
+- Support for Clojure 1.6 and below
 
 ## [0.10.1] - 2015-07-08
 ### Added

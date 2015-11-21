@@ -111,11 +111,11 @@
         {type :t resp :r :as json-resp} (send-query* conn token json)
         resp (parse-response resp)]
     (condp get type
-      #{1} (first resp) ;; Success Atom, Query returned a single RQL datatype
+      #{1 5} (first resp) ;; Success Atom, Query returned a single RQL datatype
       #{2} (do ;; Success Sequence, Query returned a sequence of RQL datatypes.
              (swap! (:conn conn) update-in [:waiting] #(disj % token))
              resp)
-      #{3 5} (if (get (:waiting @conn) token) ;; Success Partial, Query returned a partial sequence of RQL datatypes
+      #{3} (if (get (:waiting @conn) token) ;; Success Partial, Query returned a partial sequence of RQL datatypes
                (lazy-seq (concat resp (send-continue-query conn token)))
                (do
                  (swap! (:conn conn) update-in [:waiting] #(conj % token))
@@ -135,3 +135,7 @@
 (defn send-stop-query [conn token]
   (log/debugf "Sending stop query with token %d" token)
   (send-query conn token (parse-query :STOP)))
+
+(defn send-server-query [conn token]
+  (log/debugf "Sending server query with token %d" token)
+  (send-query conn token (parse-query :SERVER_INFO)))
