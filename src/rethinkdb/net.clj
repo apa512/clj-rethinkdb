@@ -52,8 +52,8 @@
       [recvd-token json])))
 
 (defn write-query [out [token json]]
-  (send-int out token 8)
-  (send-int out (count json) 4)
+  (send-int out token Long/BYTES)
+  (send-int out (count json) Integer/BYTES)
   (send-str out json))
 
 (defn make-connection-loops [in out]

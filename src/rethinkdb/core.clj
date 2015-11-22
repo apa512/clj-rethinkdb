@@ -3,31 +3,26 @@
             [clojure.tools.logging :as log])
   (:import [clojure.lang IDeref]
            [java.io Closeable DataInputStream DataOutputStream]
-           [java.net Socket]))
+           [java.net Socket]
+           [rethinkdb Ql2$VersionDummy$Version Ql2$VersionDummy$Protocol]))
 
 (defn send-version
   "Sends protocol version to RethinkDB when establishing connection.
   Hard coded to use v3."
   [out]
-  (let [v1 1063369270
-        v2 1915781601
-        v3 1601562686
-        v4 1074539808]
-    (send-int out v3 4)))
+  (send-int out Ql2$VersionDummy$Version/V0_3_VALUE Integer/BYTES))
 
 (defn send-protocol
   "Sends protocol type to RethinkDB when establishing connection.
   Hard coded to use JSON protocol."
   [out]
-  (let [protobuf 656407617
-        json 2120839367]
-    (send-int out json 4)))
+  (send-int out Ql2$VersionDummy$Protocol/JSON_VALUE Integer/BYTES))
 
 (defn send-auth-key
   "Sends auth-key to RethinkDB when establishing connection."
   [out auth-key]
   (let [n (count auth-key)]
-    (send-int out n 4)
+    (send-int out n Integer/BYTES)
     (send-str out auth-key)))
 
 (defn close
