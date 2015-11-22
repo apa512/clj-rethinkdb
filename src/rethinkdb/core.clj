@@ -10,19 +10,19 @@
   "Sends protocol version to RethinkDB when establishing connection.
   Hard coded to use v3."
   [out]
-  (send-int out Ql2$VersionDummy$Version/V0_3_VALUE Integer/BYTES))
+  (send-int out Ql2$VersionDummy$Version/V0_3_VALUE 4))
 
 (defn send-protocol
   "Sends protocol type to RethinkDB when establishing connection.
   Hard coded to use JSON protocol."
   [out]
-  (send-int out Ql2$VersionDummy$Protocol/JSON_VALUE Integer/BYTES))
+  (send-int out Ql2$VersionDummy$Protocol/JSON_VALUE 4))
 
 (defn send-auth-key
   "Sends auth-key to RethinkDB when establishing connection."
   [out auth-key]
   (let [n (count auth-key)]
-    (send-int out n Integer/BYTES)
+    (send-int out n 4)
     (send-str out auth-key)))
 
 (defn close
