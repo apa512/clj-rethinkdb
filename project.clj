@@ -13,7 +13,7 @@
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [org.clojure/tools.logging "0.3.1"]
                  [cheshire "5.5.0"]
-                 [rethinkdb-protobuf "2.2.0"]
+                 [rethinkdb-protobuf "2.2.0.1"]
                  [com.google.protobuf/protobuf-java "2.6.1"]
                  [clj-time "0.10.0"]]
   :profiles {:dev {:resource-paths ["test-resources"]
