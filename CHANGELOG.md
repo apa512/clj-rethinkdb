@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file. This change
 - Prefix RethinkDB server exceptions with `RethinkDB server:`. [#100](https://github.com/apa512/clj-rethinkdb/pull/100)
 - Mask auth-key when logging connection exceptions [#90](https://github.com/apa512/clj-rethinkdb/issues/90)
 - Upgraded to support RethinkDB 2.2 protobuf query language
+- Add optargs arity to `table`. [#78](https://github.com/apa512/clj-rethinkdb/issues/78)
 
 ### Added
 - Added a new arity to `changes` that allows you to pass optargs. [#112](https://github.com/apa512/clj-rethinkdb/issues/112)

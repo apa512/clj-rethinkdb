@@ -186,11 +186,17 @@
 (defn table
   "Select all documents in a table. This command can be chained with other
   commands to do further processing on the data. If no db is provided then precedence
-  follows the order given in the rethinkdb.query ns documentation."
+  follows the order given in the rethinkdb.query ns documentation.
+
+  To provide optargs without explicitly passing a db (instead using the db on the
+  connection), pass nil as the db, e.g.
+  (table nil :authors {:read-mode :outdated})"
   ([table-name]
    (term :TABLE [table-name]))
   ([db table-name]
-   (term :TABLE [db table-name])))
+   (term :TABLE [db table-name]))
+  ([db table-name optargs]
+   (term :TABLE (if db [db table-name] [table-name]) optargs)))
 
 (defn get
   "Get a document by primary key.

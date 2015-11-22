@@ -118,6 +118,12 @@
                                     (r/eq (r/get-field row :name) "Pikachu")))) conn) [(first pokemons)]))
       (is (= 1 (r/run (r/get-field {:a 1} :a) conn))))
 
+    (testing "selecting data with optargs"
+      (is (= (-> (r/table nil test-table {:read-mode :majority}) (r/get 25) (r/get-field :name) (r/run conn))
+             "Pikachu"))
+      (is (= (-> (r/db test-db) (r/table test-table {:read-mode :majority}) (r/get 25) (r/get-field :name) (r/run conn))
+             "Pikachu")))
+
     (testing "default values"
       (is (= "not found" (r/run (-> (r/get-field {:a 1} :b) (r/default "not found")) conn)))
       (is (= "not found" (r/run (-> (r/max [nil]) (r/default "not found")) conn)))
