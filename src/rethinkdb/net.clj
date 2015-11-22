@@ -10,6 +10,11 @@
 
 (declare send-continue-query send-stop-query)
 
+(defn make-rethink-exception [msg map]
+  (let [ex (ex-info (str "RethinkDB server: " msg) map)]
+    (log/error ex)
+    ex))
+
 (defn close
   "Clojure proxy for java.io.Closeable's close."
   [^Closeable x]
@@ -108,21 +113,46 @@
                 (concat query [{:db [(types/tt->int :DB) [db]]}])
                 query)
         json (json/generate-string query)
-        {type :t resp :r :as json-resp} (send-query* conn token json)
+        {type :t resp :r etype :e :as json-resp} (send-query* conn token json)
         resp (parse-response resp)]
-    (condp get type
-      #{1 5} (first resp) ;; Success Atom, Query returned a single RQL datatype
-      #{2} (do ;; Success Sequence, Query returned a sequence of RQL datatypes.
-             (swap! (:conn conn) update-in [:waiting] #(disj % token))
-             resp)
-      #{3} (if (get (:waiting @conn) token) ;; Success Partial, Query returned a partial sequence of RQL datatypes
-               (lazy-seq (concat resp (send-continue-query conn token)))
-               (do
-                 (swap! (:conn conn) update-in [:waiting] #(conj % token))
-                 (Cursor. conn token resp)))
-      (let [ex (ex-info (str "RethinkDB server: " (first resp)) json-resp)]
-        (log/error ex)
-        (throw ex)))))
+    (case (int type)
+
+      (1 5) ;; Success atom, Server info
+      (first resp) ;; Query returned a single RQL datatype
+
+      2 ;; Success sequence
+      (do ;; Query returned a sequence of RQL datatypes.
+        (swap! (:conn conn) update-in [:waiting] #(disj % token))
+        resp)
+
+      3 ;; Success partial
+      (if (get (:waiting @conn) token) ;; Query returned a partial sequence of RQL datatypes
+        (lazy-seq (concat resp (send-continue-query conn token)))
+        (do
+          (swap! (:conn conn) update-in [:waiting] #(conj % token))
+          (Cursor. conn token resp)))
+
+      16 ;; Client error value
+      (throw (make-rethink-exception (first resp) {:type :client :response json-resp}))
+
+      17 ;; Compile error value
+      (throw (make-rethink-exception (first resp) {:type :compile :response json-resp}))
+
+      18 ;; Runtime error value
+      (throw (make-rethink-exception
+               (first resp)
+               {:type     (case (int etype)
+                            1000000 :internal
+                            2000000 :resource-limit
+                            3000000 :query-logic
+                            3100000 :non-existence
+                            4100000 :op-failed
+                            4200000 :op-indeterminate
+                            5000000 :user
+                            :unknown)
+                :response json-resp}))
+
+      (throw (make-rethink-exception (first resp) {:type :unknown :response json-resp})))))
 
 (defn send-start-query [conn token query]
   (log/debugf "Sending start query with token %d, query: %s" token query)

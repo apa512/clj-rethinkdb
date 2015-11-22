@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. This change
 - Mask auth-key when logging connection exceptions [#90](https://github.com/apa512/clj-rethinkdb/issues/90)
 - Upgraded to support RethinkDB 2.2 protobuf query language
 - Add optargs arity to `table`. [#78](https://github.com/apa512/clj-rethinkdb/issues/78)
+- Added support for 2.1's error types. These give more information about why an error happened. See http://rethinkdb.com/docs/error-types/ for more details. **Breaking** the structure of exception data has changed from `<response map>` to {:type :op-failed :response <response map>}`. [#77](https://github.com/apa512/clj-rethinkdb/issues/77)
 
 ### Added
 - Added a new arity to `changes` that allows you to pass optargs. [#112](https://github.com/apa512/clj-rethinkdb/issues/112)
