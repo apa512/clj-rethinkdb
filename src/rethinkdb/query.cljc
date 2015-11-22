@@ -985,10 +985,27 @@
   [table-or-db]
   (term :REBALANCE [table-or-db]))
 
+(defn reconfigure
+  "Reconfigure a database or table’s sharding and replication."
+  [table-or-db optargs]
+  (term :RECONFIGURE [table-or-db] optargs))
+
 (defn status
   "Return the status of a table."
   [table]
   (term :STATUS [table]))
+
+(defn wait
+  "Wait for a table or all the tables in a database to be ready. A table may be
+   temporarily unavailable after creation, rebalancing or reconfiguring. The wait
+   command blocks until the given table (or database) is fully up to date.
+
+   If wait is called with no table or db specified, it will wait on the default db
+   for the connection."
+  ([] (term :WAIT []))
+  ([table-or-db] (term :WAIT [table-or-db]))
+  ([table-or-db optargs] (term :WAIT [table-or-db] optargs)))
+
 
 ;;; Misc
 

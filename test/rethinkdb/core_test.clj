@@ -297,12 +297,26 @@
     (is (= 104644.93094219 (r/run (r/distance (r/point 20 20)
                                               (r/circle (r/point 21 20) 2)) conn)))))
 
-(deftest configuration
-  (with-open [conn (r/connect)]
-    (is (= "cljrethinkdb_test" (:name (r/run (r/config (r/db test-db)) conn))))
-    (is (= "pokedex" (:name (r/run (-> (r/db test-db) (r/table test-table) r/config) conn))))
-    (is (= "pokedex" (:name (r/run (-> (r/db test-db) (r/table test-table) r/status) conn))))
-    (is (= "cljrethinkdb_test" (:name (r/run (r/info (r/db test-db)) conn))))))
+(deftest administration
+  (with-open [conn (r/connect :db test-db)]
+    (testing "info"
+      (is (= "cljrethinkdb_test" (:name (r/run (r/info (r/db test-db)) conn)))))
+    (testing "configuration"
+      (is (= "cljrethinkdb_test" (:name (r/run (r/config (r/db test-db)) conn))))
+      (is (= "pokedex" (:name (r/run (-> (r/db test-db) (r/table test-table) r/config) conn)))))
+    (testing "rebalance"
+      (is (= (-> (r/db test-db) (r/rebalance) (r/run conn) (keys))
+             [:rebalanced :status_changes])))
+    (testing "reconfigure"
+      (is (= {:reconfigured 0}
+             (-> (r/db test-db) (r/reconfigure {:shards 1 :replicas 1 :dry-run true}) (r/run conn)
+                 (select-keys [:reconfigured])))))
+    (testing "status"
+      (is (= "pokedex" (:name (r/run (-> (r/db test-db) (r/table test-table) r/status) conn)))))
+    (testing "wait"
+      (is (= {:ready 1} (-> (r/wait) (r/run conn))))
+      (is (= {:ready 1} (-> (r/db test-db) (r/wait) (r/run conn))))
+      (is (= {:ready 1} (-> (r/db test-db) (r/wait {:timeout 1}) (r/run conn)))))))
 
 (deftest nested-fns
   (with-open [conn (r/connect)]
