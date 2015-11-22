@@ -411,7 +411,7 @@
     (is (contains? server-info :id))
     (is (contains? server-info :name)))
   (is (thrown? ExceptionInfo (r/connect :port 1)))
-  (with-redefs-fn {#'core/send-version (fn [out] (net/send-int out 168696 Integer/BYTES))}
+  (with-redefs-fn {#'core/send-version (fn [out] (net/send-int out 168696 4))}
     #(is (thrown? ExceptionInfo (r/connect)))))
 
 (deftest dont-leak-auth-key
