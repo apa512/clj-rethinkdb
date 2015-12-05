@@ -125,7 +125,7 @@ The clj-rethinkdb query API aims to match the [JavaScript](http://rethinkdb.com/
 Many query terms take an `optargs` parameter. This is a map of `:snake-cased` keywords (or string keys if you prefer) to values. Keyword values are converted to strings. In the JavaScript driver you could write
 
 ```js
-r.db("artists").table("singers").insert({:id 1 :name "Carly Rae"}, {durability: "hard", returnChanges: false, conflict: "error"}]).run(conn)
+r.db("artists").table("singers").insert({id: 1, name: "Carly Rae"}, {durability: "hard", returnChanges: false, conflict: "error"}]).run(conn)
 ```
 
 In Clojure this would be
