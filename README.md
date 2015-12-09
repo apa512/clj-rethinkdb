@@ -16,7 +16,7 @@ All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, 
 
 ## Usage
 
-The clj-rethinkdb query API aims to match the [JavaScript](http://rethinkdb.com/api/javascript/) API as much as possible. The docstrings in `rethinkdb.query` show basic usage, but more advanced usage and optarg specs can be found in the official [RethinkDB docs](http://rethinkdb.com/api/javascript/).
+The clj-rethinkdb query API aims to match the [JavaScript](http://rethinkdb.com/api/javascript/) API as much as possible. The docstrings in `rethinkdb.query` show basic usage, but more advanced usage and optarg specs can be found in the official [RethinkDB docs](http://rethinkdb.com/api/javascript/). **It is highly recommended to read the [official JavaScript docs](http://rethinkdb.com/api/javascript/), to understand the query terms available in clj-rethinkdb.** 
 
 ```clojure
 (require '[rethinkdb.query :as r])
