@@ -14,11 +14,7 @@
 #?(:clj (defn str->bytes
           "Creates a ByteBuffer of size n bytes containing string s converted to bytes"
           [^String s]
-          (let [n (count s)
-                buf (ByteBuffer/allocate n)]
-            (doto buf
-              (.put (.getBytes s)))
-            (.array buf))))
+          (.getBytes s "UTF-8")))
 
 #?(:clj (defn bytes->int
           "Converts bytes to int"

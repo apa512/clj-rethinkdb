@@ -32,8 +32,9 @@
   (.write out (int->bytes i n) 0 n))
 
 (defn send-str [^OutputStream out s]
-  (let [n (count s)]
-    (.write out (str->bytes s) 0 n)))
+  (let [bytes (str->bytes s)
+        n (count bytes)]
+    (.write out bytes 0 n)))
 
 (defn read-str [^DataInputStream in n]
   (let [resp (byte-array n)]
@@ -43,8 +44,7 @@
 (defn ^String read-init-response [^InputStream in]
   (let [resp (byte-array 4096)]
     (.read in resp 0 4096)
-    (clojure.string/replace (String. resp) #"\W*$" "")))
-
+    (clojure.string/replace (String. resp "UTF-8") #"\W*$" "")))
 
 (defn read-response* [^InputStream in]
   (let [recvd-token (byte-array 8)
@@ -58,7 +58,7 @@
 
 (defn write-query [out [token json]]
   (send-int out token 8)
-  (send-int out (count json) 4)
+  (send-int out (count (str->bytes json)) 4)
   (send-str out json))
 
 (defn make-connection-loops [in out]
