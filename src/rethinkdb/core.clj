@@ -3,7 +3,7 @@
             [clojure.tools.logging :as log])
   (:import [clojure.lang IDeref]
            [java.io Closeable DataInputStream DataOutputStream]
-           [java.net Socket]
+           [java.net Socket InetSocketAddress]
            [rethinkdb Ql2$VersionDummy$Version Ql2$VersionDummy$Protocol]))
 
 (defn send-version
@@ -59,19 +59,27 @@
 
   (connect :host \"dbserver1.local\")
   "
-  [& {:keys [^String host ^int port token auth-key db]
+  [& {:keys [^String host ^int port token auth-key db
+             ^int connect-timeout
+             ^int read-timeout]
       :or {host "127.0.0.1"
            port 28015
            token 0
            auth-key ""
-           db nil}}]
+           db nil
+           connect-timeout 5000
+           read-timeout    5000}}]
   (let [auth-key-printable (if (= "" auth-key) "" "<auth key provided but hidden>")]
     (try
-      (let [socket (Socket. host port)
+      (let [socket (doto (Socket.)
+                     (.connect (InetSocketAddress. host port) connect-timeout))
             out (DataOutputStream. (.getOutputStream socket))
             in (DataInputStream. (.getInputStream socket))]
+        ;; Read timeouts
+        (.setSoTimeout socket read-timeout)
         ;; Disable Nagle's algorithm on the socket
         (.setTcpNoDelay socket true)
+
         ;; Initialise the connection
         (send-version out)
         (send-auth-key out auth-key)
