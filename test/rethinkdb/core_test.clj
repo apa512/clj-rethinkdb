@@ -424,5 +424,13 @@
          (is (= ""
                 (:auth-key (ex-data e)))))))
 
+(deftest utf8-compliance
+  (with-open [conn (r/connect :db test-db)]
+    (is (= (-> (r/table test-table)
+               (r/insert [{:text "üöä"}])
+               (r/run conn)
+               :inserted)
+           1))))
+
 (use-fixtures :each setup-each)
 (use-fixtures :once setup-once)
