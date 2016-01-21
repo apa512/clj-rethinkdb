@@ -30,3 +30,7 @@
 
 (defn snake-case [s]
   (string/replace (name s) \- \_))
+
+(defn keyword->str [k]
+  (-> (str k)
+      (subs 1)))
