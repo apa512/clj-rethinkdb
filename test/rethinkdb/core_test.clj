@@ -40,13 +40,15 @@
 
 (defn setup-each [test-fn]
   (with-open [conn (r/connect :db test-db)]
-    (ensure-table (name test-table) {:primary-key :national_no} conn)
-    (test-fn)
-    (r/run (r/table-drop test-table) conn)))
+    (-> (r/table test-table)
+        (r/delete {:durability :soft :return-changes false})
+        (r/run conn))
+    (test-fn)))
 
 (defn setup-once [test-fn]
   (with-open [conn (r/connect)]
     (ensure-db test-db conn)
+    (ensure-table test-table {:primary-key :national_no} conn)
     (test-fn)
     (r/run (r/db-drop test-db) conn)))
 
