@@ -1,4 +1,4 @@
-(defproject com.apa512/rethinkdb "0.13.2-SNAPSHOT"
+(defproject com.apa512/rethinkdb "0.13.3-SNAPSHOT"
   :description "RethinkDB client"
   :url "http://github.com/apa512/clj-rethinkdb"
   :license {:name "Eclipse Public License"
@@ -10,14 +10,14 @@
   :plugins [[codox "0.8.13"]]
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.48" :scope "provided"]
-                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+                 [org.clojure/core.async "0.2.374"]
                  [org.clojure/tools.logging "0.3.1"]
                  [cheshire "5.5.0"]
                  [rethinkdb-protobuf "2.2.0.1"]
                  [com.google.protobuf/protobuf-java "2.6.1"]
-                 [clj-time "0.10.0"]]
+                 [clj-time "0.11.0"]]
   :profiles {:dev {:resource-paths ["test-resources"]
-                   :dependencies [[ch.qos.logback/logback-classic "1.1.3"]]}}
+                   :dependencies [[ch.qos.logback/logback-classic "1.1.5"]]}}
   :jvm-opts ["-Xmx512m"]
   :deploy-repositories [["releases" :clojars]
                         ["snapshots" :clojars]])
