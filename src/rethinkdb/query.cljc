@@ -209,12 +209,19 @@
   "Get all documents where the given value matches the value of the requested
   index."
   [table ids & [optargs]]
-  (term :GET_ALL (concat [table] ids) optargs))
+  (term :GET_ALL
+        (if (map? ids)
+          [table ids]
+          (concat [table] ids))
+        optargs))
 
 (defn get-field
   "Get a single field from an object."
   [sel field-name]
   (term :GET_FIELD [sel field-name]))
+
+(defn args [sq]
+  (term :ARGS [sq]))
 
 (defn between
   "Get all documents between two keys. Accepts three optional arguments: ```index```,

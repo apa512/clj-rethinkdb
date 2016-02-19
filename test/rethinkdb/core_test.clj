@@ -97,12 +97,23 @@
                             conn))))
 
     (testing "merging values"
-      (are [term result] (= (r/run term conn) result)
-        (r/merge {:a {:b :c}}) {:a {:b "c"}}
-        (r/merge {:a {:b :c}} {:a {:f :g}}) {:a {:b "c" :f "g"}}
-        (r/merge {:a {:b :c}} {:a {:b :x}}) {:a {:b "x"}}
-        (r/merge {:a 1} {:b 2} {:c 3}) {:a 1 :b 2 :c 3}))
-    ;; TODO: test with the other types that merge can take
+      (let [trainers [{:id 1 :name "Ash" :pokemon_ids [25 81]}]]
+        (are [term result] (= (r/run term conn) result)
+          (r/merge {:a {:b :c}}) {:a {:b "c"}}
+          (r/merge {:a {:b :c}} {:a {:f :g}}) {:a {:b "c" :f "g"}}
+          (r/merge {:a {:b :c}} {:a {:b :x}}) {:a {:b "x"}}
+          (r/merge {:a 1} {:b 2} {:c 3}) {:a 1 :b 2 :c 3})
+        (is (= #{"Pikachu" "Magnemite"}
+               (->> (r/run (-> trainers
+                               (r/merge (r/fn [row]
+                                          {:pokemons (-> (r/table test-table)
+                                                         (r/get-all (r/args (r/get-field row "pokemon_ids")))
+                                                         (r/map (r/fn [row] (r/get-field row :name)))
+                                                         (r/coerce-to "array"))})))
+                           conn)
+                   first
+                   :pokemons
+                   (into #{}))))))
 
     (testing "selecting data"
       (is (= (set (r/run (r/table test-table) conn)) (set pokemons)))
