@@ -3,7 +3,7 @@
   #?(:clj (:import [java.nio ByteOrder ByteBuffer])))
 
 #?(:clj (defn int->bytes
-          "Creates a ByteBuffer of size n bytes containing int i"
+          "Returns a byte array of size n bytes containing int i"
           [i n]
           (let [buf (ByteBuffer/allocate n)]
             (doto buf
@@ -12,7 +12,7 @@
             (.array buf))))
 
 #?(:clj (defn str->bytes
-          "Creates a ByteBuffer of size n bytes containing string s converted to bytes"
+          "Returns a byte array of size n bytes containing string s converted to bytes"
           [^String s]
           (.getBytes s "UTF-8")))
 

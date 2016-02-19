@@ -437,11 +437,21 @@
 
 (deftest utf8-compliance
   (with-open [conn (r/connect :db test-db)]
-    (is (= (-> (r/table test-table)
-               (r/insert [{:text "üöä"}])
-               (r/run conn)
-               :inserted)
-           1))))
+    (let [doc {:national_no (UUID/randomUUID)
+               :text        "üöä"}]
+      (testing "Writing UTF-8"
+        (is (= (-> (r/table test-table)
+                   (r/insert [doc])
+                   (r/run conn)
+                   :inserted)
+               1)))
+      (testing "Reading UTF-8"
+        (is
+          (= (-> (r/table test-table)
+                 (r/get (:national_no doc))
+                 (r/run conn)
+                 :text)
+             (:text doc)))))))
 
 (use-fixtures :each setup-each)
 (use-fixtures :once setup-once)
