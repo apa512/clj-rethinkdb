@@ -107,7 +107,7 @@
                (->> (r/run (-> trainers
                                (r/merge (r/fn [row]
                                           {:pokemons (-> (r/table test-table)
-                                                         (r/get-all (r/args (r/get-field row "pokemon_ids")))
+                                                         (r/get-all (r/get-field row "pokemon_ids"))
                                                          (r/map (r/fn [row] (r/get-field row :name)))
                                                          (r/coerce-to "array"))})))
                            conn)

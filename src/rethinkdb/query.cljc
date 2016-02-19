@@ -32,6 +32,11 @@
   [args terms]
   (term :FUNC [args terms]))
 
+(defn- wrap-args [x]
+  (if (= (:rethinkdb.query-builder/term x) :ARGS)
+    x
+    (term :ARGS [x])))
+
 #?(:clj (defmacro fn [args & [body]]
           (let [new-args (into [] (clojure.core/map
                                    #(hash-map :temp-var (keyword %)) args))
@@ -211,7 +216,7 @@
   [table ids & [optargs]]
   (term :GET_ALL
         (if (map? ids)
-          [table ids]
+          [table (wrap-args ids)]
           (concat [table] ids))
         optargs))
 
