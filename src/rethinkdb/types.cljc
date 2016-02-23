@@ -3,7 +3,6 @@
      (:import [rethinkdb Ql2$Query$QueryType Ql2$Term$TermType]
               [com.google.protobuf ProtocolMessageEnum])))
 
-
 ;; From https://github.com/rethinkdb/rethinkdb/blob/4316a7a5e52530553c4855f898be0335d487b0fe/drivers/java/proto_basic.json
 (def proto-basic
   {"VersionDummy" {"Version" {"V0_1" 1063369270,

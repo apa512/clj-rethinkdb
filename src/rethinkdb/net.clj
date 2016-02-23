@@ -1,17 +1,31 @@
 (ns rethinkdb.net
-  (:require [cheshire.core :as json]
+  (:require [byte-streams :as bs]
+            [cheshire.core :as json]
             [clojure.core.async :as async]
+            [clojure.core.async.impl.protocols :refer [ReadPort]]
             [clojure.tools.logging :as log]
-            [rethinkdb.query-builder :refer [parse-query]]
-            [rethinkdb.types :as types]
+            [gloss.core :as gloss]
+            [gloss.io :as io]
+            [manifold.deferred :as d]
+            [manifold.stream :as s]
+            [manifold.stream.core]
+            [rethinkdb.query-builder :as qb]
             [rethinkdb.response :refer [parse-response]]
-            [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes]])
-  (:import [java.io Closeable InputStream OutputStream DataInputStream]))
+            [rethinkdb.types :as types])
+  (:import [java.io Closeable]))
 
-(declare send-continue-query send-stop-query)
+(declare send-continue-query)
 
-(defn make-rethink-exception [msg map]
-  (let [ex (ex-info (str "RethinkDB server: " msg) map)]
+(gloss/defcodec query-protocol
+  [:uint64-le (gloss/finite-frame :int32-le (gloss/string :utf-8))])
+
+(gloss/defcodec init-protocol
+  [:int32-le
+   (gloss/finite-frame :int32-le (gloss/string :utf-8))
+   :int32-le])
+
+(defn make-rethink-exception [msg m]
+  (let [ex (ex-info (str "RethinkDB server: " msg) m)]
     (log/error ex)
     ex))
 
@@ -20,152 +34,160 @@
   [^Closeable x]
   (.close x))
 
-(deftype Cursor [conn token coll]
+(deftype Cursor [stream token]
   Closeable
-  (close [this] (and (send-stop-query conn token) :closed))
+  (close [this]
+    (println "Closing cursor")
+    (s/close! stream))
+  clojure.lang.Counted
+  (count [this]
+    (count (seq this)))
   clojure.lang.Seqable
-  (seq [this] (do
-                (Thread/sleep 250)
-                (lazy-seq (concat coll (send-continue-query conn token))))))
+  (seq [this]
+    (s/stream->seq stream))
+  manifold.stream.core.IEventSink
+  (put [this x _]
+    (s/put! stream x)))
 
-(defn send-int [^OutputStream out i n]
-  (.write out (int->bytes i n) 0 n))
+(defn init-connection [client version protocol auth-key]
+  (s/put! client (io/encode init-protocol
+                            [version auth-key protocol])))
 
-(defn send-str [^OutputStream out s]
-  (let [bytes (str->bytes s)
-        n (count bytes)]
-    (.write out bytes 0 n)))
+(defn read-init-response [client]
+  (clojure.string/replace (bs/to-string @(s/take! client)) #"\W*$" ""))
 
-(defn read-str [^DataInputStream in n]
-  (let [resp (byte-array n)]
-    (.readFully in resp 0 n)
-    (String. resp)))
+(defn deliver-result [conn token resp]
+  (let [result (get-in @conn [:results token])
+        cursor (get-in @conn [:cursors token])]
+    (when cursor
+      (d/on-realized (s/put-all! cursor resp)
+                     (fn [_]
+                       (close cursor))
+                     (constantly nil)))
+    (d/on-realized (s/put! result (or cursor resp))
+                   (fn [_]
+                     (s/close! result))
+                   (constantly nil))))
 
-(defn ^String read-init-response [^InputStream in]
-  (let [resp (byte-array 4096)]
-    (.read in resp 0 4096)
-    (clojure.string/replace (String. resp "UTF-8") #"\W*$" "")))
+(defn append-result [conn token resp]
+  (let [query-chan (:query-chan @conn)
+        cursor (get-in @conn [:cursors token])]
+    (if cursor
+      (s/put-all! cursor resp)
+      (let [result (get-in @conn [:results token])
+            cursor (Cursor. (s/stream) token)]
+        (swap! (:conn conn) assoc-in [:cursors token] cursor)
+        (s/put-all! cursor resp)
+        (s/put! result cursor)
+        (send-continue-query conn token)))))
 
-(defn read-response* [^InputStream in]
-  (let [recvd-token (byte-array 8)
-        length (byte-array 4)]
-    (.read in recvd-token 0 8)
-    (.read in length 0 4)
-    (let [recvd-token (bytes->int recvd-token 8)
-          length (bytes->int length 4)
-          json (read-str in length)]
-      [recvd-token json])))
+(defn append-changes [conn token resp]
+  (prn "Appending changes")
+  (let [query-chan (:query-chan @conn)
+        result (get-in @conn [:results token])]
+    (if (:async? (s/description result))
+      (s/put-all! result resp)
+      (append-result conn token resp))
+    (println "Continuing")
+    (send-continue-query conn token)))
 
-(defn write-query [out [token json]]
-  (send-int out token 8)
-  (send-int out (count (str->bytes json)) 4)
-  (send-str out json))
-
-(defn make-connection-loops [in out]
-  (let [recv-chan (async/chan)
-        send-chan (async/chan)
-        pub       (async/pub recv-chan first)
-        ;; Receive loop
-        recv-loop (async/go-loop []
-                    (when (try
-                            (let [resp (read-response* in)]
-                              (log/trace "Received raw response %s" resp)
-                              (async/>! recv-chan resp))
-                            (catch java.net.SocketException e
-                              false))
-                      (recur)))
-        ;; Send loop
-        send-loop (async/go-loop []
-                    (when-let [query (async/<! send-chan)]
-                      (log/trace "Sending raw query %s")
-                      (write-query out query)
-                      (recur)))]
-    ;; Return as map to merge into connection
-    {:pub pub
-     :loops [recv-loop send-loop]
-     :r-ch recv-chan
-     :ch send-chan}))
-
-(defn close-connection-loops
-  [conn]
-  (let [{:keys [pub ch r-ch] [recv-loop send-loop] :loops} @conn]
-    (async/unsub-all pub)
-    ;; Close send channel and wait for loop to complete
-    (async/close! ch)
-    (async/<!! send-loop)
-    ;; Close recv channel
-    (async/close! r-ch)))
-
-(defn send-query* [conn token query]
-  (let [chan (async/chan)
-        {:keys [pub ch]} @conn]
-    (async/sub pub token chan)
-    (async/>!! ch [token query])
-    (let [[recvd-token json] (async/<!! chan)]
-      (assert (= recvd-token token) "Must not receive response with different token")
-      (async/unsub-all pub token)
-      (json/parse-string-strict json true))))
-
-(defn send-query [conn token query]
-  (let [{:keys [db]} @conn
-        query (if (and db (= 2 (count query))) ;; If there's only 1 element in query then this is a continue or stop query.
-                ;; TODO: Could provide other global optargs too
-                (concat query [{:db [(types/tt->int :DB) [db]]}])
-                query)
-        json (json/generate-string query)
-        {type :t resp :r etype :e :as json-resp} (send-query* conn token json)
-        resp (parse-response resp)]
+(defn handle-response [conn token resp]
+  (let [{type :t resp :r etype :e notes :n :as json-resp} resp]
     (case (int type)
-
-      (1 5) ;; Success atom, Server info
-      (first resp) ;; Query returned a single RQL datatype
+      (1 5) ;; Success atom, server info
+      (deliver-result conn token (first resp))
 
       2 ;; Success sequence
-      (do ;; Query returned a sequence of RQL datatypes.
-        (swap! (:conn conn) update-in [:waiting] #(disj % token))
-        resp)
+      (deliver-result conn token resp)
 
       3 ;; Success partial
-      (if (get (:waiting @conn) token) ;; Query returned a partial sequence of RQL datatypes
-        (lazy-seq (concat resp (send-continue-query conn token)))
-        (do
-          (swap! (:conn conn) update-in [:waiting] #(conj % token))
-          (Cursor. conn token resp)))
+      (if (seq notes)
+        (append-changes conn token resp)
+        (append-result conn token resp))
 
       16 ;; Client error value
-      (throw (make-rethink-exception (first resp) {:type :client :response json-resp}))
+      (deliver-result conn token
+                      (make-rethink-exception
+                       (first resp)
+                       {:type :client :response json-resp}))
 
       17 ;; Compile error value
-      (throw (make-rethink-exception (first resp) {:type :compile :response json-resp}))
+      (deliver-result conn token
+                      (make-rethink-exception
+                       (first resp)
+                       {:type :compile :response json-resp}))
 
       18 ;; Runtime error value
-      (throw (make-rethink-exception
-               (first resp)
-               {:type     (case (int etype)
-                            1000000 :internal
-                            2000000 :resource-limit
-                            3000000 :query-logic
-                            3100000 :non-existence
-                            4100000 :op-failed
-                            4200000 :op-indeterminate
-                            5000000 :user
-                            :unknown)
-                :response json-resp}))
+      (deliver-result conn token
+                      (make-rethink-exception
+                       (first resp)
+                       {:type (case (int etype)
+                                1000000 :internal
+                                2000000 :resource-limit
+                                3000000 :query-logic
+                                3100000 :non-existence
+                                4100000 :op-failed
+                                4200000 :op-indeterminate
+                                5000000 :user
+                                :unknown)
+                        :response json-resp})))))
 
-      (throw (make-rethink-exception (first resp) {:type :unknown :response json-resp})))))
+(defn setup-consumer [conn]
+  (s/consume
+   (fn [[token json]]
+     (handle-response conn token
+                      (-> json
+                          (json/parse-string-strict true)
+                          parse-response)))
+   (io/decode-channel (:client @conn) query-protocol)))
 
-(defn send-start-query [conn token query]
-  (log/debugf "Sending start query with token %d, query: %s" token query)
-  (send-query conn token (parse-query :START query)))
+(defn add-global-optargs [{:keys [db]} query]
+  (if (and db (= 2 (count query))) ;; If there's only 1 element in query then this is a continue or stop query
+    ;; TODO: Could provide other global optargs too
+    (concat query [{:db [(types/tt->int :DB) [db]]}])
+    query))
 
-(defn send-continue-query [conn token]
-  (log/debugf "Sending continue query with token %d" token)
-  (send-query conn token (parse-query :CONTINUE)))
+(defn with-next-token [conn [stream query]]
+  (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
+    (s/on-closed stream
+                 (fn []
+                   (swap! (:conn conn) update-in [:results] #(dissoc % token))))
+    (swap! (:conn conn) assoc-in [:results token] stream)
+    [token query]))
+
+(defn setup-producer [conn]
+  (let [{:keys [start-query-chan query-chan client]} @conn]
+    (async/pipeline 1 query-chan (map (partial with-next-token conn)) start-query-chan)
+    (async/go-loop []
+      (when-let [[token query] (async/<! query-chan)]
+        (let [query (add-global-optargs @conn query)
+              json (json/generate-string query)]
+          (s/put! client (io/encode query-protocol [token json]))
+          (recur))))))
+
+(defn send-first-query [conn query async?]
+  (let [stream (s/stream* {:description #(assoc % :async? async?)})
+        {:keys [start-query-chan]} @conn]
+    (async/go (async/>! start-query-chan [stream query]))
+    (if async?
+      (let [result-chan (async/chan)]
+        (s/connect stream result-chan)
+        result-chan)
+      (let [result @(s/take! stream)]
+        (if (instance? Throwable result)
+          (throw result)
+          result)))))
 
 (defn send-stop-query [conn token]
-  (log/debugf "Sending stop query with token %d" token)
-  (send-query conn token (parse-query :STOP)))
+  (async/>!! (:query-chan @conn) [token (qb/parse-query :STOP)]))
 
-(defn send-server-query [conn token]
-  (log/debugf "Sending server query with token %d" token)
-  (send-query conn token (parse-query :SERVER_INFO)))
+(defn send-continue-query [conn token]
+  (async/go
+   (async/>! (:query-chan @conn) [token (qb/parse-query :CONTINUE)])))
+
+(defn send-start-query [conn query & [opts]]
+  (let [async? (some :async? [opts @conn])]
+    (send-first-query conn (qb/parse-query :START query) async?)))
+
+(defn send-server-query [conn]
+  (send-first-query conn (qb/parse-query :SERVER_INFO) false))

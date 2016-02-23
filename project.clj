@@ -12,6 +12,8 @@
                  [org.clojure/clojurescript "1.7.48" :scope "provided"]
                  [org.clojure/core.async "0.2.374"]
                  [org.clojure/tools.logging "0.3.1"]
+                 [aleph "0.4.1-beta4"]
+                 [gloss "0.2.5" :exclusions [manifold byte-streams potemkin]]
                  [cheshire "5.5.0"]
                  [rethinkdb-protobuf "2.2.0.1"]
                  [com.google.protobuf/protobuf-java "3.0.0-alpha-3.1"]

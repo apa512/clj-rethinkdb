@@ -1,8 +1,7 @@
 (ns rethinkdb.query-builder
-  (:require [rethinkdb.utils :refer [snake-case]]
+  (:require [clojure.string :as string]
             [rethinkdb.types :refer [tt->int qt->int]]
-    #?@(:clj [
-            [clj-time.coerce :as c]])))
+    #?@(:clj [[clj-time.coerce :as c]])))
 
 (defn term [term args & [optargs]]
   {::term term
@@ -10,6 +9,9 @@
    ::optargs optargs})
 
 (declare parse-term)
+
+(defn snake-case [s]
+  (string/replace (name s) \- \_))
 
 (defn snake-case-keys [m]
   (into {}

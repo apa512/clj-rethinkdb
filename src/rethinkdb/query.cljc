@@ -15,9 +15,8 @@
   #?(:cljs (:use-macros [rethinkdb.query :only [fn]]))
   (:require [clojure.walk :as walk]
             [rethinkdb.query-builder :as qb :refer [term]]
-    #?@(:clj [
-            [rethinkdb.net :as net]
-            [rethinkdb.core :as core]]))
+    #?@(:clj [[rethinkdb.net :as net]
+              [rethinkdb.core :as core]]))
   #?(:clj
      (:import [rethinkdb.core Connection])))
 
@@ -53,7 +52,8 @@
                     port 28015
                     token 0
                     auth-key \"\"
-                    db nil}}" core/connect))
+                    db nil}}"
+          core/connect))
 
 ;;; Cursors
 
@@ -1018,7 +1018,6 @@
   ([table-or-db] (term :WAIT [table-or-db]))
   ([table-or-db optargs] (term :WAIT [table-or-db] optargs)))
 
-
 ;;; Misc
 
 (def minval
@@ -1050,13 +1049,11 @@
 (defn make-array [& xs]
   (term :MAKE_ARRAY xs))
 
-#?(:clj (defn run [query conn]
-          (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
-            (net/send-start-query conn token (replace-vars query)))))
+#?(:clj (defn run [query conn & [opts]]
+          (net/send-start-query conn (replace-vars query) opts)))
 
 #?(:clj (defn server
           "Returns the server name and server UUID being used by a connection.
           Only supported by RethinkDB 2.2 and up"
           [conn]
-          (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
-            (net/send-server-query conn token))))
+          (net/send-server-query conn)))

@@ -1,8 +1,8 @@
 (ns rethinkdb.core-test
   (:require [clj-time.core :as t]
             [clojure.test :refer :all]
+            [clojure.core.async :refer [go <! take! <!!]]
             [rethinkdb.query :as r]
-            [rethinkdb.core :as core]
             [rethinkdb.net :as net])
   (:import (clojure.lang ExceptionInfo)
            (java.util UUID)))
@@ -120,9 +120,9 @@
       (is (= (r/run (-> (r/table test-table) (r/get 25)) conn) (first pokemons)))
       (is (= (set (r/run (-> (r/table test-table) (r/get-all [25 81])) conn)) (set pokemons)))
       (is (= pokemons (sort-by :national_no (r/run (-> (r/table test-table)
-                                                       (r/between r/minval r/maxval {:right-bound :closed})) conn))))
+                                                     (r/between r/minval r/maxval {:right-bound :closed})) conn))))
       (is (= (r/run (-> (r/table test-table)
-                        (r/between 80 81 {:right-bound :closed})) conn) [(last pokemons)]))
+                      (r/between 80 81 {:right-bound :closed})) conn) [(last pokemons)]))
       (is (= (r/run (-> (r/db test-db)
                         (r/table test-table)
                         (r/filter (r/fn [row]
@@ -161,27 +161,24 @@
 
 (deftest changefeeds
   (with-open [conn (r/connect)]
-    (let [changes (future
-                    (-> (r/db test-db)
-                        (r/table test-table)
-                        r/changes
-                        (r/run conn)))]
-      (Thread/sleep 500)
+    (let [changes (-> (r/db test-db)
+                      (r/table test-table)
+                      (r/changes {:include-initial true})
+                      (r/run conn {:async? true}))]
       (r/run (-> (r/db test-db)
                  (r/table test-table)
                  (r/insert (take 2 (repeat {:name "Test"})))) conn)
-      (is (= "Test" (get-in (first @changes) [:new_val :name])))))
-  (with-open [conn (r/connect :db test-db)]
-    (let [changes (future
-                    (-> (r/db test-db)
-                        (r/table test-table)
-                        (r/changes {:include-states true})
-                        (r/run conn)))]
-      (Thread/sleep 500)
-      (r/run (-> (r/table test-table)
-                 (r/insert (take 2 (repeat {:name "Test"}))))
-             conn)
-      (is (= {:state "ready"} (first @changes))))))
+      (is (= "Test" (get-in (<!! changes) [:new_val :name])))))
+  (with-open [conn (r/connect)]
+    (let [changes (-> (r/db test-db)
+                      (r/table test-table)
+                      (r/changes {:include-initial true})
+                      (r/run conn))]
+      (future
+       (r/run (-> (r/db test-db)
+                  (r/table test-table)
+                  (r/insert (take 2 (repeat {:name "Test"})))) conn))
+      (is (= "Test" (get-in (first changes) [:new_val :name]))))))
 
 (deftest document-manipulation
   (with-open [conn (r/connect :db test-db)]
@@ -241,6 +238,7 @@
         (r/time 2014 12 31 10 15 0)) (+ (* 15 60) (* 10 60 60))
       (r/year (r/time 2014 12 31)) 2014
       (r/month (r/time 2014 12 31)) 12
+
       (r/day (r/time 2014 12 31)) 31
       (r/day-of-week (r/time 2014 12 31)) 3
       (r/day-of-year (r/time 2014 12 31)) 365
@@ -403,18 +401,18 @@
                         (r/get-field :name))
                     conn))))))
 
-(deftest throwing-server-exceptions
-  (with-open [conn (r/connect :db test-db)]
-    (is (thrown? ExceptionInfo (r/run (r/table :nope) conn)))
-    (try (r/run (r/table :nope) conn)
-         (catch ExceptionInfo ex
-           (let [r (get-in (ex-data ex) [:response :r])
-                 etype (:type (ex-data ex))
-                 msg (.getMessage ex)]
-             (is (= etype :op-failed))
-             (is (= r ["Table `cljrethinkdb_test.nope` does not exist."]))
-             (is (= "RethinkDB server: Table `cljrethinkdb_test.nope` does not exist." msg)))))))
-
+;(deftest throwing-server-exceptions
+;  (with-open [conn (r/connect :db test-db)]
+;    (is (thrown? ExceptionInfo (r/run (r/table :nope) conn)))
+;    (try (r/run (r/table :nope) conn)
+;         (catch ExceptionInfo ex
+;           (let [r (get-in (ex-data ex) [:response :r])
+;                 etype (:type (ex-data ex))
+;                 msg (.getMessage ex)]
+;             (is (= etype :op-failed))
+;             (is (= r ["Table `cljrethinkdb_test.nope` does not exist."]))
+;             (is (= "RethinkDB server: Table `cljrethinkdb_test.nope` does not exist." msg)))))))
+;
 (deftest query-conn
   (is (do (r/connect)
           true))
@@ -422,7 +420,7 @@
     (is (contains? server-info :id))
     (is (contains? server-info :name)))
   (is (thrown? ExceptionInfo (r/connect :port 1)))
-  (with-redefs-fn {#'core/send-version (fn [out] (net/send-int out 168696 4))}
+  (with-redefs {#'core/version 168696}
     #(is (thrown? ExceptionInfo (r/connect)))))
 
 (deftest dont-leak-auth-key

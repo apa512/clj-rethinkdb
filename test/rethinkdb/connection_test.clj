@@ -1,6 +1,7 @@
 (ns rethinkdb.connection-test
   (:require [clj-time.core :as t]
             [clojure.test :refer :all]
+            [clojure.core.async :refer [<!!]]
             [rethinkdb.query :as r]))
 
 ;;; Reference performance
@@ -19,7 +20,7 @@
 
 (defn setup [test-fn]
   (with-open [conn (r/connect)]
-    (if (some #{test-db} (r/run (r/db-list) conn))
+    (when (some #{test-db} (r/run (r/db-list) conn))
       (r/run (r/db-drop test-db) conn))
     (r/run (r/db-create test-db) conn)
     (test-fn)))
@@ -30,11 +31,10 @@
   (-> (r/db test-db)
       (r/table-list)))
 
-
 ;; Uncomment to run test
 (deftest connection-speed-test
   (println "performance (connection per query)")
-  (let [conn r/connect]
+  (let [conn (r/connect)]
     (time
       (doseq [n (range 100)]
         (with-open [conn (r/connect)]
@@ -52,10 +52,6 @@
       (doall
         (pmap (fn [v] (r/run query conn))
               (range 100)))))
-
-  (println "performance (pooled connection")
-  #_(with-open [conn connect]
-    nil)
 
   (println "multiple connection test")
   (let [conn1 (r/connect)
