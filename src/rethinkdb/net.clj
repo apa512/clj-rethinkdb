@@ -5,7 +5,7 @@
             [rethinkdb.query-builder :refer [parse-query]]
             [rethinkdb.types :as types]
             [rethinkdb.response :refer [parse-response]]
-            [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes]])
+            [rethinkdb.utils :refer [str->bytes int->bytes bytes->int pp-bytes keyword->str]])
   (:import [java.io Closeable InputStream OutputStream DataInputStream]))
 
 (declare send-continue-query send-stop-query)
@@ -112,7 +112,7 @@
                 ;; TODO: Could provide other global optargs too
                 (concat query [{:db [(types/tt->int :DB) [db]]}])
                 query)
-        json (json/generate-string query)
+        json (json/generate-string query {:key-fn keyword->str})
         {type :t resp :r etype :e :as json-resp} (send-query* conn token json)
         resp (parse-response resp)]
     (case (int type)
