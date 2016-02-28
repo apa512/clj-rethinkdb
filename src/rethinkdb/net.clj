@@ -37,7 +37,8 @@
 (deftype Cursor [conn stream token]
   Closeable
   (close [this]
-    (send-stop-query conn token)
+    (when (get-in @conn [:cursors token])
+      (send-stop-query conn token))
     (swap! (:conn conn) update-in [:cursors] #(dissoc % token))
     (s/close! stream))
   clojure.lang.Counted
@@ -61,6 +62,7 @@
   (let [result (get-in @conn [:results token])
         cursor (get-in @conn [:cursors token])]
     (when cursor
+      (swap! (:conn conn) update-in [:cursors] #(dissoc % token))
       (d/on-realized (s/put-all! cursor resp)
                      (fn [_]
                        (close cursor))
