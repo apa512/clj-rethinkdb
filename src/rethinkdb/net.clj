@@ -14,7 +14,7 @@
             [rethinkdb.types :as types])
   (:import [java.io Closeable]))
 
-(declare send-continue-query)
+(declare send-continue-query send-stop-query)
 
 (gloss/defcodec query-protocol
   [:uint64-le (gloss/finite-frame :int32-le (gloss/string :utf-8))])
@@ -34,10 +34,10 @@
   [^Closeable x]
   (.close x))
 
-(deftype Cursor [stream token]
+(deftype Cursor [conn stream token]
   Closeable
   (close [this]
-    (println "Closing cursor")
+    (send-stop-query conn token)
     (s/close! stream))
   clojure.lang.Counted
   (count [this]
@@ -75,7 +75,7 @@
     (if cursor
       (s/put-all! cursor resp)
       (let [result (get-in @conn [:results token])
-            cursor (Cursor. (s/stream) token)]
+            cursor (Cursor. conn (s/stream) token)]
         (swap! (:conn conn) assoc-in [:cursors token] cursor)
         (s/put-all! cursor resp)
         (s/put! result cursor)
