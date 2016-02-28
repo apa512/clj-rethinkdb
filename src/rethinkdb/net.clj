@@ -38,6 +38,7 @@
   Closeable
   (close [this]
     (send-stop-query conn token)
+    (swap! (:conn conn) update-in [:cursors] #(dissoc % token))
     (s/close! stream))
   clojure.lang.Counted
   (count [this]
