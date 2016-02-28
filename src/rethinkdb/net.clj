@@ -82,13 +82,11 @@
         (send-continue-query conn token)))))
 
 (defn append-changes [conn token resp]
-  (prn "Appending changes")
   (let [query-chan (:query-chan @conn)
         result (get-in @conn [:results token])]
     (if (:async? (s/description result))
       (s/put-all! result resp)
       (append-result conn token resp))
-    (println "Continuing")
     (send-continue-query conn token)))
 
 (defn handle-response [conn token resp]
