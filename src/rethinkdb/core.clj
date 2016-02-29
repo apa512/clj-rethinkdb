@@ -13,7 +13,7 @@
 (def version  Ql2$VersionDummy$Version/V0_4_VALUE)
 (def protocol Ql2$VersionDummy$Protocol/JSON_VALUE)
 
-(defn close-connection
+(defn close
   "Closes RethinkDB database connection, stops all running queries
   and waits for response before returning."
   [conn]
@@ -28,7 +28,7 @@
   IDeref
   (deref [_] @conn)
   Closeable
-  (close [this] (close-connection this)))
+  (close [this] (close this)))
 
 (defmethod print-method Connection
   [r writer]
