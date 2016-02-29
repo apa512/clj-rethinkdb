@@ -401,18 +401,18 @@
                         (r/get-field :name))
                     conn))))))
 
-;(deftest throwing-server-exceptions
-;  (with-open [conn (r/connect :db test-db)]
-;    (is (thrown? ExceptionInfo (r/run (r/table :nope) conn)))
-;    (try (r/run (r/table :nope) conn)
-;         (catch ExceptionInfo ex
-;           (let [r (get-in (ex-data ex) [:response :r])
-;                 etype (:type (ex-data ex))
-;                 msg (.getMessage ex)]
-;             (is (= etype :op-failed))
-;             (is (= r ["Table `cljrethinkdb_test.nope` does not exist."]))
-;             (is (= "RethinkDB server: Table `cljrethinkdb_test.nope` does not exist." msg)))))))
-;
+(deftest throwing-server-exceptions
+  (with-open [conn (r/connect :db test-db)]
+    (is (thrown? ExceptionInfo (r/run (r/table :nope) conn)))
+    (try (r/run (r/table :nope) conn)
+         (catch ExceptionInfo ex
+           (let [r (get-in (ex-data ex) [:response :r])
+                 etype (:type (ex-data ex))
+                 msg (.getMessage ex)]
+             (is (= etype :op-failed))
+             (is (= r ["Table `cljrethinkdb_test.nope` does not exist."]))
+             (is (= "RethinkDB server: Table `cljrethinkdb_test.nope` does not exist." msg)))))))
+
 (deftest query-conn
   (is (do (r/connect)
           true))
