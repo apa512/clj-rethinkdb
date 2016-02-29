@@ -81,8 +81,8 @@
             cursor (Cursor. conn (s/stream) token)]
         (swap! (:conn conn) assoc-in [:cursors token] cursor)
         (s/put-all! cursor resp)
-        (s/put! result cursor)
-        (send-continue-query conn token)))))
+        (s/put! result cursor)))
+    (send-continue-query conn token)))
 
 (defn append-changes [conn token resp]
   (let [query-chan (:query-chan @conn)
