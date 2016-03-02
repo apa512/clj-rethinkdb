@@ -1,7 +1,8 @@
 (ns rethinkdb.core-test
   (:require [clj-time.core :as t]
             [clojure.test :refer :all]
-            [clojure.core.async :refer [go <! take! <!!]]
+            [clojure.core.async :refer [go go-loop <! take! <!!]]
+            [manifold.stream :as s]
             [rethinkdb.query :as r]
             [rethinkdb.net :as net])
   (:import (clojure.lang ExceptionInfo)
@@ -161,24 +162,27 @@
 
 (deftest changefeeds
   (with-open [conn (r/connect)]
-    (let [changes (-> (r/db test-db)
-                      (r/table test-table)
-                      (r/changes {:include-initial true})
-                      (r/run conn {:async? true}))]
-      (r/run (-> (r/db test-db)
-                 (r/table test-table)
-                 (r/insert (take 2 (repeat {:name "Test"})))) conn)
-      (is (= "Test" (get-in (<!! changes) [:new_val :name])))))
-  (with-open [conn (r/connect)]
-    (let [changes (-> (r/db test-db)
+    (let [docs (map #(hash-map :n %) (range 100))
+          changes-chan (-> (r/db test-db)
+                           (r/table test-table)
+                           (r/changes {:include-initial true})
+                           (r/run conn {:async? true}))
+          changes (-> (r/db test-db)
                       (r/table test-table)
                       (r/changes {:include-initial true})
                       (r/run conn))]
-      (future
-       (r/run (-> (r/db test-db)
-                  (r/table test-table)
-                  (r/insert (take 2 (repeat {:name "Test"})))) conn))
-      (is (= "Test" (get-in (first changes) [:new_val :name]))))))
+      (doseq [doc docs]
+        (r/run (-> (r/db test-db)
+                   (r/table test-table)
+                   (r/insert doc))
+               conn))
+      (let [received (s/stream)]
+        (go-loop []
+          (s/put! received (get-in (<! changes-chan) [:new_val :n]))
+          (recur))
+        (= (range 100)
+           (map #(get-in % [:new_val :n]) (take 100 changes))
+           (take 100 (s/stream->seq received)))))))
 
 (deftest document-manipulation
   (with-open [conn (r/connect :db test-db)]
