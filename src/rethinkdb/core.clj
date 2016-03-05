@@ -7,6 +7,8 @@
                                    setup-consumer read-init-response
                                    send-stop-query]])
   (:import [clojure.lang IDeref]
+           [io.netty.bootstrap Bootstrap]
+           [io.netty.channel ChannelOption]
            [java.io Closeable]
            [rethinkdb Ql2$VersionDummy$Version Ql2$VersionDummy$Protocol]))
 
@@ -44,16 +46,26 @@
   not provided.
 
   (connect :host \"dbserver1.local\")"
-  [& {:keys [^String host ^int port token auth-key db async?]
+  [& {:keys [^String host ^int port token auth-key db async?
+             ^int connect-timeout
+             ^int read-timeout]
       :or {host "127.0.0.1"
            port 28015
            token 0
            auth-key ""
            db nil
-           async? false}}]
+           async? false
+           connect-timeout 5000
+           read-timeout 5000}}]
   (let [auth-key-printable (if (= "" auth-key) "" "<auth key provided but hidden>")]
     (try
-     (let [client @(tcp/client {:host host :port port})]
+     (let [client @(tcp/client {:host host :port port
+                                :bootstrap-transform
+                                (fn [^Bootstrap bs]
+                                  (doto bs
+                                    (.option ChannelOption/CONNECT_TIMEOUT_MILLIS connect-timeout)
+                                    (.option ChannelOption/SO_TIMEOUT read-timeout)
+                                    (.option ChannelOption/TCP_NODELAY true)))})]
        (init-connection client version protocol auth-key)
        (let [init-response (read-init-response client)]
          (log/trace "Initial response while establishing RethinkDB connection:" init-response)
