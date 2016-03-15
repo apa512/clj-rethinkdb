@@ -81,8 +81,12 @@
 
 (defn table-create
   "Create a table."
-  [db table-name & [optargs]]
-  (term :TABLE_CREATE [db table-name] optargs))
+  ([table-name]
+   (term :TABLE_CREATE [table-name]))
+  ([db table-name]
+   (term :TABLE_CREATE [db table-name]))
+  ([db table-name optargs]
+   (term :TABLE_CREATE (if db [db table-name] [table-name]) optargs)))
 
 (defn table-drop
   "Drop a table. If no db is provided then precedence follows the

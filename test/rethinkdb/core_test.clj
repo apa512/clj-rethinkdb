@@ -145,8 +145,10 @@
 (deftest db-in-connection
   (testing "run a query with an implicit database"
     (with-open [conn (r/connect :db test-db)]
-      (is (= [(name test-table)]
-             (-> (r/table-list) (r/run conn))))))
+      (-> (r/table-create "test_table") (r/run conn))
+      (is (= [(name test-table) "test_table"]
+             (-> (r/table-list) (r/run conn))))
+      (-> (r/table-drop "test_table") (r/run conn))))
   (testing "precedence of db connections"
     (with-open [conn (r/connect :db "nonexistent_db")]
       (is (= [(name test-table)]
