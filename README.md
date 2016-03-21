@@ -155,7 +155,7 @@ note particularly that `returnChanges` is written as `:return-changes` in Clojur
 
 An example using loops, functions, branching and various object operations (select, add & remove fields).
 
-`upsert-xs!` takes a list of items `[{:id 'item-1', ...}, {:id 'item-2', ...}, ...]` and insert them if the id was not present in the database before. Or does an update if the item already exists.
+`upsert-items!` takes a list of items `[{:id "item-1" ...}, {:id "item-2" ...} ...]` and insert them if the id is not present in the database, or does an update if the item already exists.
 
 ```clj
 (defn upsert-items! [items]
@@ -163,17 +163,17 @@ An example using loops, functions, branching and various object operations (sele
     (-> items
         (r/for-each
           (r/fn [item]
-              ;; Find a document using the upsert'd item id.
-              (let [doc (r/get table (r/get-field item :id))]
-                (r/branch (r/eq nil doc)
-                  ;; item is new, set its updated/created time and insert it.
-                  (r/insert table
-                            (r/merge {:updated (r/now) :created (r/now)} item)
-                            {:conflict "update"})
-                  ;; item already exists, set the updated time and update the doc,
-                  ;; Take care of removing the id in the update-object to avoid upsetting RethinkDB.
-                  (r/update doc
-                            (r/merge {:updated (r/now)} (r/without item [:id])))))))
+            ;; Find a document using the upsert'd item id.
+            (let [doc (r/get table (r/get-field item :id))]
+              (r/branch (r/eq nil doc)
+                ;; Item is new, set its updated/created time and insert it.
+                (r/insert table
+                          (r/merge {:updated (r/now) :created (r/now)} item)
+                          {:conflict "update"})
+                ;; Item already exists, set the updated time and update the doc.
+                ;; Take care of removing the id in the update-object to avoid upsetting RethinkDB.
+                (r/update doc
+                          (r/merge {:updated (r/now)} (r/without item [:id])))))))
       (r/run conn))))
 ```
 
