@@ -16,7 +16,7 @@ All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, 
 
 ## Usage
 
-The clj-rethinkdb query API aims to match the [JavaScript](http://rethinkdb.com/api/javascript/) API as much as possible. The docstrings in `rethinkdb.query` show basic usage, but more advanced usage and optarg specs can be found in the official [RethinkDB docs](http://rethinkdb.com/api/javascript/). **It is highly recommended to read the [official JavaScript docs](http://rethinkdb.com/api/javascript/), to understand the query terms available in clj-rethinkdb.** 
+The clj-rethinkdb query API aims to match the [JavaScript](http://rethinkdb.com/api/javascript/) API as much as possible. The docstrings in `rethinkdb.query` show basic usage, but more advanced usage and optarg specs can be found in the official [RethinkDB docs](http://rethinkdb.com/api/javascript/). **It is highly recommended to read the [official JavaScript docs](http://rethinkdb.com/api/javascript/), to understand the query terms available in clj-rethinkdb.**
 
 ```clojure
 (require '[rethinkdb.query :as r])
@@ -133,7 +133,7 @@ In Clojure this would be
 ```clj
 (-> (r/db "test")
     (r/table "authors")
-    (r/insert {:id 1 :name "Carly Rae"} 
+    (r/insert {:id 1 :name "Carly Rae"}
               {:conflict :update :return-changes true :durability :hard})
     (r/run conn)))
 =>
@@ -148,6 +148,21 @@ In Clojure this would be
 
 note particularly that `returnChanges` is written as `:return-changes` in Clojure.
 
+### core.async
+
+Starting with version 0.14.8, clj-rethinkdb can be used asynchronously by passing ```:async? true``` to ```connect```. This can also be
+handled on a per query basis by passing ```{:async? true}``` or ```{:async? false}``` to ```run```.
+
+```clj
+(with-open [conn (r/connect :host "127.0.0.1" :port 28015 :db "test" :async? true)]
+  (go
+    (-> (r/table "singers")
+        (r/insert {:id 2 :name "Brian Eno"})
+        (r/run conn {:async? false}))
+    (<! (-> (r/table "authors")
+            (r/get 2)
+            (r/run conn)))))
+```
 
 ### Advanced Operations
 
@@ -180,7 +195,6 @@ An example using loops, functions, branching and various object operations (sele
 Note that for inserts we resolve conflicts by an update. At worst this may override an object that has been added while the query was running. Which should never happen since this function is recognized by RethinkDB as atomic.
 
 Also note that the ordering in `r/merge` is important, preference is given to fields in the rightmost object in the argument list. The upsert'd items can define a default `:updated` and `:created` field that'll override `(r/now)`.
-
 
 ### Complete Reference
 

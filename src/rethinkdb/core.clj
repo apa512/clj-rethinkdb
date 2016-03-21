@@ -64,7 +64,7 @@
                                 (fn [^Bootstrap bs]
                                   (doto bs
                                     (.option ChannelOption/CONNECT_TIMEOUT_MILLIS connect-timeout)
-                                    (.option ChannelOption/SO_TIMEOUT read-timeout)
+                                    (.option ChannelOption/SO_TIMEOUT (int read-timeout))
                                     (.option ChannelOption/TCP_NODELAY true)))})]
        (init-connection client version protocol auth-key)
        (let [init-response (read-init-response client)]

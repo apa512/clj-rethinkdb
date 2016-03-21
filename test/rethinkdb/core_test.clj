@@ -186,6 +186,17 @@
            (map #(get-in % [:new_val :n]) (take 100 changes))
            (take 100 (s/stream->seq received)))))))
 
+(deftest core.async
+  (with-open [conn (r/connect :async? true)]
+    (-> (r/db test-db)
+        (r/table test-table)
+        (r/insert {:national_no 172 :name "Pichu"})
+        (r/run conn {:async? false}))
+    (is (= [{:national_no 172 :name "Pichu"}]
+           (<!! (-> (r/db test-db)
+                    (r/table test-table)
+                    (r/run conn)))))))
+
 (deftest document-manipulation
   (with-open [conn (r/connect :db test-db)]
     (r/run (-> (r/table test-table) (r/insert pokemons)) conn)
@@ -204,7 +215,7 @@
       (r/upcase "Shouting") "SHOUTING"
       (r/downcase "Whispering") "whispering"
 
-      ;; UUID's
+      ;; UUIDs
       (r/uuid "slava@example.com") "90691cbc-b5ea-5826-ae98-951e30fc3b2d"
       (r/uuid "a") "d0333a3b-39b1-5201-b37a-7bfbf6542b5f")
     (is (instance? UUID (UUID/fromString (r/run (r/uuid) conn))))))
