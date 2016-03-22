@@ -468,5 +468,18 @@
                    :text)
                (:text doc)))))))
 
+(deftest namespaced-keywords
+  (with-open [conn (r/connect :db test-db)]
+    (let [id (UUID/randomUUID)]
+      (is (-> (r/table test-table)
+              (r/insert [{:national_no id
+                          :namespaced/keyword "value"}])
+              (r/run conn))
+          (= (-> (r/table test-table)
+                 (r/get id)
+                 (r/run conn))
+             {:national_no id
+              :namespaced/keyword "value"})))))
+
 (use-fixtures :each setup-each)
 (use-fixtures :once setup-once)

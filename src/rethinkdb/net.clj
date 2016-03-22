@@ -162,7 +162,7 @@
     (async/go-loop []
       (when-let [[token query] (async/<! query-chan)]
         (let [query (add-global-optargs @conn query)
-              json (json/generate-string query)]
+              json (json/generate-string query {:key-fn #(subs (str %) 1)})]
           (s/put! client (io/encode query-protocol [token json]))
           (recur))))))
 
