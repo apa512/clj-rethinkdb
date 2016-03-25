@@ -1,9 +1,9 @@
 (ns rethinkdb.query-builder
   (:require [clojure.string :as string]
             [rethinkdb.types :refer [tt->int qt->int]]
-            #?@(:clj [[clj-time.coerce :as c]
-                      [clojure.data.codec.base64 :as base64]
-                      [byte-streams :as bs]])))
+    #?@(:clj [[clj-time.coerce :as c]
+              [clojure.data.codec.base64 :as base64]
+              [byte-streams :as bs]])))
 
 (defn term [term args & [optargs]]
   {::term term
