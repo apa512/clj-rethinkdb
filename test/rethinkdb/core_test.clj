@@ -1,5 +1,8 @@
 (ns rethinkdb.core-test
-  (:require [clj-time.core :as t]
+  (:require [clojure.java.io :as io]
+            [clojure.data.codec.base64 :as base64]
+            [byte-streams :as bs]
+            [clj-time.core :as t]
             [clojure.test :refer :all]
             [clojure.core.async :refer [go go-loop <! take! <!!]]
             [manifold.stream :as s]
@@ -483,3 +486,14 @@
 
 (use-fixtures :each setup-each)
 (use-fixtures :once setup-once)
+
+(deftest binary
+  (with-open [conn (r/connect :db test-db)]
+    (let [file (io/file (io/resource "pikachu.png"))]
+      (-> (r/table "pokedex")
+          (r/insert {:national_no 25
+                     :name "Pikachu"
+                     :image (bs/to-byte-array file)})
+          (r/run conn))
+      (let [resp (-> (r/table "pokedex") (r/run conn) first :image)]
+        (is (= (String. resp "UTF-8") (String. (bs/to-byte-array file) "UTF-8")))))))

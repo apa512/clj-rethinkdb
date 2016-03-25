@@ -1,6 +1,9 @@
 (ns rethinkdb.response
-  (:require [clj-time.core :as t]
-            [clj-time.coerce :as c]))
+  (:require [clojure.string :as string]
+            [clj-time.core :as t]
+            [clj-time.coerce :as c]
+    #?@(:clj [[clojure.data.codec.base64 :as base64]
+              [byte-streams :as bs]])))
 
 (declare parse-response)
 
@@ -17,8 +20,9 @@
 (defmethod parse-reql-type "GROUPED_DATA" [resp]
   (apply hash-map (apply concat (parse-response (:data resp)))))
 
-(defmethod parse-reql-type "BINARY" [resp]
-  (dissoc resp :$reql_type$))
+#?(:clj (defmethod parse-reql-type "BINARY" [resp]
+          (base64/decode (bs/to-byte-array
+                          (string/replace (:data resp) #"\r\n" "")))))
 
 (defmethod parse-reql-type "GEOMETRY" [resp]
   (dissoc resp :$reql_type$))
