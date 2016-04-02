@@ -20,7 +20,7 @@
   and waits for response before returning."
   [conn]
   (let [{:keys [start-query-chan query-chan results cursors client]} @conn]
-    (doseq [token (keys (:results @conn))]
+    (doseq [token (keys cursors)]
       (send-stop-query conn token))
     (async/close! query-chan)
     (s/close! client)

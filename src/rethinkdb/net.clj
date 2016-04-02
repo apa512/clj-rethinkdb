@@ -43,7 +43,7 @@
     (s/close! stream))
   clojure.lang.Counted
   (count [this]
-    (count (seq this)))
+    (count (into [] (seq this))))
   clojure.lang.Seqable
   (seq [this]
     (s/stream->seq stream))
