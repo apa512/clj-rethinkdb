@@ -45,7 +45,7 @@
 
 #?(:clj (defmethod parse-arg :binary [arg]
           {"$reql_type$" "BINARY"
-           "data" (String. (base64/encode arg) "UTF-8")}))
+           "data" (String. ^bytes (base64/encode arg) "UTF-8")}))
 
 (defmethod parse-arg :uuid [arg]
   (str arg))
