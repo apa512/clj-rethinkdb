@@ -123,6 +123,7 @@
       (is (= (set (r/run (r/table test-table) conn)) (set pokemons)))
       (is (= (r/run (-> (r/table test-table) (r/get 25)) conn) (first pokemons)))
       (is (= (set (r/run (-> (r/table test-table) (r/get-all [25 81])) conn)) (set pokemons)))
+      (is (= (first (r/run (-> (r/table test-table) (r/get-all 25)) conn)) (first (set pokemons))))
       (is (= pokemons (sort-by :national_no (r/run (-> (r/table test-table)
                                                      (r/between r/minval r/maxval {:right-bound :closed})) conn))))
       (is (= (r/run (-> (r/table test-table)

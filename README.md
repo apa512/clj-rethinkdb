@@ -59,7 +59,7 @@ The clj-rethinkdb query API aims to match the [JavaScript](http://rethinkdb.com/
   ;; Use the "genre" index we created to get all books with the genre of "crap".
   (-> (r/db "test")
       (r/table "authors")
-      (r/get-all ["crap"] {:index "genre"})
+      (r/get-all "crap" {:index "genre"})
       (r/filter (r/fn [row]
                   (r/eq "Stephenie Meyer" (r/get-field row "name"))))
       (r/run conn))

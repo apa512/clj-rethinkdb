@@ -219,9 +219,10 @@
   index."
   [table ids & [optargs]]
   (term :GET_ALL
-        (if (map? ids)
-          [table (wrap-args ids)]
-          (concat [table] ids))
+        (cond
+          (map? ids) [table (wrap-args ids)]
+          (coll? ids) (concat [table] ids)
+          :else [table ids])
         optargs))
 
 (defn get-field
