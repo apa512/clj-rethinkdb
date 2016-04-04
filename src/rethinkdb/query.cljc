@@ -219,9 +219,10 @@
   index."
   [table ids & [optargs]]
   (term :GET_ALL
-        (if (map? ids)
-          [table (wrap-args ids)]
-          (concat [table] ids))
+        (cond
+         (sequential? ids) (concat [table] ids)
+         (map? ids)        [table (wrap-args ids)]
+         :else (throw (IllegalArgumentException. "get-all expects a collection or a map.")))
         optargs))
 
 (defn get-field
