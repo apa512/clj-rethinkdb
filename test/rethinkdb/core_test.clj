@@ -343,7 +343,6 @@
     (testing "status"
       (is (= "pokedex" (:name (r/run (-> (r/db test-db) (r/table test-table) r/status) conn)))))
     (testing "wait"
-      (is (= {:ready 1} (-> (r/wait) (r/run conn))))
       (is (= {:ready 1} (-> (r/db test-db) (r/wait) (r/run conn))))
       (is (= {:ready 1} (-> (r/db test-db) (r/wait {:timeout 1}) (r/run conn)))))))
 
