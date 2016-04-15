@@ -287,11 +287,30 @@
 
 (deftest math-and-logic
   (with-open [conn (r/connect)]
-    (is (<= 0 (r/run (r/random 0 2) conn) 2))
+
     (are [term result] (= (r/run term conn) result)
       (r/add 2 2 2) 6
       (r/add "Hello " "from " "Tokyo") "Hello from Tokyo"
       (r/add [1 2] [3 4]) [1 2 3 4])
+
+    (are [term result] (= (r/run term conn) result)
+      (r/sub 7 2) 5
+      (r/sub (r/now) (r/sub (r/now) 60)) 60)
+
+    (are [term result] (= (r/run term conn) result)
+      (r/mul 2 3) 6
+      (r/mul ["Hi" "there"] 2) ["Hi" "there" "Hi" "there"]
+      (r/mul [1 2] 3) [1 2 1 2 1 2])
+
+    (are [term result] (= (r/run term conn) result)
+      (r/div 6 3) 2
+      (r/div 7 2) 3.5)
+
+    (are [term result] (= (r/run term conn) result)
+      (r/mod 2 2) 0
+      (r/mod 3 2) 1
+      (r/mod 6 2) 0
+      (r/mod 8 3) 2)
 
     (are [args lt-le-eq-ne-ge-gt] (= (r/run (r/make-array
                                               (apply r/lt args)
@@ -307,6 +326,12 @@
       [0 1 1 2] [false true false true false false]
       [5 4 3] [false false false true true true]
       [5 4 4 3] [false false false true true false])
+
+    (are [term result] (= result (r/run term conn))
+      (r/not true) false
+      (r/not false) true)
+
+    (is (<= 0 (r/run (r/random 0 2) conn) 2))
 
     (are [n floor-round-ceil] (= (r/run (r/make-array (r/floor n) (r/round n) (r/ceil n)) conn) floor-round-ceil)
       0 [0 0 0]
