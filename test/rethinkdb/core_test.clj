@@ -126,7 +126,7 @@
       (is (= pokemons (sort-by :national_no (r/run (-> (r/table test-table)
                                                      (r/between r/minval r/maxval {:right-bound :closed})) conn))))
       (is (= (r/run (-> (r/table test-table)
-                      (r/between 80 81 {:right-bound :closed})) conn) [(last pokemons)]))
+                        (r/between 80 81 {:right-bound :closed})) conn) [(last pokemons)]))
       (is (= (r/run (-> (r/db test-db)
                         (r/table test-table)
                         (r/filter (r/fn [row]
@@ -231,6 +231,10 @@
 
 (deftest dates-and-times
   (with-open [conn (r/connect)]
+    (is (< (-> (t/interval (r/run (r/now) conn) (t/now))
+               (t/in-seconds))
+           1))
+
     (are [term result] (= (r/run term conn) result)
       (r/time 2014 12 31) (t/date-time 2014 12 31)
       (r/time 2014 12 31 "+01:00") (t/from-time-zone
@@ -345,11 +349,20 @@
 
 (deftest geospatial-commands
   (with-open [conn (r/connect)]
-    (is (= {:type "Point" :coordinates [50 50]}
-           (r/run (r/geojson {:type "Point" :coordinates [50 50]}) conn)))
-    (is (= "Polygon" (:type (r/run (r/fill (r/line [[50 51] [51 51] [51 52] [50 51]])) conn))))
-    (is (= 104644.93094219 (r/run (r/distance (r/point 20 20)
-                                              (r/circle (r/point 21 20) 2)) conn)))))
+    (are [term result] (= (r/run term conn) result)
+      (r/geojson {:type "Point" :coordinates [50 50]}) {:type "Point" :coordinates [50 50]}
+      (r/fill (r/line [[50 51] [51 51] [51 52] [50 51]])) {:type "Polygon" :coordinates [[[50 51] [51 51] [51 52] [50 51]]]}
+      (r/distance (r/point 20 20) (r/circle (r/point 21 20) 2)) 104644.93094219
+      (r/to-geojson (r/point 20 20)) {:type "Point" :coordinates [20 20]}
+      (r/includes (r/circle (r/point 20 20) 2) (r/point 20 20)) true
+      (r/includes (r/circle (r/point 20 20) 1) (r/point 40 40)) false
+      (r/intersects (r/circle (r/point 20 20) 30) (r/point 21 20)) false
+      (r/intersects (r/circle (r/point 20 20) 10) (r/point 20 20)) true
+      (r/intersects (r/circle (r/point 20 20) 3) (r/circle (r/point 20 20) 1)) true
+      (r/intersects (r/circle (r/point 20 20) 3) (r/circle (r/point 21 20) 1)) false
+      (r/polygon [[50 51] [51 51] [51 52] [50 51]]) {:type "Polygon" :coordinates [[[50 51] [51 51] [51 52] [50 51]]]}
+      (r/polygon-sub (r/polygon [[0 9] [0 6] [3 6] [3 9]])
+                     (r/polygon [[1 7] [1 8] [2 8] [2 7]])) {:type "Polygon" :coordinates [[[0 9] [0 6] [3 6] [3 9] [0 9]] [[1 7] [1 8] [2 8] [2 7] [1 7]]]})))
 
 (deftest administration
   (with-open [conn (r/connect :db test-db)]
@@ -476,7 +489,6 @@
        (catch ExceptionInfo e
          (is (= ""
                 (:auth-key (ex-data e)))))))
-
 
 (deftest utf8-compliance
   (with-open [conn (r/connect :db test-db)]
