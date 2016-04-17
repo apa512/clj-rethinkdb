@@ -49,7 +49,10 @@
     (s/stream->seq stream))
   manifold.stream.core.IEventSink
   (put [this x _]
-    (s/put! stream x)))
+    (case x
+      ::more (send-continue-query conn token)
+      ::done (close this)
+      (s/put! stream x))))
 
 (defn init-connection [client version protocol auth-key]
   (s/put! client (io/encode init-protocol
@@ -63,10 +66,7 @@
         cursor (get-in @conn [:cursors token])]
     (when cursor
       (swap! (:conn conn) update-in [:cursors] #(dissoc % token))
-      (d/on-realized (s/put-all! cursor resp)
-                     (fn [_]
-                       (close cursor))
-                     (constantly nil)))
+      (s/put-all! cursor (conj resp ::done)))
     (d/on-realized (s/put! result (or cursor resp))
                    (fn [_]
                      (s/close! result))
@@ -76,13 +76,12 @@
   (let [query-chan (:query-chan @conn)
         cursor (get-in @conn [:cursors token])]
     (if cursor
-      (s/put-all! cursor resp)
+      (s/put-all! cursor (conj resp ::more))
       (let [result (get-in @conn [:results token])
             cursor (Cursor. conn (s/stream) token)]
         (swap! (:conn conn) assoc-in [:cursors token] cursor)
-        (s/put-all! cursor resp)
-        (s/put! result cursor)))
-    (send-continue-query conn token)))
+        (s/put-all! cursor (conj resp ::more))
+        (s/put! result cursor)))))
 
 (defn append-changes [conn token resp]
   (let [query-chan (:query-chan @conn)
