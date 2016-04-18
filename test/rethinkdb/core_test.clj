@@ -119,6 +119,17 @@
                    :pokemons
                    (into #{}))))))
 
+    (testing "set manipulation"
+      (are [term result] (= (r/run term conn) result)
+        (r/set-insert [1 2 3] 3) [1 2 3]
+        (r/set-insert [1 2 3] 4) [1 2 3 4]
+        (r/set-union [1 2 3] [4 5 6]) [1 2 3 4 5 6]
+        (r/set-union [1 2 3] [1 2 4]) [1 2 3 4]
+        (r/set-intersection [1 2 3] [1 2 4]) [1 2]
+        (r/set-intersection [1 2 3] [4 5 6]) []
+        (r/set-difference [1 2 3] [1 2 4]) [3]
+        (r/set-difference [1 2 3] [4 5 6]) [1 2 3]))
+
     (testing "selecting data"
       (is (= (set (r/run (r/table test-table) conn)) (set pokemons)))
       (is (= (r/run (-> (r/table test-table) (r/get 25)) conn) (first pokemons)))
