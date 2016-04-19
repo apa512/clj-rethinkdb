@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com).
 
 ## [Unreleased]
+
+## [0.15.13] - 2016-04-17
+### Changed
+- Use netty on the backend and make connections thread safe
+- Use connection DB with `table-create`
+- Dropped the `read-timeout` option to connect
+- Allow namespaced keywords
+- Add support for binary
+
+### Added
+- Added options to make queries return a core.async channel
+
+## [0.13.14] - 2016-02-21
 ### Changed
 - Disable Nagle's algorithm (set TCP NO_DELAY to true). This provides a speedup of around 30-40x for small queries on Linux. [#114](https://github.com/apa512/clj-rethinkdb/pull/114)
 - Renamed changes arg from `table` to `xs`. [#76](https://github.com/apa512/clj-rethinkdb/issues/76)
@@ -22,7 +35,6 @@ All notable changes to this project will be documented in this file. This change
 
 ### Removed
 - Support for RethinkDB < 2.0. [Changes](https://github.com/rethinkdb/rethinkdb/issues/5124) in RethinkDB 2.2 mean we can't (easily) support changefeeds in versions older than 2.0. The rest of the driver commands should work, but explicit support is being removed.
-
 
 ## [0.11.0] - 2015-10-19
 ### Added
