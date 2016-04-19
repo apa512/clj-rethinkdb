@@ -130,6 +130,20 @@
         (r/set-difference [1 2 3] [1 2 4]) [3]
         (r/set-difference [1 2 3] [4 5 6]) [1 2 3]))
 
+    (testing "array manipulation"
+      (are [term result] (= (r/run term conn) result)
+        (r/append [1 2 3] 9) [1 2 3 9]
+        (r/prepend [1 2 3] 9) [9 1 2 3]
+        (r/difference [1 2 3 1 4 2] [1 2]) [3 4]
+        (r/insert-at [1 2 3] 0 9) [9 1 2 3]
+        (r/insert-at [1 2 3] 1 9) [1 9 2 3]
+        (r/splice-at [1 2 3] 1 [8 9]) [1 8 9 2 3]
+        (r/splice-at [1 2 3] 2 [8 9]) [1 2 8 9 3]
+        (r/delete-at [1 2 3] 0) [2 3]
+        (r/delete-at [1 2 3] 2) [1 2]
+        (r/change-at [1 2 3] 0 9) [9 2 3]
+        (r/change-at [1 2 3] 1 9) [1 9 3]))
+
     (testing "selecting data"
       (is (= (set (r/run (r/table test-table) conn)) (set pokemons)))
       (is (= (r/run (-> (r/table test-table) (r/get 25)) conn) (first pokemons)))
