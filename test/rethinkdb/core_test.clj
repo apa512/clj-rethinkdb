@@ -119,31 +119,6 @@
                    :pokemons
                    (into #{}))))))
 
-    (testing "set manipulation"
-      (are [term result] (= (r/run term conn) result)
-        (r/set-insert [1 2 3] 3) [1 2 3]
-        (r/set-insert [1 2 3] 4) [1 2 3 4]
-        (r/set-union [1 2 3] [4 5 6]) [1 2 3 4 5 6]
-        (r/set-union [1 2 3] [1 2 4]) [1 2 3 4]
-        (r/set-intersection [1 2 3] [1 2 4]) [1 2]
-        (r/set-intersection [1 2 3] [4 5 6]) []
-        (r/set-difference [1 2 3] [1 2 4]) [3]
-        (r/set-difference [1 2 3] [4 5 6]) [1 2 3]))
-
-    (testing "array manipulation"
-      (are [term result] (= (r/run term conn) result)
-        (r/append [1 2 3] 9) [1 2 3 9]
-        (r/prepend [1 2 3] 9) [9 1 2 3]
-        (r/difference [1 2 3 1 4 2] [1 2]) [3 4]
-        (r/insert-at [1 2 3] 0 9) [9 1 2 3]
-        (r/insert-at [1 2 3] 1 9) [1 9 2 3]
-        (r/splice-at [1 2 3] 1 [8 9]) [1 8 9 2 3]
-        (r/splice-at [1 2 3] 2 [8 9]) [1 2 8 9 3]
-        (r/delete-at [1 2 3] 0) [2 3]
-        (r/delete-at [1 2 3] 2) [1 2]
-        (r/change-at [1 2 3] 0 9) [9 2 3]
-        (r/change-at [1 2 3] 1 9) [1 9 3]))
-
     (testing "selecting data"
       (is (= (set (r/run (r/table test-table) conn)) (set pokemons)))
       (is (= (r/run (-> (r/table test-table) (r/get 25)) conn) (first pokemons)))
@@ -227,13 +202,65 @@
 
 (deftest document-manipulation
   (with-open [conn (r/connect :db test-db)]
-    (r/run (-> (r/table test-table) (r/insert pokemons)) conn)
-    (is (= {:national_no 25}
-           (r/run (-> (r/table test-table)
-                      (r/get 25)
-                      (r/without [:type :name])) conn)))))
+    (testing "pluck"
+      (let [o {:a 1 :y 2}
+            a [{:x 1 :y 2}
+               {:x 3 :y 4}]]
+        (are [term result] (= (r/run term conn) result)
+          (r/pluck o :x) (select-keys o [:x])
+          (r/pluck o [:x :y]) (select-keys o [:x :y])
+          (r/pluck a :x) (map #(select-keys % [:x]) a)
+          (r/pluck a [:x :y]) (map #(select-keys % [:x :y]) a))))
 
-(deftest string-manipulating
+    (testing "without"
+      (r/run (-> (r/table test-table) (r/insert pokemons)) conn)
+      (is (= {:national_no 25}
+             (r/run (-> (r/table test-table)
+                        (r/get 25)
+                        (r/without [:type :name])) conn))))
+
+    (testing "array manipulation"
+      (are [term result] (= (r/run term conn) result)
+        (r/append [1 2 3] 9) [1 2 3 9]
+        (r/prepend [1 2 3] 9) [9 1 2 3]
+        (r/difference [1 2 3 1 4 2] [1 2]) [3 4]
+        (r/insert-at [1 2 3] 0 9) [9 1 2 3]
+        (r/insert-at [1 2 3] 1 9) [1 9 2 3]
+        (r/splice-at [1 2 3] 1 [8 9]) [1 8 9 2 3]
+        (r/splice-at [1 2 3] 2 [8 9]) [1 2 8 9 3]
+        (r/delete-at [1 2 3] 0) [2 3]
+        (r/delete-at [1 2 3] 2) [1 2]
+        (r/change-at [1 2 3] 0 9) [9 2 3]
+        (r/change-at [1 2 3] 1 9) [1 9 3]))
+
+    (testing "set manipulation"
+      (are [term result] (= (r/run term conn) result)
+        (r/set-insert [1 2 3] 3) [1 2 3]
+        (r/set-insert [1 2 3] 4) [1 2 3 4]
+        (r/set-union [1 2 3] [4 5 6]) [1 2 3 4 5 6]
+        (r/set-union [1 2 3] [1 2 4]) [1 2 3 4]
+        (r/set-intersection [1 2 3] [1 2 4]) [1 2]
+        (r/set-intersection [1 2 3] [4 5 6]) []
+        (r/set-difference [1 2 3] [1 2 4]) [3]
+        (r/set-difference [1 2 3] [4 5 6]) [1 2 3]))
+
+    (testing "has-fields"
+      (let [o {:x 1 :y 2}
+            a [{:x 1 :y 2}
+               {:x 3 :z 4}]]
+        (are [term result] (= (r/run term conn) result)
+          (r/has-fields o :x) true
+          (r/has-fields o :z) false
+          (r/has-fields a :x) a
+          (r/has-fields a :y) [(first a)])))
+
+    (testing "literal-values"
+      (with-open [conn (r/connect)]
+        (is (= (r/run (r/object :a 1) conn) {:a 1}))
+        (is (= (r/run (r/keys (r/object :a 1)) conn) ["a"]))
+        (is (= (r/run (r/values (r/object :a 1)) conn) [1]))))))
+
+(deftest string-manipulation
   (with-open [conn (r/connect)]
     (are [term result] (= (r/run term conn) result)
       (r/match "pikachu" "^pika") {:str "pika" :start 0 :groups [] :end 4}
@@ -247,12 +274,6 @@
       (r/uuid "slava@example.com") "90691cbc-b5ea-5826-ae98-951e30fc3b2d"
       (r/uuid "a") "d0333a3b-39b1-5201-b37a-7bfbf6542b5f")
     (is (instance? UUID (UUID/fromString (r/run (r/uuid) conn))))))
-
-(deftest literal-values
-  (with-open [conn (r/connect)]
-    (is (= (r/run (r/object :a 1) conn) {:a 1}))
-    (is (= (r/run (r/keys (r/object :a 1)) conn) ["a"]))
-    (is (= (r/run (r/values (r/object :a 1)) conn) [1]))))
 
 (deftest dates-and-times
   (with-open [conn (r/connect)]
