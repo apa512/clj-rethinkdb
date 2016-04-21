@@ -15,12 +15,12 @@
                  [org.clojure/tools.logging "0.3.1"]
                  [aleph "0.4.1"]
                  [gloss "0.2.5"]
-                 [cheshire "5.5.0"]
+                 [cheshire "5.6.1"]
                  [rethinkdb-protobuf "2.2.0.1"]
                  [com.google.protobuf/protobuf-java "3.0.0-alpha-3.1"]
                  [clj-time "0.11.0"]]
   :profiles {:dev {:resource-paths ["test-resources"]
-                   :dependencies [[ch.qos.logback/logback-classic "1.1.5"]]}}
+                   :dependencies [[ch.qos.logback/logback-classic "1.1.7"]]}}
   :jvm-opts ["-Xmx512m"]
   :deploy-repositories [["releases" :clojars]
                         ["snapshots" :clojars]])
