@@ -3,12 +3,13 @@
             [clojure.core.async :as async]
             [clojure.tools.logging :as log]
             [manifold.stream :as s]
+            [rethinkdb.ssl :as ssl]
             [rethinkdb.net :refer [init-connection setup-producer
                                    setup-consumer read-init-response
                                    send-stop-query]])
   (:import [clojure.lang IDeref]
            [io.netty.bootstrap Bootstrap]
-           [io.netty.channel ChannelOption]
+           [io.netty.channel ChannelPipeline ChannelOption]
            [java.io Closeable]
            [rethinkdb Ql2$VersionDummy$Version Ql2$VersionDummy$Protocol]))
 
@@ -46,7 +47,7 @@
   not provided.
 
   (connect :host \"dbserver1.local\")"
-  [& {:keys [^String host ^int port token auth-key db async?
+  [& {:keys [^String host ^int port token auth-key db async? ca-cert
              ^int connect-timeout]
       :or {host "127.0.0.1"
            port 28015
@@ -57,12 +58,25 @@
            connect-timeout 5000}}]
   (let [auth-key-printable (if (= "" auth-key) "" "<auth key provided but hidden>")]
     (try
-     (let [client @(tcp/client {:host host :port port
-                                :bootstrap-transform
-                                (fn [^Bootstrap bs]
-                                  (doto bs
-                                    (.option ChannelOption/CONNECT_TIMEOUT_MILLIS (int connect-timeout))
-                                    (.option ChannelOption/TCP_NODELAY true)))})]
+     (let [client #_@(with-redefs [aleph.netty/ssl-client-context #(ssl/ssl-context "/home/erik/cert.pem")]
+                     (tcp/client {:host host :port port
+                                  :ssl? true
+                                  :bootstrap-transform
+                                  (fn [^Bootstrap bs]
+                                    (doto bs
+                                      (.option ChannelOption/CONNECT_TIMEOUT_MILLIS (int connect-timeout))
+                                      (.option ChannelOption/TCP_NODELAY true)))}))
+           @(tcp/client {:host host :port port
+                         :pipeline-transform
+                         (fn [^ChannelPipeline p]
+                           (if ca-cert
+                             (ssl/ssl-pipeline p ca-cert)
+                             p))
+                         :bootstrap-transform
+                         (fn [^Bootstrap bs]
+                           (doto bs
+                             (.option ChannelOption/CONNECT_TIMEOUT_MILLIS (int connect-timeout))
+                             (.option ChannelOption/TCP_NODELAY true)))})]
        (init-connection client version protocol auth-key)
        (let [init-response (read-init-response client)]
          (log/trace "Initial response while establishing RethinkDB connection:" init-response)
