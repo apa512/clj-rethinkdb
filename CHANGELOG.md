@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.15.15] - 2016-04-23
+- Add TLS support
+
 ## [0.15.13] - 2016-04-17
 ### Changed
 - Use netty on the backend and make connections thread safe
