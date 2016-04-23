@@ -163,7 +163,9 @@
       (r/avg [2 4]) 3
       (r/min [4 2]) 2
       (r/max [4 6]) 6
-      (r/sum [3 4]) 7)))
+      (r/sum [3 4]) 7
+      (r/contains [1 6 1 8] 1) true
+      (r/contains [1 6 1 8] 2) false)))
 
 (deftest changefeeds
   (with-open [conn (r/connect)]
@@ -321,16 +323,14 @@
       (r/to-iso8601 (r/time 2014 12 31 14 12 33 "-04:00")) "2014-12-31T14:12:33-04:00"
       (r/to-epoch-time (r/time 1970 1 1)) 0)))
 
-(deftest control-structure
+(deftest control-structures
   (with-open [conn (r/connect)]
     (are [term result] (= result (r/run term conn))
       (r/branch true 1 0) 1
       (r/branch false 1 0) 0
-      (r/or false false) false
-      (r/any false true) true
-      (r/all true true) true
-      (r/and true false) false
       (r/coerce-to [["name" "Pikachu"]] "OBJECT") {:name "Pikachu"}
+      (r/coerce-to 1 "STRING") "1"
+      (r/coerce-to "1" "NUMBER") 1
       (r/type-of [1 2 3]) "ARRAY"
       (r/type-of {:number 42}) "OBJECT"
       (r/json "{\"number\":42}") {:number 42})))
@@ -341,26 +341,24 @@
     (are [term result] (= (r/run term conn) result)
       (r/add 2 2 2) 6
       (r/add "Hello " "from " "Tokyo") "Hello from Tokyo"
-      (r/add [1 2] [3 4]) [1 2 3 4])
-
-    (are [term result] (= (r/run term conn) result)
+      (r/add [1 2] [3 4]) [1 2 3 4]
       (r/sub 7 2) 5
-      (r/sub (r/now) (r/sub (r/now) 60)) 60)
-
-    (are [term result] (= (r/run term conn) result)
+      (r/sub (r/now) (r/sub (r/now) 60)) 60
       (r/mul 2 3) 6
       (r/mul ["Hi" "there"] 2) ["Hi" "there" "Hi" "there"]
-      (r/mul [1 2] 3) [1 2 1 2 1 2])
-
-    (are [term result] (= (r/run term conn) result)
+      (r/mul [1 2] 3) [1 2 1 2 1 2]
       (r/div 6 3) 2
-      (r/div 7 2) 3.5)
-
-    (are [term result] (= (r/run term conn) result)
+      (r/div 7 2) 3.5
       (r/mod 2 2) 0
       (r/mod 3 2) 1
       (r/mod 6 2) 0
-      (r/mod 8 3) 2)
+      (r/mod 8 3) 2
+      (r/or false false) false
+      (r/any false true) true
+      (r/all true true) true
+      (r/and true false) false
+      (r/not true) false
+      (r/not false) true)
 
     (are [args lt-le-eq-ne-ge-gt] (= (r/run (r/make-array
                                               (apply r/lt args)
@@ -376,10 +374,6 @@
       [0 1 1 2] [false true false true false false]
       [5 4 3] [false false false true true true]
       [5 4 4 3] [false false false true true false])
-
-    (are [term result] (= result (r/run term conn))
-      (r/not true) false
-      (r/not false) true)
 
     (is (<= 0 (r/run (r/random 0 2) conn) 2))
 
