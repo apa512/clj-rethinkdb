@@ -93,13 +93,6 @@
         (-> (r/table test-table) (r/get 1) r/delete) {:deleted 1}
         (-> (r/table test-table) r/sync) {:synced 1}))
 
-    (testing "transformations"
-      (is (= [25 81] (r/run (-> (r/table test-table)
-                                (r/order-by {:index (r/asc :national_no)})
-                                (r/map (r/fn [row]
-                                         (r/get-field row :national_no))))
-                            conn))))
-
     (testing "merging values"
       (let [trainers [{:id 1 :name "Ash" :pokemon_ids [25 81]}]]
         (are [term result] (= (r/run term conn) result)
@@ -144,6 +137,37 @@
       (is (= "not found" (r/run (-> (r/max [nil]) (r/default "not found")) conn)))
       (is (= "Cannot take the average of an empty stream.  (If you passed `avg` a field name, it may be that no elements of the stream had that field.)"
              (r/run (-> (r/avg [nil]) (r/default (r/fn [row] row))) conn))))))
+
+(deftest transformations
+  (with-open [conn (r/connect :db test-db)]
+    (testing "order-by + map"
+      (is (= [25 81] ((r/run (-> (r/table test-table) (r/insert pokemons)) conn)
+                      (r/run (-> (r/table test-table) r/sync) conn)
+                      (r/run (-> (r/table test-table)
+                                 (r/order-by {:index (r/asc :national_no)})
+                                 (r/map (r/fn [row]
+                                          (r/get-field row :national_no))))
+                             conn)))))
+
+    (testing "skip"
+      (are [term result] (= (r/run term conn) result)
+        (r/skip [0 1 2 3 4 5 6 7] 3) [3 4 5 6 7]
+        (r/skip [0 1 2 3 4 5 6 7] 8) []))
+
+    (testing "limit"
+      (are [term result] (= (r/run term conn) result)
+        (r/limit [0 1 2 3 4 5 6 7] 3) [0 1 2]
+        (r/limit [0 1 2 3 4 5 6 7] 5) [0 1 2 3 4]))
+
+    (testing "slice"
+      (are [term result] (= (r/run term conn) result)
+        (r/slice [0 1 2 3 4 5 6 7] 2 4) [2 3]
+        (r/slice [0 1 2 3 4 5 6 7] 0 4) [0 1 2 3]))
+
+    (testing "sample"
+      (is (clojure.set/subset? (set (r/run (r/sample [1 2 3 4 5] 3) conn)) #{1 2 3 4 5}))
+      (is (= (count (r/run (r/sample [1 2 3 4 5] 3) conn)) 3))
+      (is (= (set (r/run (r/sample [1 2 3 4 5] 10) conn)) #{1 2 3 4 5})))))
 
 (deftest db-in-connection
   (testing "run a query with an implicit database"
@@ -337,7 +361,6 @@
 
 (deftest math-and-logic
   (with-open [conn (r/connect)]
-
     (are [term result] (= (r/run term conn) result)
       (r/add 2 2 2) 6
       (r/add "Hello " "from " "Tokyo") "Hello from Tokyo"
