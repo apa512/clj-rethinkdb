@@ -58,25 +58,17 @@
            connect-timeout 5000}}]
   (let [auth-key-printable (if (= "" auth-key) "" "<auth key provided but hidden>")]
     (try
-     (let [client #_@(with-redefs [aleph.netty/ssl-client-context #(ssl/ssl-context "/home/erik/cert.pem")]
-                     (tcp/client {:host host :port port
-                                  :ssl? true
-                                  :bootstrap-transform
-                                  (fn [^Bootstrap bs]
-                                    (doto bs
-                                      (.option ChannelOption/CONNECT_TIMEOUT_MILLIS (int connect-timeout))
-                                      (.option ChannelOption/TCP_NODELAY true)))}))
-           @(tcp/client {:host host :port port
-                         :pipeline-transform
-                         (fn [^ChannelPipeline p]
-                           (if ca-cert
-                             (ssl/ssl-pipeline p ca-cert)
-                             p))
-                         :bootstrap-transform
-                         (fn [^Bootstrap bs]
-                           (doto bs
-                             (.option ChannelOption/CONNECT_TIMEOUT_MILLIS (int connect-timeout))
-                             (.option ChannelOption/TCP_NODELAY true)))})]
+     (let [client @(tcp/client {:host host :port port
+                                :pipeline-transform
+                                (fn [^ChannelPipeline p]
+                                  (if ca-cert
+                                    (ssl/ssl-pipeline p ca-cert)
+                                    p))
+                                :bootstrap-transform
+                                (fn [^Bootstrap bs]
+                                  (doto bs
+                                    (.option ChannelOption/CONNECT_TIMEOUT_MILLIS (int connect-timeout))
+                                    (.option ChannelOption/TCP_NODELAY true)))})]
        (init-connection client version protocol auth-key)
        (let [init-response (read-init-response client)]
          (log/trace "Initial response while establishing RethinkDB connection:" init-response)
