@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com).
 
 ## [Unreleased]
+### Changed
+- Renamed indexes-of to offsets-of.
 
 ## [0.15.15] - 2016-04-23
 - Add TLS support
