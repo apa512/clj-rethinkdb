@@ -164,6 +164,23 @@
         (r/slice [0 1 2 3 4 5 6 7] 2 4) [2 3]
         (r/slice [0 1 2 3 4 5 6 7] 0 4) [0 1 2 3]))
 
+    (testing "nth"
+      (are [term result] (= (r/run term conn) result)
+        (r/nth [0 1 2 3 4 5 6 7] 0) 0
+        (r/nth [0 1 2 3 4 5 6 7] 2) 2
+        (r/nth [0 1 2 3 4 5 6 7] -1) 7
+        (r/nth [0 1 2 3 4 5 6 7] -3) 5))
+
+    (testing "is-empty"
+      (are [term result] (= (r/run term conn) result)
+        (r/is-empty [0 1 2 3 4 5 6 7]) false
+        (r/is-empty []) true))
+
+    (testing "union"
+      (are [term result] (= (r/run term conn) result)
+        (r/union [0 1 2 3] [4 5 6 7]) [0 1 2 3 4 5 6 7]
+        (r/union [0 1 2 3] []) [0 1 2 3]))
+
     (testing "sample"
       (is (clojure.set/subset? (set (r/run (r/sample [1 2 3 4 5] 3) conn)) #{1 2 3 4 5}))
       (is (= (count (r/run (r/sample [1 2 3 4 5] 3) conn)) 3))
