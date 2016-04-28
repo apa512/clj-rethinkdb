@@ -58,7 +58,12 @@
     identity
     [(tt->int term)
      (map parse-arg (seq args))
-     (if optargs (snake-case-keys optargs))]))
+     (if optargs (snake-case-keys (->> optargs
+                                       (map (fn [[k v]]
+                                              [k (if (::term v)
+                                                   (parse-term v)
+                                                   v)]))
+                                       (into {}))))]))
 
 (defn parse-query
   ([type]
