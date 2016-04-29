@@ -171,6 +171,12 @@
         (r/nth [0 1 2 3 4 5 6 7] -1) 7
         (r/nth [0 1 2 3 4 5 6 7] -3) 5))
 
+    (testing "offsets-of"
+      (are [term result] (= (r/run term conn) result)
+        (r/offsets-of [0 1 2 3 4 5 6 7] 3) [3]
+        (r/offsets-of ['a' 'b' 'c'] 'b') [1]
+        (r/offsets-of ['a' 'b' 'c' 'b'] 'b') [1 3]))
+
     (testing "is-empty"
       (are [term result] (= (r/run term conn) result)
         (r/is-empty [0 1 2 3 4 5 6 7]) false

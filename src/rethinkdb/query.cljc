@@ -347,11 +347,11 @@
   [sq n]
   (term :NTH [sq n]))
 
-(defn indexes-of
+(defn offsets-of
   "Get the indexes of an element in a sequence. If the argument is a predicate,
   get the indexes of all elements matching it."
   [sq obj-or-func]
-  (term :INDEXES_OF [sq obj-or-func]))
+  (term :OFFSETS_OF [sq obj-or-func]))
 
 (defn is-empty
   "Test if a sequence is empty."
