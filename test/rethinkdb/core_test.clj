@@ -375,6 +375,8 @@
     (are [term result] (= result (r/run term conn))
       (r/branch true 1 0) 1
       (r/branch false 1 0) 0
+      (r/range 5) [0 1 2 3 4]
+      (r/range 3 5) [3 4]
       (r/coerce-to [["name" "Pikachu"]] "OBJECT") {:name "Pikachu"}
       (r/coerce-to 1 "STRING") "1"
       (r/coerce-to "1" "NUMBER") 1

@@ -834,6 +834,15 @@
   [sq func]
   (term :FOR_EACH [sq func]))
 
+(defn range
+  "Generate a stream of sequential integers in a specified range."
+  ([]
+   (term :RANGE []))
+  ([end-value]
+   (term :RANGE [end-value]))
+  ([start-value end-value]
+   (term :RANGE [start-value end-value])))
+
 (defn error
   "Throw a runtime error."
   ([] (term :ERROR []))
@@ -1038,7 +1047,7 @@
     (walk/postwalk
       #(if (clojure.core/and (map? %) (= :FUNC (:rethinkdb.query-builder/term %)))
         (let [vars (first (:rethinkdb.query-builder/args %))
-              new-vars (range @var-counter (+ @var-counter (clojure.core/count vars)))
+              new-vars (clojure.core/range @var-counter (+ @var-counter (clojure.core/count vars)))
               new-args (clojure.core/map
                          (clojure.core/fn [arg]
                            (term :VAR [arg]))
