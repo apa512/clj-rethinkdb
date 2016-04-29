@@ -375,8 +375,11 @@
   "Takes a stream and partitions it into multiple groups based on the fields or
   functions provided. Commands chained after ```group``` will be called on each of
   these grouped sub-streams, producing grouped data."
-  [sq s]
-  (term :GROUP [sq s]))
+  [sq field-or-index]
+  (if (clojure.core/and (map? field-or-index)
+                        (empty? (::term field-or-index)))
+    (term :GROUP [sq] field-or-index)
+    (term :GROUP [sq field-or-index])))
 
 (defn ungroup
   "Takes a grouped stream or grouped data and turns it into an array of objects
