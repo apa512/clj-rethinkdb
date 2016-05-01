@@ -47,6 +47,12 @@
   clojure.lang.Seqable
   (seq [this]
     (s/stream->seq stream))
+  java.lang.Iterable
+  (iterator [this]
+    (.iterator (seq this)))
+  java.util.Collection
+  (toArray [this]
+    (into-array Object this))
   manifold.stream.core.IEventSink
   (put [this x _]
     (case x
