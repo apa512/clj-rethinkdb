@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file. This change
 ## [Unreleased]
 ### Changed
 - Renamed indexes-of to offsets-of.
+### Added
+- Added range.
 
 ## [0.15.15] - 2016-04-23
 - Add TLS support
