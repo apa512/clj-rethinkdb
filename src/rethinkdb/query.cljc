@@ -36,6 +36,9 @@
     x
     (term :ARGS [x])))
 
+(defn- term? [x]
+  (:rethinkdb.query-builder/term x))
+
 #?(:clj (defmacro fn [args & [body]]
           (let [new-args (into [] (clojure.core/map
                                    #(hash-map :temp-var (keyword %)) args))
@@ -375,11 +378,11 @@
   "Takes a stream and partitions it into multiple groups based on the fields or
   functions provided. Commands chained after ```group``` will be called on each of
   these grouped sub-streams, producing grouped data."
-  [sq field-or-index]
-  (if (clojure.core/and (map? field-or-index)
-                        (empty? (::term field-or-index)))
-    (term :GROUP [sq] field-or-index)
-    (term :GROUP [sq field-or-index])))
+  [sq field-or-index-or-optargs]
+  (if (clojure.core/and (map? field-or-index-or-optargs)
+                        (clojure.core/not (term? field-or-index-or-optargs)))
+    (term :GROUP [sq] field-or-index-or-optargs)
+    (term :GROUP [sq field-or-index-or-optargs])))
 
 (defn ungroup
   "Takes a grouped stream or grouped data and turns it into an array of objects
