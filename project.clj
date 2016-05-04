@@ -7,7 +7,7 @@
           :src-dir-uri "https://github.com/apa512/clj-rethinkdb/blob/master/"
           :src-linenum-anchor-prefix "L"}
   :global-vars {*warn-on-reflection* true}
-  :plugins [[codox "0.9.4"]]
+  :plugins [[lein-codox "0.9.5"]]
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.48" :scope "provided"]
                  [org.clojure/core.async "0.2.374"]

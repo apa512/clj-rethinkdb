@@ -207,10 +207,18 @@
 (deftest aggregation
   (with-open [conn (r/connect)]
     (are [term result] (= (r/run term conn) result)
+      (r/group [1 6 1 8] (r/fn [e] e)) {1 [1 1], 6 [6], 8 [8]}
+      (r/ungroup (r/group [1 6 1 8] (r/fn [e] e))) [{:group 1, :reduction [1 1]}
+                                                    {:group 6, :reduction [6]}
+                                                    {:group 8, :reduction [8]}]
+      (r/count [1 6 1 8]) 4
+      (r/count "asdf") 4
+      (r/count {:a 1 :b 2 :c 3}) 3
+      (r/sum [3 4]) 7
       (r/avg [2 4]) 3
       (r/min [4 2]) 2
       (r/max [4 6]) 6
-      (r/sum [3 4]) 7
+      (r/distinct [1 6 1 8]) [1 6 8]
       (r/contains [1 6 1 8] 1) true
       (r/contains [1 6 1 8] 2) false)))
 
@@ -375,6 +383,7 @@
     (are [term result] (= result (r/run term conn))
       (r/branch true 1 0) 1
       (r/branch false 1 0) 0
+      (r/limit (r/range) 4) [0 1 2 3]
       (r/range 5) [0 1 2 3 4]
       (r/range 3 5) [3 4]
       (r/coerce-to [["name" "Pikachu"]] "OBJECT") {:name "Pikachu"}
