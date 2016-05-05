@@ -937,11 +937,11 @@
   [geo]
   (term :TO_GEOJSON [geo]))
 
-(defn get-intersection
+(defn get-intersecting
   "Get all documents where the given geometry object intersects the geometry
   object of the requested geospatial index."
   [table geo & [optargs]]
-  (term :GET_INTERSECTION [table geo] optargs))
+  (term :GET_INTERSECTING [table geo] optargs))
 
 (defn get-nearest
   "Get all documents where the specified geospatial index is within a certain
