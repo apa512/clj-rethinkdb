@@ -2,12 +2,15 @@
 
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com).
 
-## [Unreleased]
+## [0.15.19]
+
 ### Changed
-- Renamed indexes-of to offsets-of.
+- **Breaking** renamed `indexes-of` to `offsets-of`
+- Renamed `get-intersection` to `get-intersecting`
+- Added support for `group` with multiple fields
 
 ### Added
-- Added range.
+- Added `range`
 
 ## [0.15.15] - 2016-04-23
 - Add TLS support

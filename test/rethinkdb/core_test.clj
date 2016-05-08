@@ -448,7 +448,24 @@
       1/2 [0 1 1])))
 
 (deftest geospatial-commands
-  (with-open [conn (r/connect)]
+  (with-open [conn (r/connect :db test-db)]
+    (def geo-table "geo")
+    (ensure-table geo-table {:primary-key :name} conn)
+    (r/run (r/index-create (r/table geo-table) :area nil {:geo true}) conn)
+    (r/run (r/index-wait (r/table geo-table)) conn)
+    (def geo-data [{:name "A" :area (r/circle (r/point 20 20) 100)}
+                   {:name "B" :area (r/circle (r/point 30 30) 100)}
+                   {:name "C" :area (r/circle (r/point 40 40) 100)}])
+    (r/run (r/insert (r/table geo-table) geo-data) conn)
+    (is (= "A" (-> (r/run (r/get-nearest (r/table geo-table) (r/point 20 20) {:index :area}) conn)
+                   (first)
+                   (:doc)
+                   (:name))))
+    (is (= "B" (-> (r/run (r/get-intersecting (r/table geo-table) (r/point 30 30) {:index :area}) conn)
+                   (first)
+                   (:name))))
+    (r/run (r/table-drop geo-table) conn)
+
     (are [term result] (= (r/run term conn) result)
       (r/geojson {:type "Point" :coordinates [50 50]}) {:type "Point" :coordinates [50 50]}
       (r/fill (r/line [[50 51] [51 51] [51 52] [50 51]])) {:type "Polygon" :coordinates [[[50 51] [51 51] [51 52] [50 51]]]}
