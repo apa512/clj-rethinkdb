@@ -208,6 +208,9 @@
   (with-open [conn (r/connect)]
     (are [term result] (= (r/run term conn) result)
       (r/group [1 6 1 8] (r/fn [e] e)) {1 [1 1], 6 [6], 8 [8]}
+      (r/group [{:x 1 :y 2} {:x 1 :y 2} {:x 1 :y 3}] [:x :y]) {[1 2] [{:x 1 :y 2}
+                                                                      {:x 1 :y 2}]
+                                                               [1 3] [{:x 1 :y 3}]}
       (r/ungroup (r/group [1 6 1 8] (r/fn [e] e))) [{:group 1, :reduction [1 1]}
                                                     {:group 6, :reduction [6]}
                                                     {:group 8, :reduction [8]}]

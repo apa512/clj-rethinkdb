@@ -382,7 +382,9 @@
   (if (clojure.core/and (map? field-or-index-or-optargs)
                         (clojure.core/not (term? field-or-index-or-optargs)))
     (term :GROUP [sq] field-or-index-or-optargs)
-    (term :GROUP [sq field-or-index-or-optargs])))
+    (term :GROUP (if (sequential? field-or-index-or-optargs)
+                   (into [sq] field-or-index-or-optargs)
+                   [sq field-or-index-or-optargs]))))
 
 (defn ungroup
   "Takes a grouped stream or grouped data and turns it into an array of objects
