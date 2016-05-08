@@ -4,10 +4,11 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 ### Changed
-- Renamed indexes-of to offsets-of.
+- Renamed `indexes-of` to `offsets-of`.
+- Renamed `get-intersection` to `get-intersecting`.
 
 ### Added
-- Added range.
+- Added `range`.
 
 ## [0.15.15] - 2016-04-23
 - Add TLS support
