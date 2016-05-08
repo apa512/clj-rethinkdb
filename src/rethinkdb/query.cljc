@@ -223,9 +223,10 @@
   [table ids & [optargs]]
   (term :GET_ALL
         (cond
-         (sequential? ids) (concat [table] ids)
-         (map? ids)        [table (wrap-args ids)]
-         :else (throw (IllegalArgumentException. "get-all expects a collection or a map.")))
+          (sequential? ids) (concat [table] ids)
+          (map? ids)        [table (wrap-args ids)]
+          :else #?(:clj (throw (IllegalArgumentException. "get-all expects a collection or a map."))
+                   :cljs (throw (js/Error. "get-all expects a collection or a map."))))
         optargs))
 
 (defn get-field
