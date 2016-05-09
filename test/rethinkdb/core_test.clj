@@ -14,9 +14,6 @@
 (def test-db "cljrethinkdb_test")
 (def test-table :pokedex)
 
-(defn split-map [m]
-  (map (fn [[k v]] {k v}) m))
-
 (def pokemons [{:national_no 25
                 :name        "Pikachu"
                 :type        ["Electric"]}
@@ -62,36 +59,37 @@
 
 (deftest manipulating-tables
   (with-open [conn (r/connect :db test-db)]
-    (are [term result] (contains? (set (split-map (r/run term conn))) result)
-      (r/table-create (r/db test-db) :tmp) {:tables_created 1}
-      (r/table-create (r/db test-db) :tmp2) {:tables_created 1}
-      (-> (r/table :tmp)
-          (r/insert {:id (UUID/randomUUID)})) {:inserted 1}
-      (r/table-drop (r/db test-db) :tmp) {:tables_dropped 1}
-      (r/table-drop :tmp2) {:tables_dropped 1}
-      (-> (r/table test-table) (r/index-create :name)) {:created 1}
-      (-> (r/table test-table) (r/index-create :tmp (r/fn [row] 1))) {:created 1}
-      (-> (r/table test-table)
-          (r/index-create :type (r/fn [row]
-                                  (r/get-field row :type)))) {:created 1}
-      (-> (r/table test-table) (r/index-rename :tmp :xxx)) {:renamed 1}
-      (-> (r/table test-table) (r/index-drop :xxx)) {:dropped 1})
-    (is (= ["name" "type"] (r/run (-> (r/table test-table) r/index-list) conn)))))
+    (testing "table-create-drop"
+      (are [term key result] (= (key (r/run term conn)) result)
+        (r/table-create (r/db test-db) :tmp) :tables_created 1
+        (r/table-create :tmp2) :tables_created 1
+        (r/insert (r/table :tmp) {:id (UUID/randomUUID)}) :inserted 1
+        (r/table-drop (r/db test-db) :tmp) :tables_dropped 1
+        (r/table-drop :tmp2) :tables_dropped 1))
+
+    (testing "indexes"
+      (are [term result] (= (r/run (-> (r/table test-table) term) conn) result)
+        (r/index-create :name) {:created 1}
+        (r/index-create :tmp (r/fn [row] 1)) {:created 1}
+        (r/index-create :type (r/fn [row] (r/get-field row :type))) {:created 1}
+        (r/index-rename :tmp :xxx) {:renamed 1}
+        (r/index-drop :xxx) {:dropped 1}
+        (r/index-list) ["name" "type"])
+      (are [term key result] (= (key (first (r/run (-> (r/table test-table) term) conn))) result)
+        (r/index-wait) :ready true
+        (r/index-status) :index "name"
+        (r/index-status) :ready true))))
 
 (deftest manipulating-data
   (with-open [conn (r/connect :db test-db)]
     (testing "writing data"
-      (are [term result] (contains? (set (split-map (r/run term conn))) result)
-        (-> (r/table test-table) (r/insert bulbasaur)) {:inserted 1}
-        (-> (r/table test-table) (r/insert pokemons)) {:inserted 2}
-        (-> (r/table test-table)
-            (r/get 1)
-            (r/update {:japanese "Fushigidane"})) {:replaced 1}
-        (-> (r/table test-table)
-            (r/get 1)
-            (r/replace (merge bulbasaur {:weight "6.9 kg"}))) {:replaced 1}
-        (-> (r/table test-table) (r/get 1) r/delete) {:deleted 1}
-        (-> (r/table test-table) r/sync) {:synced 1}))
+      (are [term operation result] (= (operation (r/run (-> (r/table test-table) term) conn)) result)
+        (r/insert bulbasaur) :inserted 1
+        (r/insert pokemons) :inserted 2
+        (-> (r/get 1) (r/update {:japanese "Fushigidane"})) :replaced 1
+        (-> (r/get 1) (r/replace (merge bulbasaur {:weight "6.9 kg"}))) :replaced 1
+        (-> (r/get 1) r/delete) :deleted 1
+        (r/sync) :synced 1))
 
     (testing "merging values"
       (let [trainers [{:id 1 :name "Ash" :pokemon_ids [25 81]}]]
