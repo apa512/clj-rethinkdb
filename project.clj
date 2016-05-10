@@ -3,9 +3,8 @@
   :url "http://github.com/apa512/clj-rethinkdb"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :codox {:defaults {:doc/format :markdown}
-          :src-dir-uri "https://github.com/apa512/clj-rethinkdb/blob/master/"
-          :src-linenum-anchor-prefix "L"}
+  :codox {:metadata {:doc/format :markdown}
+          :source-uri "https://github.com/apa512/clj-rethinkdb/blob/master/{filepath}#L{line}"}
   :global-vars {*warn-on-reflection* true}
   :plugins [[lein-codox "0.9.5"]]
   :dependencies [[org.clojure/clojure "1.7.0"]

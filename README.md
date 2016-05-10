@@ -12,7 +12,7 @@ A RethinkDB client for Clojure. Tested and supported on RethinkDB 2.0.x but shou
 
 ## Changes
 
-All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, 0.10.x is the last release track supporting Clojure 1.6 and below. 0.11.x is the last release track that supports versions of RethinkDB < 2.0
+All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, 0.10.x is the last release track supporting Clojure 1.6 and below. 0.11.x is the last release track that supports versions of RethinkDB < 2.0.
 
 ## Usage
 
@@ -192,11 +192,10 @@ An example using loops, functions, branching and various object operations (sele
       (r/run conn))))
 ```
 
-Note that for inserts we resolve conflicts by an update. At worst this may override an object that has been added while the query was running. Which should never happen since this function is recognized by RethinkDB as atomic.
+Note that for inserts we resolve conflicts by an update. At worst this may override an object that has been added while the query was running, which should never happen since this function is recognized by RethinkDB as atomic.
 
 Also note that the ordering in `r/merge` is important, preference is given to fields in the rightmost object in the argument list. The upsert'd items can define a default `:updated` and `:created` field that'll override `(r/now)`.
 
 ### Complete Reference
 
 See full documentation at http://apa512.github.io/clj-rethinkdb/ (work in progress).
-
