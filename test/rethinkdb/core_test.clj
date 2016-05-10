@@ -212,6 +212,8 @@
       (r/ungroup (r/group [1 6 1 8] (r/fn [e] e))) [{:group 1, :reduction [1 1]}
                                                     {:group 6, :reduction [6]}
                                                     {:group 8, :reduction [8]}]
+      (r/reduce [1] (r/fn [a b] (r/add a b))) 1
+      (r/reduce [1 6 1 8] (r/fn [a b] (r/add a b))) 16
       (r/count [1 6 1 8]) 4
       (r/count "asdf") 4
       (r/count {:a 1 :b 2 :c 3}) 3
@@ -313,10 +315,10 @@
           (r/has-fields a :y) [(first a)])))
 
     (testing "literal-values"
-      (with-open [conn (r/connect)]
-        (is (= (r/run (r/object :a 1) conn) {:a 1}))
-        (is (= (r/run (r/keys (r/object :a 1)) conn) ["a"]))
-        (is (= (r/run (r/values (r/object :a 1)) conn) [1]))))))
+      (are [term result] (= (r/run term conn) result)
+        (r/object :a 1) {:a 1}
+        (r/keys (r/object :a 1)) ["a"]
+        (r/values (r/object :a 1)) [1]))))
 
 (deftest string-manipulation
   (with-open [conn (r/connect)]
@@ -392,7 +394,8 @@
       (r/coerce-to "1" "NUMBER") 1
       (r/type-of [1 2 3]) "ARRAY"
       (r/type-of {:number 42}) "OBJECT"
-      (r/json "{\"number\":42}") {:number 42})))
+      (r/json "{\"number\":42}") {:number 42})
+    (is (= (:url (r/run (r/http "http://httpbin.org/get") conn)) "http://httpbin.org/get"))))
 
 (deftest math-and-logic
   (with-open [conn (r/connect)]
@@ -647,4 +650,4 @@
                      :image (bs/to-byte-array file)})
           (r/run conn))
       (let [resp (-> (r/table "pokedex") (r/run conn) first :image)]
-        (is (= (String. resp "UTF-8") (String. (bs/to-byte-array file) "UTF-8")))))))
+        (is (= (String. ^bytes resp "UTF-8") (String. (bs/to-byte-array file) "UTF-8")))))))
