@@ -4,8 +4,9 @@
     #?@(:clj [
             [clj-time.coerce :as c]
             [clojure.data.codec.base64 :as base64]]))
-  (:import (org.joda.time DateTime)
-           (java.util UUID)))
+  #?(:clj
+     (:import (org.joda.time DateTime)
+              (java.util UUID))))
 
 (defn term [term args & [optargs]]
   {::term term

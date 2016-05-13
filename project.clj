@@ -7,7 +7,8 @@
           :source-uri "https://github.com/apa512/clj-rethinkdb/blob/master/{filepath}#L{line}"}
   :global-vars {*warn-on-reflection* true}
   :plugins [[lein-codox "0.9.5"]
-            [test2junit "1.1.2"]]
+            [test2junit "1.1.2"]
+            [lein-cljsbuild "1.1.3"]]
   :test2junit-output-dir ~(or (System/getenv "CIRCLE_TEST_REPORTS") "target/test2junit")
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.48" :scope "provided"]
@@ -22,6 +23,9 @@
                  [clj-time "0.11.0"]]
   :profiles {:dev {:resource-paths ["test-resources"]
                    :dependencies [[ch.qos.logback/logback-classic "1.1.7"]]}}
+  :cljsbuild {:builds [{:source-paths ["src"]
+                        :compiler     {:output-to     "target/clj-rethinkdb.js"
+                                       :optimizations :whitespace}}]}
   :jvm-opts ["-Xmx512m"]
   :deploy-repositories [["releases" :clojars]
                         ["snapshots" :clojars]])

@@ -14,3 +14,4 @@ notify:
 test:
   override:
    - lein test2junit
+   - lein cljsbuild once
