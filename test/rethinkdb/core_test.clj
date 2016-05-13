@@ -645,11 +645,11 @@
 (deftest binary
   (with-open [conn (r/connect :db test-db)]
     (let [file (io/file (io/resource "pikachu.png"))
-          file-bytes ^bytes (bs/to-byte-array file)]
+          file-bytes (bs/to-byte-array file)]
       (-> (r/table "pokedex")
           (r/insert {:national_no 25
                      :name        "Pikachu"
                      :image       file-bytes})
           (r/run conn))
-      (let [resp ^bytes (-> (r/table "pokedex") (r/run conn) first :image)]
-        (is (Arrays/equals resp file-bytes))))))
+      (let [resp (-> (r/table "pokedex") (r/run conn) first :image)]
+        (is (Arrays/equals ^bytes resp ^bytes file-bytes))))))
