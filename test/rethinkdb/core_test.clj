@@ -5,10 +5,11 @@
             [clojure.test :refer :all]
             [clojure.core.async :refer [go go-loop <! take! <!!]]
             [manifold.stream :as s]
-            [rethinkdb.query :as r]
-            [rethinkdb.net :as net])
+            [rethinkdb.query :as r])
   (:import (clojure.lang ExceptionInfo)
-           (java.util UUID Arrays)))
+           (java.util UUID Arrays)
+           (ch.qos.logback.classic Logger Level)
+           (org.slf4j LoggerFactory)))
 
 (def test-db "cljrethinkdb_test")
 (def test-table :pokedex)
@@ -561,14 +562,18 @@
                                   {:default true})
                         (r/get-field :name))
                     conn)))
-      (is (thrown?
-            Exception
-            (r/run (-> twin-peaks
-                       (r/filter (r/fn [row]
-                                   (r/eq (r/get-field row :job) "Deputy"))
-                                 {:default (r/error)})
-                       (r/get-field :name))
-                   conn)))
+      (let [root-logger ^Logger (LoggerFactory/getLogger "rethinkdb.net")
+            level (.getLevel root-logger)]
+        (.setLevel root-logger Level/OFF)
+        (is (thrown?
+              Exception
+              (r/run (-> twin-peaks
+                         (r/filter (r/fn [row]
+                                         (r/eq (r/get-field row :job) "Deputy"))
+                                   {:default (r/error)})
+                         (r/get-field :name))
+                     conn)))
+        (.setLevel root-logger level))
       (is (= ["Hawk" "Andy"]
              (r/run (-> twin-peaks
                         (r/filter (r/fn [row]
@@ -578,16 +583,20 @@
                     conn))))))
 
 (deftest throwing-server-exceptions
-  (with-open [conn (r/connect :db test-db)]
-    (is (thrown? ExceptionInfo (r/run (r/table :nope) conn)))
-    (try (r/run (r/table :nope) conn)
-         (catch ExceptionInfo ex
-           (let [r (get-in (ex-data ex) [:response :r])
-                 etype (:type (ex-data ex))
-                 msg (.getMessage ex)]
-             (is (= etype :op-failed))
-             (is (= r ["Table `cljrethinkdb_test.nope` does not exist."]))
-             (is (= "RethinkDB server: Table `cljrethinkdb_test.nope` does not exist." msg)))))))
+  (let [root-logger ^Logger (LoggerFactory/getLogger "rethinkdb.net")
+        level (.getLevel root-logger)]
+    (.setLevel root-logger Level/OFF)
+    (with-open [conn (r/connect :db test-db)]
+      (is (thrown? ExceptionInfo (r/run (r/table :nope) conn)))
+      (try (r/run (r/table :nope) conn)
+           (catch ExceptionInfo ex
+             (let [r (get-in (ex-data ex) [:response :r])
+                   etype (:type (ex-data ex))
+                   msg (.getMessage ex)]
+               (is (= etype :op-failed))
+               (is (= r ["Table `cljrethinkdb_test.nope` does not exist."]))
+               (is (= "RethinkDB server: Table `cljrethinkdb_test.nope` does not exist." msg))))))
+    (.setLevel root-logger level)))
 
 (deftest query-conn
   (is (do (r/connect)
@@ -595,19 +604,27 @@
   (let [server-info (r/server (r/connect))]
     (is (contains? server-info :id))
     (is (contains? server-info :name)))
-  (is (thrown? ExceptionInfo (r/connect :port 1)))
+  (let [root-logger ^Logger (LoggerFactory/getLogger "rethinkdb.core")
+        level (.getLevel root-logger)]
+    (.setLevel root-logger Level/OFF)
+    (is (thrown? ExceptionInfo (r/connect :port 1)))
+    (.setLevel root-logger level))
   (with-redefs {#'core/version 168696}
     #(is (thrown? ExceptionInfo (r/connect)))))
 
 (deftest dont-leak-auth-key
-  (try (r/connect :port 28016 :auth-key "super secret")
-       (catch ExceptionInfo e
-         (is (= "<auth key provided but hidden>"
-                (:auth-key (ex-data e))))))
-  (try (r/connect :port 28016)
-       (catch ExceptionInfo e
-         (is (= ""
-                (:auth-key (ex-data e)))))))
+  (let [root-logger ^Logger (LoggerFactory/getLogger "rethinkdb.core")
+        level (.getLevel root-logger)]
+    (.setLevel root-logger Level/OFF)
+    (try (r/connect :port 28016 :auth-key "super secret")
+         (catch ExceptionInfo e
+           (is (= "<auth key provided but hidden>"
+                  (:auth-key (ex-data e))))))
+    (try (r/connect :port 28016)
+         (catch ExceptionInfo e
+           (is (= ""
+                  (:auth-key (ex-data e))))))
+    (.setLevel root-logger level)))
 
 (deftest utf8-compliance
   (with-open [conn (r/connect :db test-db)]
