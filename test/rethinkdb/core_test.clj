@@ -1,6 +1,5 @@
 (ns rethinkdb.core-test
   (:require [clojure.java.io :as io]
-            [clojure.data.codec.base64 :as base64]
             [byte-streams :as bs]
             [clj-time.core :as t]
             [clojure.test :refer :all]
@@ -9,7 +8,7 @@
             [rethinkdb.query :as r]
             [rethinkdb.net :as net])
   (:import (clojure.lang ExceptionInfo)
-           (java.util UUID)))
+           (java.util UUID Arrays)))
 
 (def test-db "cljrethinkdb_test")
 (def test-table :pokedex)
@@ -643,11 +642,12 @@
 
 (deftest binary
   (with-open [conn (r/connect :db test-db)]
-    (let [file (io/file (io/resource "pikachu.png"))]
+    (let [file (io/file (io/resource "pikachu.png"))
+          file-bytes ^bytes (bs/to-byte-array file)]
       (-> (r/table "pokedex")
           (r/insert {:national_no 25
-                     :name "Pikachu"
-                     :image (bs/to-byte-array file)})
+                     :name        "Pikachu"
+                     :image       file-bytes})
           (r/run conn))
-      (let [resp (-> (r/table "pokedex") (r/run conn) first :image)]
-        (is (= (String. ^bytes resp "UTF-8") (String. (bs/to-byte-array file) "UTF-8")))))))
+      (let [resp ^bytes (-> (r/table "pokedex") (r/run conn) first :image)]
+        (is (Arrays/equals resp file-bytes))))))
