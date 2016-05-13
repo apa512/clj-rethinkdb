@@ -192,7 +192,10 @@
    (async/>! (:query-chan @conn) [token (qb/parse-query :CONTINUE)])))
 
 (defn send-start-query [conn query & [opts]]
-  (let [async? (some :async? [opts @conn])]
+  (let [async? (->> [opts @conn]
+                    (remove nil?)
+                    (map :async?)
+                    first)]
     (send-first-query conn (qb/parse-query :START query) async?)))
 
 (defn send-server-query [conn]
