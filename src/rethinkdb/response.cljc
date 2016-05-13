@@ -38,7 +38,7 @@
   (into [] (map parse-response resp)))
 
 (defmethod parse-response :map [resp]
-  (if-let [reql-type (:$reql_type$ resp)]
+  (if (:$reql_type$ resp)
     (parse-reql-type resp)
     (zipmap (keys resp) (map parse-response (vals resp)))))
 

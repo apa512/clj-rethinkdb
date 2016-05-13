@@ -1,9 +1,11 @@
 (ns rethinkdb.query-builder
   (:require [clojure.string :as string]
             [rethinkdb.types :refer [tt->int qt->int]]
-    #?@(:clj [[clj-time.coerce :as c]
-              [clojure.data.codec.base64 :as base64]
-              [byte-streams :as bs]])))
+    #?@(:clj [
+            [clj-time.coerce :as c]
+            [clojure.data.codec.base64 :as base64]]))
+  (:import (org.joda.time DateTime)
+           (java.util UUID)))
 
 (defn term [term args & [optargs]]
   {::term term
@@ -26,8 +28,8 @@
       (::term arg) :query
       (or (sequential? arg) (seq? arg)) :sequential
       (map? arg) :map
-      (= (type arg) #?(:clj org.joda.time.DateTime :cljs js/Date)) :time
-      (= (type arg) #?(:clj java.util.UUID :cljs UUID)) :uuid
+      (= (type arg) #?(:clj DateTime :cljs js/Date)) :time
+      (= (type arg) UUID) :uuid
       #?@(:clj [(instance? (type (byte-array [])) arg) :binary]))))
 
 (defmethod parse-arg :query [arg]
