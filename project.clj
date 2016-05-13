@@ -6,7 +6,9 @@
   :codox {:metadata {:doc/format :markdown}
           :source-uri "https://github.com/apa512/clj-rethinkdb/blob/master/{filepath}#L{line}"}
   :global-vars {*warn-on-reflection* true}
-  :plugins [[lein-codox "0.9.5"]]
+  :plugins [[lein-codox "0.9.5"]
+            [test2junit "1.1.2"]]
+  :test2junit-output-dir ~(or (System/getenv "CIRCLE_TEST_REPORTS") "target/test2junit")
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.48" :scope "provided"]
                  [org.clojure/core.async "0.2.374"]

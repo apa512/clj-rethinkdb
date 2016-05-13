@@ -11,3 +11,6 @@ dependencies:
 notify:
   webhooks:
     - url: https://webhooks.gitter.im/e/45e8ba5133104828a25b
+test:
+  override:
+   - lein test2junit
