@@ -133,21 +133,32 @@
              "Pikachu")))
 
     (testing "default values"
-      (is (= "not found" (r/run (-> (r/get-field {:a 1} :b) (r/default "not found")) conn)))
-      (is (= "not found" (r/run (-> (r/max [nil]) (r/default "not found")) conn)))
-      (is (= "Cannot take the average of an empty stream.  (If you passed `avg` a field name, it may be that no elements of the stream had that field.)"
-             (r/run (-> (r/avg [nil]) (r/default (r/fn [row] row))) conn))))))
+      (are [term result] (= result (r/run term conn))
+        (-> (r/get-field {:a 1} :b) (r/default "not found")) "not found"
+        (-> (r/max [nil]) (r/default "not found")) "not found"
+        (-> (r/avg [nil]) (r/default (r/fn [row] row))) "Cannot take the average of an empty stream.  (If you passed `avg` a field name, it may be that no elements of the stream had that field.)"))))
 
 (deftest transformations
   (with-open [conn (r/connect :db test-db)]
     (testing "order-by + map"
-      (is (= [25 81] ((r/run (-> (r/table test-table) (r/insert pokemons)) conn)
-                      (r/run (-> (r/table test-table) r/sync) conn)
-                      (r/run (-> (r/table test-table)
-                                 (r/order-by {:index (r/asc :national_no)})
-                                 (r/map (r/fn [row]
-                                          (r/get-field row :national_no))))
-                             conn)))))
+      (r/run (-> (r/table test-table) (r/insert pokemons)) conn)
+      (r/run (-> (r/table test-table) r/sync) conn)
+      (are [order result] (= result (r/run (-> (r/table test-table)
+                                               (r/order-by {:index (order :national_no)})
+                                               (r/map (r/fn [row]
+                                                        (r/get-field row :national_no))))
+                                           conn))
+        r/asc [25 81]
+        r/desc [81 25]))
+
+    (testing "with-fields"
+      (are [term result] (= (r/run term conn) result)
+        (r/with-fields pokemons ["name"]) [{:name "Pikachu"} {:name "Magnemite"}]
+        (r/with-fields pokemons ["color"]) []))
+
+    (testing "concat-map"
+      (are [term result] (= (r/run term conn) result)
+        (r/concat-map [1 6 1 8] (r/fn [e] [e (r/mul 2 e)])) [1 2 6 12 1 2 8 16]))
 
     (testing "skip"
       (are [term result] (= (r/run term conn) result)
