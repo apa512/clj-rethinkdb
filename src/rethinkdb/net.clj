@@ -93,9 +93,9 @@
   (let [query-chan (:query-chan @conn)
         result (get-in @conn [:results token])]
     (if (:async? (s/description result))
-      (s/put-all! result resp)
-      (append-result conn token resp))
-    (send-continue-query conn token)))
+      (do (s/put-all! result resp)
+          (send-continue-query conn token))
+      (append-result conn token resp))))
 
 (defn handle-response [conn token resp]
   (let [{type :t resp :r etype :e notes :n :as json-resp} resp]
