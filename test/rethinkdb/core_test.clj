@@ -5,14 +5,15 @@
             [clojure.test :refer :all]
             [clojure.core.async :refer [go go-loop <! take! <!! close!]]
             [manifold.stream :as s]
-            [rethinkdb.query :as r])
+            [rethinkdb.query :as r]
+            [rethinkdb.test-utils :as utils])
   (:import (clojure.lang ExceptionInfo)
            (java.util UUID Arrays)
            (ch.qos.logback.classic Logger Level)
            (org.slf4j LoggerFactory)))
 
-(def test-db "cljrethinkdb_test")
-(def test-table :pokedex)
+(def test-db utils/test-db)
+(def test-table utils/test-table)
 
 (def pokemons [{:national_no 25
                 :name        "Pikachu"
@@ -25,33 +26,6 @@
                 :name        "Bulbasaur"
                 :type        ["Grass" "Poison"]})
 
-(defn ensure-table
-  "Ensures that an empty table \"table-name\" exists"
-  [table-name optargs conn]
-  (if (some #{table-name} (r/run (r/table-list) conn))
-    (r/run (r/table-drop table-name) conn))
-  (r/run (r/table-create (r/db test-db) table-name optargs) conn))
-
-(defn ensure-db
-  "Ensures that an empty database \"db-name\" exists"
-  [db-name conn]
-  (if (some #{db-name} (r/run (r/db-list) conn))
-    (r/run (r/db-drop db-name) conn))
-  (r/run (r/db-create db-name) conn))
-
-(defn setup-each [test-fn]
-  (with-open [conn (r/connect :db test-db)]
-    (-> (r/table test-table)
-        (r/delete {:durability :soft :return-changes false})
-        (r/run conn))
-    (test-fn)))
-
-(defn setup-once [test-fn]
-  (with-open [conn (r/connect)]
-    (ensure-db test-db conn)
-    (ensure-table test-table {:primary-key :national_no} conn)
-    (test-fn)
-    (r/run (r/db-drop test-db) conn)))
 
 (deftest manipulating-databases
   (with-open [conn (r/connect)]
@@ -464,7 +438,7 @@
 (deftest geospatial-commands
   (with-open [conn (r/connect :db test-db)]
     (def geo-table "geo")
-    (ensure-table geo-table {:primary-key :name} conn)
+    (utils/ensure-table geo-table {:primary-key :name} conn)
     (r/run (r/index-create (r/table geo-table) :area nil {:geo true}) conn)
     (r/run (r/index-wait (r/table geo-table)) conn)
     (def geo-data [{:name "A" :area (r/circle (r/point 20 20) 100)}
@@ -679,5 +653,5 @@
       (let [resp (-> (r/table "pokedex") (r/run conn) first :image)]
         (is (Arrays/equals ^bytes resp ^bytes file-bytes))))))
 
-(use-fixtures :each setup-each)
-(use-fixtures :once setup-once)
+(use-fixtures :each utils/setup-each)
+(use-fixtures :once utils/setup-once)
