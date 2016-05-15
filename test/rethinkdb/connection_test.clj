@@ -32,41 +32,41 @@
       (r/table-list)))
 
 ;; Uncomment to run test
-;(deftest connection-speed-test
-;  (println "performance (connection per query)")
-;  (let [conn (r/connect)]
-;    (time
-;      (doseq [n (range 100)]
-;        (with-open [conn (r/connect)]
-;          (r/run query conn)))))
-;
-;  (println "performance (reusing connection")
-;  (time
-;    (with-open [conn (r/connect)]
-;      (doseq [n (range 100)]
-;        (r/run query conn))))
-;
-;  (println "performance (parallel, one connection)")
-;  (with-open [conn (r/connect)]
-;    (time
-;      (doall
-;        (pmap (fn [v] (r/run query conn))
-;              (range 100)))))
-;
-;  (println "multiple connection test")
-;  (let [conn1 (r/connect)
-;        conn2 (r/connect)
-;        conn3 (r/connect)]
-;    (r/run query conn1)
-;    (future
-;      (do
-;        (r/run query conn2)
-;        (.close conn1)))
-;    (future
-;      (with-open [conn (r/connect)]
-;        (r/run query conn)))
-;    (future
-;      (.close conn2))
-;    (r/run query conn3)
-;    (.close conn3)
-;    (is true)))
+(deftest connection-speed-test
+  (println "performance (connection per query)")
+  (let [conn (r/connect)]
+    (time
+      (doseq [n (range 100)]
+        (with-open [conn (r/connect)]
+          (r/run query conn)))))
+
+  (println "performance (reusing connection")
+  (time
+    (with-open [conn (r/connect)]
+      (doseq [n (range 100)]
+        (r/run query conn))))
+
+  (println "performance (parallel, one connection)")
+  (with-open [conn (r/connect)]
+    (time
+      (doall
+        (pmap (fn [v] (r/run query conn))
+              (range 100)))))
+
+  (println "multiple connection test")
+  (let [conn1 (r/connect)
+        conn2 (r/connect)
+        conn3 (r/connect)]
+    (r/run query conn1)
+    (future
+      (do
+        (r/run query conn2)
+        (.close conn1)))
+    (future
+      (with-open [conn (r/connect)]
+        (r/run query conn)))
+    (future
+      (.close conn2))
+    (r/run query conn3)
+    (.close conn3)
+    (is true)))

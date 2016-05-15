@@ -6,7 +6,7 @@
             [rethinkdb.ssl :as ssl]
             [rethinkdb.net :refer [init-connection setup-producer
                                    setup-consumer read-init-response
-                                   send-stop-query]])
+                                   send-stop-query close-cursor]])
   (:import [clojure.lang IDeref]
            [io.netty.bootstrap Bootstrap]
            [io.netty.channel ChannelPipeline ChannelOption]
@@ -20,9 +20,9 @@
   "Closes RethinkDB database connection, stops all running queries
   and waits for response before returning."
   [conn]
-  (let [{:keys [start-query-chan query-chan results cursors client]} @conn]
-    (doseq [token (keys cursors)]
-      (send-stop-query conn token))
+  (let [{:keys [query-chan pending client]} @conn]
+    (doseq [token (keys pending)]
+      (close-cursor conn token))
     (async/close! query-chan)
     (s/close! client)
     :closed))
@@ -76,10 +76,9 @@
            (throw (ex-info init-response {:host host :port port :auth-key auth-key-printable :db db}))))
        (let [conn (connection {:client client
                                :db db
-                               :start-query-chan (async/chan)
+                               :initial-query-chan (async/chan)
                                :query-chan (async/chan)
-                               :results {}
-                               :cursors {}
+                               :pending {}
                                :async? async?
                                :token token})]
          (setup-producer conn)

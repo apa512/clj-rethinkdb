@@ -3,6 +3,7 @@
             [cheshire.core :as json]
             [clojure.core.async :as async]
             [clojure.core.async.impl.protocols :refer [ReadPort]]
+            [clojure.string :as string]
             [clojure.tools.logging :as log]
             [gloss.core :as gloss]
             [gloss.io :as io]
@@ -34,13 +35,17 @@
   [^Closeable x]
   (.close x))
 
+(defn close-cursor [conn token]
+  (when-let [cursor (get-in @conn [:pending token :cursor])]
+    (close cursor)))
+
 (deftype Cursor [conn stream token]
   Closeable
   (close [this]
-    (when (get-in @conn [:cursors token])
-      (send-stop-query conn token))
-    (swap! (:conn conn) update-in [:cursors] #(dissoc % token))
-    (s/close! stream))
+    (s/close! stream)
+    (when (get-in @conn [:pending token])
+      (swap! (:conn conn) update :pending #(dissoc % token))
+      (send-stop-query conn token)))
   clojure.lang.Counted
   (count [this]
     (count (into [] (seq this))))
@@ -65,37 +70,25 @@
                             [version auth-key protocol])))
 
 (defn read-init-response [client]
-  (clojure.string/replace (bs/to-string @(s/take! client)) #"\W*$" ""))
+  (string/replace (bs/to-string @(s/take! client)) #"\W*$" ""))
 
 (defn deliver-result [conn token resp]
-  (let [result (get-in @conn [:results token])
-        cursor (get-in @conn [:cursors token])]
-    (when cursor
-      (swap! (:conn conn) update-in [:cursors] #(dissoc % token))
-      (s/put-all! cursor (conj resp ::done)))
-    (d/on-realized (s/put! result (or cursor resp))
-                   (fn [_]
-                     (s/close! result))
-                   (constantly nil))))
+  (when-let [{:keys [result cursor]} (get-in @conn [:pending token])]
+    (if cursor
+      (do (swap! (:conn conn) update-in [:pending token] #(dissoc % :cursor))
+          (s/put-all! cursor (conj resp ::done)))
+      (do (swap! (:conn conn) update :pending #(dissoc % token))
+          (s/put! result resp)))))
 
 (defn append-result [conn token resp]
-  (let [query-chan (:query-chan @conn)
-        cursor (get-in @conn [:cursors token])]
-    (if cursor
-      (s/put-all! cursor (conj resp ::more))
-      (let [result (get-in @conn [:results token])
-            cursor (Cursor. conn (s/stream) token)]
-        (swap! (:conn conn) assoc-in [:cursors token] cursor)
-        (s/put-all! cursor (conj resp ::more))
-        (s/put! result cursor)))))
-
-(defn append-changes [conn token resp]
-  (let [query-chan (:query-chan @conn)
-        result (get-in @conn [:results token])]
-    (if (:async? (s/description result))
-      (do (s/put-all! result resp)
-          (send-continue-query conn token))
-      (append-result conn token resp))))
+  (when-let [{:keys [result async? cursor]} (get-in @conn [:pending token])]
+    (let [cursor (or cursor
+                     (let [cursor (Cursor. conn (if async? result (s/stream)) token)]
+                       (swap! (:conn conn) assoc-in [:pending token :cursor] cursor)
+                       (when-not async?
+                         (s/put! result cursor))
+                       cursor))]
+      (s/put-all! cursor (conj resp ::more)))))
 
 (defn handle-response [conn token resp]
   (let [{type :t resp :r etype :e notes :n :as json-resp} resp]
@@ -107,9 +100,7 @@
       (deliver-result conn token resp)
 
       3 ;; Success partial
-      (if (seq notes)
-        (append-changes conn token resp)
-        (append-result conn token resp))
+      (append-result conn token resp)
 
       16 ;; Client error value
       (deliver-result conn token
@@ -147,56 +138,70 @@
                           parse-response)))
    (io/decode-channel (:client @conn) query-protocol)))
 
+
 (defn add-global-optargs [{:keys [db]} query]
   (if (and db (= 2 (count query))) ;; If there's only 1 element in query then this is a continue or stop query
     ;; TODO: Could provide other global optargs too
     (concat query [{:db [(types/tt->int :DB) [db]]}])
     query))
 
-(defn with-next-token [conn [stream query]]
-  (let [token (:token (swap! (:conn conn) update-in [:token] inc))]
-    (s/on-closed stream
-                 (fn []
-                   (swap! (:conn conn) update-in [:results] #(dissoc % token))))
-    (swap! (:conn conn) assoc-in [:results token] stream)
-    [token query]))
+(defn add-token [conn query]
+  (let [token (:token (swap! (:conn conn) update-in [:token] inc))
+        query (assoc query :token token)]
+    (swap! (:conn conn) assoc-in [:pending token] query)
+    query))
 
 (defn setup-producer [conn]
-  (let [{:keys [start-query-chan query-chan client]} @conn]
-    (async/pipeline 1 query-chan (map (partial with-next-token conn)) start-query-chan)
+  (let [{:keys [initial-query-chan query-chan client]} @conn]
+    (async/pipeline 1 query-chan (map (partial add-token conn)) initial-query-chan)
     (async/go-loop []
-      (when-let [[token query] (async/<! query-chan)]
-        (let [query (add-global-optargs @conn query)
-              json (json/generate-string query {:key-fn #(subs (str %) 1)})]
-          (s/put! client (io/encode query-protocol [token json]))
+      (when-let [{:keys [term query-type token]} (async/<! query-chan)]
+        (let [term (add-global-optargs @conn
+                                       (if term
+                                         (qb/parse-query query-type term)
+                                         (qb/parse-query query-type)))
+              json (json/generate-string term {:key-fn #(subs (str %) 1)})]
+          (when-not (and (= query-type :CONTINUE)
+                         (not (get-in @conn [:pending token])))
+            (s/put! client (io/encode query-protocol [token json])))
           (recur))))))
 
-(defn send-first-query [conn query async?]
-  (let [stream (s/stream* {:description #(assoc % :async? async?)})
-        {:keys [start-query-chan]} @conn]
-    (async/go (async/>! start-query-chan [stream query]))
+;;; ========================================================================
+;;; Sending initial query
+;;; ========================================================================
+
+(defn send-initial-query [conn query]
+  (let [{:keys [async?]} query
+        {:keys [initial-query-chan]} @conn
+        stream (s/stream)]
+    (async/go (async/>! initial-query-chan
+                        (assoc query :result stream)))
     (if async?
       (let [result-chan (async/chan)]
         (s/connect stream result-chan)
         result-chan)
-      (let [result @(s/take! stream)]
-        (if (instance? Throwable result)
-          (throw result)
-          result)))))
+      (let [response @(s/take! stream)]
+        (if (instance? Throwable response)
+          (throw response)
+          response)))))
 
 (defn send-stop-query [conn token]
-  (async/>!! (:query-chan @conn) [token (qb/parse-query :STOP)]))
+  (async/>!! (:query-chan @conn) {:query-type :STOP
+                                  :token token}))
 
 (defn send-continue-query [conn token]
   (async/go
-   (async/>! (:query-chan @conn) [token (qb/parse-query :CONTINUE)])))
+   (async/>! (:query-chan @conn) {:query-type :CONTINUE
+                                  :token token})))
 
-(defn send-start-query [conn query & [opts]]
+(defn send-start-query [conn term & [opts]]
   (let [async? (->> [opts @conn]
-                    (remove nil?)
                     (map :async?)
+                    (remove nil?)
                     first)]
-    (send-first-query conn (qb/parse-query :START query) async?)))
+    (send-initial-query conn {:term term
+                              :query-type :START
+                              :async? async?})))
 
 (defn send-server-query [conn]
-  (send-first-query conn (qb/parse-query :SERVER_INFO) false))
+  (send-initial-query conn {:query-type :SERVER_INFO}))

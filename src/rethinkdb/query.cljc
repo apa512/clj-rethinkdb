@@ -60,8 +60,8 @@
 
 ;;; Cursors
 
-#?(:clj (defn close [cursor]
-          (net/close cursor)))
+;#?(:clj (defn close [cursor]
+;          (net/close cursor)))
 
 ;;; Manipulating databases
 

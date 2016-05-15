@@ -3,7 +3,7 @@
             [byte-streams :as bs]
             [clj-time.core :as t]
             [clojure.test :refer :all]
-            [clojure.core.async :refer [go go-loop <! take! <!!]]
+            [clojure.core.async :refer [go go-loop <! take! <!! close!]]
             [manifold.stream :as s]
             [rethinkdb.query :as r])
   (:import (clojure.lang ExceptionInfo)
@@ -258,9 +258,9 @@
         (go-loop []
           (s/put! received (get-in (<! changes-chan) [:new_val :n]))
           (recur))
-        (= (range 100)
-           (map #(get-in % [:new_val :n]) (take 100 changes))
-           (take 100 (s/stream->seq received)))))))
+        (is (= (range 100)
+               (map #(get-in % [:new_val :n]) (take 100 changes))
+               (take 100 (s/stream->seq received))))))))
 
 (deftest core.async
   (with-open [conn (r/connect :async? true)]
@@ -667,9 +667,6 @@
              {:national_no id
               :namespaced/keyword "value"})))))
 
-(use-fixtures :each setup-each)
-(use-fixtures :once setup-once)
-
 (deftest binary
   (with-open [conn (r/connect :db test-db)]
     (let [file (io/file (io/resource "pikachu.png"))
@@ -681,3 +678,6 @@
           (r/run conn))
       (let [resp (-> (r/table "pokedex") (r/run conn) first :image)]
         (is (Arrays/equals ^bytes resp ^bytes file-bytes))))))
+
+(use-fixtures :each setup-each)
+(use-fixtures :once setup-once)
