@@ -167,6 +167,10 @@
             (s/put! client (io/encode query-protocol [token json])))
           (recur))))))
 
+(defn async-query? [opts conn]
+  (let [not-found (:async? conn)]
+    (get opts :async? not-found)))
+
 ;;; ========================================================================
 ;;; Sending initial query
 ;;; ========================================================================
@@ -196,10 +200,7 @@
                                   :token token})))
 
 (defn send-start-query [conn term & [opts]]
-  (let [async? (->> [opts @conn]
-                    (map :async?)
-                    (remove nil?)
-                    first)]
+  (let [async? (async-query? opts @conn)]
     (send-initial-query conn {:term term
                               :query-type :START
                               :async? async?})))
