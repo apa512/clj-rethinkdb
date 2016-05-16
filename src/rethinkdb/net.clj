@@ -78,7 +78,8 @@
       (do (swap! (:conn conn) update-in [:pending token] #(dissoc % :cursor))
           (s/put-all! cursor (conj resp ::done)))
       (do (swap! (:conn conn) update :pending #(dissoc % token))
-          (s/put-all! result [resp ::done])))))
+          (s/put! result resp)
+          (s/close! result)))))
 
 (defn append-result [conn token resp]
   (when-let [{:keys [result async? cursor]} (get-in @conn [:pending token])]
