@@ -11,7 +11,9 @@
 (use-fixtures :once utils/setup-once)
 
 (def pokemon [{:national_no 25 :name "Pikachu"}
-              {:national_no 26 :name "Raichu"}])
+              {:national_no 26 :name "Raichu"}
+              {:national_no 27 :name "Sandshrew"}
+              {:national_no 28 :name "Nidoran"}])
 (def changefeed-pokemon (map #(hash-map :new_val %) pokemon))
 
 
@@ -36,7 +38,7 @@
         ;; Insert (success atom)
         [{:deleted   0
           :errors    0
-          :inserted  2
+          :inserted  4
           :replaced  0
           :skipped   0
           :unchanged 0}]
