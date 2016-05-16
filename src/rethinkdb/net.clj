@@ -61,20 +61,22 @@
         send-chan (async/chan)
         pub (async/pub recv-chan first)
         ;; Receive loop
-        recv-loop (async/go-loop []
-                    (when (try
-                            (let [resp (read-response* in)]
-                              (log/trace "Received raw response %s" resp)
-                              (async/>! recv-chan resp))
-                            (catch java.net.SocketException e
-                              false))
-                      (recur)))
+        recv-loop (async/thread
+                    (loop []
+                      (when (try
+                              (let [resp (read-response* in)]
+                                (log/trace "Received raw response %s" resp)
+                                (async/>!! recv-chan resp))
+                              (catch java.net.SocketException e
+                                false))
+                        (recur))))
         ;; Send loop
-        send-loop (async/go-loop []
-                    (when-let [query (async/<! send-chan)]
-                      (log/trace "Sending raw query %s")
-                      (write-query out query)
-                      (recur)))]
+        send-loop (async/thread
+                    (loop []
+                      (when-let [query (async/<!! send-chan)]
+                        (log/trace "Sending raw query %s")
+                        (write-query out query)
+                        (recur))))]
     ;; Return as map to merge into connection
     {:pub pub
      :loops [recv-loop send-loop]
