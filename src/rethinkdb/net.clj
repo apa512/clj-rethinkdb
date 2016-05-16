@@ -94,6 +94,7 @@
 
 (defn handle-response [conn token resp]
   (let [{type :t resp :r etype :e notes :n :as json-resp} resp]
+    (log/debug "Handling response" token type resp)
     (case (int type)
       (1 5) ;; Success atom, server info
       (deliver-result conn token resp)
@@ -159,6 +160,7 @@
     (async/pipeline 1 query-chan (map (partial add-token conn)) initial-query-chan)
     (async/go-loop []
       (when-let [{:keys [term query-type token]} (async/<! query-chan)]
+        (log/debug "Sending query" query-type token term)
         (let [term (add-global-optargs @conn
                                        (if term
                                          (qb/parse-query query-type term)
@@ -177,7 +179,6 @@
   (let [{:keys [async?]} query
         {:keys [initial-query-chan]} @conn
         stream (s/stream)]
-    (log/debug "Init query" query)
     (async/go (async/>! initial-query-chan
                         (assoc query :result stream)))
     (if async?
