@@ -3,17 +3,23 @@
             [clojure.core.async :as async]
             [rethinkdb.query :as r]
             [rethinkdb.test-utils :as utils])
-  (:import (clojure.core.async.impl.protocols ReadPort)))
+  (:import (clojure.core.async.impl.protocols ReadPort)
+           (org.slf4j LoggerFactory)
+           (ch.qos.logback.classic Logger Level)))
 
 (use-fixtures :each utils/setup-each)
 (use-fixtures :once utils/setup-once)
 
 (deftest always-return-async
-  (with-open [conn (r/connect :async? true)]
-    (are [query] (instance? ReadPort (r/run query conn))
-      (r/db-list)
-      (-> (r/db :non-existent) (r/table :nope))
-      (-> (r/db utils/test-db) (r/table utils/test-table) (r/insert {:a 1})))))
+  (let [root-logger ^Logger (LoggerFactory/getLogger "rethinkdb.net")
+        level (.getLevel root-logger)]
+    (.setLevel root-logger Level/OFF)
+    (with-open [conn (r/connect :async? true)]
+      (are [query] (instance? ReadPort (r/run query conn))
+        (r/db-list)
+        (-> (r/db :non-existent) (r/table :nope))
+        (-> (r/db utils/test-db) (r/table utils/test-table) (r/insert {:a 1}))))
+    (.setLevel root-logger level)))
 
 (deftest async-results
   (let [conn (r/connect :async? true :db utils/test-db)
