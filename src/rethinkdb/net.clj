@@ -13,7 +13,8 @@
             [rethinkdb.query-builder :as qb]
             [rethinkdb.response :refer [parse-response]]
             [rethinkdb.types :as types])
-  (:import [java.io Closeable]))
+  (:import [java.io Closeable]
+           [clojure.lang Keyword]))
 
 (declare send-continue-query send-stop-query)
 
@@ -54,7 +55,7 @@
     (s/stream->seq stream))
   java.lang.Iterable
   (iterator [this]
-    (.iterator (seq this)))
+    (.iterator ^Iterable (seq this)))
   java.util.Collection
   (toArray [this]
     (into-array Object this))
@@ -78,7 +79,7 @@
       (do (swap! (:conn conn) update-in [:pending token] #(dissoc % :cursor))
           (s/put-all! cursor (conj resp ::done)))
       (do (swap! (:conn conn) update :pending #(dissoc % token))
-          (s/put! result resp)
+          (s/put-all! result resp)
           (s/close! result)))))
 
 (defn append-result [conn token resp]
@@ -93,9 +94,10 @@
 
 (defn handle-response [conn token resp]
   (let [{type :t resp :r etype :e notes :n :as json-resp} resp]
+    (log/debug "Handling response" token type resp)
     (case (int type)
       (1 5) ;; Success atom, server info
-      (deliver-result conn token (first resp))
+      (deliver-result conn token resp)
 
       2 ;; Success sequence
       (deliver-result conn token resp)
@@ -137,7 +139,7 @@
                       (-> json
                           (json/parse-string-strict true)
                           parse-response)))
-   (io/decode-channel (:client @conn) query-protocol)))
+   (io/decode-stream (:client @conn) query-protocol)))
 
 
 (defn add-global-optargs [{:keys [db]} query]
@@ -149,6 +151,7 @@
 (defn add-token [conn query]
   (let [token (:token (swap! (:conn conn) update-in [:token] inc))
         query (assoc query :token token)]
+    (assert (nil? (get-in @conn [:pending token])))
     (swap! (:conn conn) assoc-in [:pending token] query)
     query))
 
@@ -157,12 +160,13 @@
     (async/pipeline 1 query-chan (map (partial add-token conn)) initial-query-chan)
     (async/go-loop []
       (when-let [{:keys [term query-type token]} (async/<! query-chan)]
+        (log/debug "Sending query" query-type token term)
         (let [term (add-global-optargs @conn
                                        (if term
                                          (qb/parse-query query-type term)
                                          (qb/parse-query query-type)))
               json (json/generate-string term {:key-fn #(subs (str %) 1)})]
-          (when-not (and (= query-type :CONTINUE)
+          (when-not (and (= ^Keyword query-type :CONTINUE)
                          (not (get-in @conn [:pending token])))
             (s/put! client (io/encode query-protocol [token json])))
           (recur))))))
