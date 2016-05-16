@@ -53,4 +53,15 @@
         changefeed-pokemon
         (-> (r/table utils/test-table)
             (r/changes {:include-initial true})
-            (r/limit 2))))))
+            (r/limit 2))))
+
+    #_(testing "Closing a changefeed with results"
+        (let [changefeed (-> (r/table utils/test-table)
+                             (r/changes {:include-initial true})
+                             (r/run conn))]
+          (async/go (async/<! (async/timeout 1000))
+                    (async/close! changefeed))
+          (is (= changefeed-pokemon
+                 (async/alt!!
+                   (async/into [] changefeed) ([v _] v)
+                   (async/timeout 1000) ([val _] :timed-out))))))))
