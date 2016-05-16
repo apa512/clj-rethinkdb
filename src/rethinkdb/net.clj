@@ -13,7 +13,8 @@
             [rethinkdb.query-builder :as qb]
             [rethinkdb.response :refer [parse-response]]
             [rethinkdb.types :as types])
-  (:import [java.io Closeable]))
+  (:import [java.io Closeable]
+           [clojure.lang Keyword]))
 
 (declare send-continue-query send-stop-query)
 
@@ -54,7 +55,7 @@
     (s/stream->seq stream))
   java.lang.Iterable
   (iterator [this]
-    (.iterator (seq this)))
+    (.iterator ^Iterable (seq this)))
   java.util.Collection
   (toArray [this]
     (into-array Object this))
@@ -162,7 +163,7 @@
                                          (qb/parse-query query-type term)
                                          (qb/parse-query query-type)))
               json (json/generate-string term {:key-fn #(subs (str %) 1)})]
-          (when-not (and (= query-type :CONTINUE)
+          (when-not (and (= ^Keyword query-type :CONTINUE)
                          (not (get-in @conn [:pending token])))
             (s/put! client (io/encode query-protocol [token json])))
           (recur))))))
