@@ -264,6 +264,10 @@
 
 (deftest core.async
   (with-open [conn (r/connect :async? true)]
+    (is (.contains
+         (<!! (-> (r/db-list)
+                  (r/run conn {:async? true})))
+         "cljrethinkdb_test"))
     (-> (r/db test-db)
         (r/table test-table)
         (r/insert {:national_no 172 :name "Pichu"})
