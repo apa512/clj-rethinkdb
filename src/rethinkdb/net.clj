@@ -138,7 +138,7 @@
                       (-> json
                           (json/parse-string-strict true)
                           parse-response)))
-   (io/decode-channel (:client @conn) query-protocol)))
+   (io/decode-stream (:client @conn) query-protocol)))
 
 
 (defn add-global-optargs [{:keys [db]} query]
