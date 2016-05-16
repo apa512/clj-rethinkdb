@@ -29,6 +29,7 @@
                                   (async/into [])
                                   (async/<!!))
                              expected)
+      ;; Insert (success atom)
       [{:deleted   0
         :errors    0
         :inserted  2
@@ -37,7 +38,15 @@
         :unchanged 0}]
       (-> (r/table utils/test-table)
           (r/insert pokemon))
+
+      ;; Success sequence
       pokemon (-> (r/table utils/test-table))
+
+      ;; Success atom
       [pokemon] (-> (r/table utils/test-table) (r/order-by :name))
 
-      )))
+      ;; Changefeed
+      (map #(hash-map :new_val %) pokemon)
+      (-> (r/table utils/test-table)
+          (r/changes {:include-initial true})
+          (r/limit 2)))))

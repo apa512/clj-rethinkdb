@@ -79,7 +79,7 @@
       (do (swap! (:conn conn) update-in [:pending token] #(dissoc % :cursor))
           (s/put-all! cursor (conj resp ::done)))
       (do (swap! (:conn conn) update :pending #(dissoc % token))
-          (s/put! result resp)
+          (s/put-all! result resp)
           (s/close! result)))))
 
 (defn append-result [conn token resp]
@@ -96,7 +96,7 @@
   (let [{type :t resp :r etype :e notes :n :as json-resp} resp]
     (case (int type)
       (1 5) ;; Success atom, server info
-      (deliver-result conn token (first resp))
+      (deliver-result conn token resp)
 
       2 ;; Success sequence
       (deliver-result conn token resp)
