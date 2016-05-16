@@ -150,6 +150,7 @@
 (defn add-token [conn query]
   (let [token (:token (swap! (:conn conn) update-in [:token] inc))
         query (assoc query :token token)]
+    (assert (nil? (get-in @conn [:pending token])))
     (swap! (:conn conn) assoc-in [:pending token] query)
     query))
 
@@ -176,6 +177,7 @@
   (let [{:keys [async?]} query
         {:keys [initial-query-chan]} @conn
         stream (s/stream)]
+    (log/debug "Init query" query)
     (async/go (async/>! initial-query-chan
                         (assoc query :result stream)))
     (if async?
