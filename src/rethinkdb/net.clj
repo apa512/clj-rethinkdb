@@ -13,9 +13,26 @@
             [rethinkdb.query-builder :as qb]
             [rethinkdb.response :refer [parse-response]]
             [rethinkdb.types :as types])
-  (:import [java.io Closeable]))
+  (:import [java.io Closeable]
+           [rethinkdb Ql2$Response$ResponseType Ql2$Response$ErrorType]))
 
 (declare send-continue-query send-stop-query)
+
+(def success-atom Ql2$Response$ResponseType/SUCCESS_ATOM_VALUE)
+(def server-info Ql2$Response$ResponseType/SERVER_INFO_VALUE)
+(def success-sequence Ql2$Response$ResponseType/SUCCESS_SEQUENCE_VALUE)
+(def success-partial Ql2$Response$ResponseType/SUCCESS_PARTIAL_VALUE)
+(def client-error Ql2$Response$ResponseType/CLIENT_ERROR_VALUE)
+(def compile-error Ql2$Response$ResponseType/COMPILE_ERROR_VALUE)
+(def runtime-error Ql2$Response$ResponseType/RUNTIME_ERROR_VALUE)
+
+(def internal Ql2$Response$ErrorType/INTERNAL_VALUE)
+(def resource-limit Ql2$Response$ErrorType/RESOURCE_LIMIT_VALUE)
+(def query-logic Ql2$Response$ErrorType/QUERY_LOGIC_VALUE)
+(def non-existence Ql2$Response$ErrorType/NON_EXISTENCE_VALUE)
+(def op-failed Ql2$Response$ErrorType/OP_FAILED_VALUE)
+(def op-indeterminate Ql2$Response$ErrorType/OP_INDETERMINATE_VALUE)
+(def user Ql2$Response$ErrorType/USER_VALUE)
 
 (gloss/defcodec query-protocol
   [:uint64-le (gloss/finite-frame :int32-le (gloss/string :utf-8))])
@@ -93,39 +110,39 @@
 (defn handle-response [conn token resp]
   (let [{type :t resp :r etype :e notes :n :as json-resp} resp]
     (case (int type)
-      (1 5) ;; Success atom, server info
+      (success-atom server-info)
       (deliver-result conn token (first resp))
 
-      2 ;; Success sequence
+      success-sequence
       (deliver-result conn token resp)
 
-      3 ;; Success partial
+      success-partial
       (append-result conn token resp)
 
-      16 ;; Client error value
+      client-error
       (deliver-result conn token
                       (make-rethink-exception
                        (first resp)
                        {:type :client :response json-resp}))
 
-      17 ;; Compile error value
+      compile-error
       (deliver-result conn token
                       (make-rethink-exception
                        (first resp)
                        {:type :compile :response json-resp}))
 
-      18 ;; Runtime error value
+      runtime-error
       (deliver-result conn token
                       (make-rethink-exception
                        (first resp)
                        {:type (case (int etype)
-                                1000000 :internal
-                                2000000 :resource-limit
-                                3000000 :query-logic
-                                3100000 :non-existence
-                                4100000 :op-failed
-                                4200000 :op-indeterminate
-                                5000000 :user
+                                internal :internal
+                                resource-limit :resource-limit
+                                query-logic :query-logic
+                                non-existence :non-existence
+                                op-failed :op-failed
+                                op-indeterminate :op-indeterminate
+                                user :user
                                 :unknown)
                         :response json-resp})))))
 
