@@ -98,7 +98,8 @@
                         (r/table test-table)
                         (r/filter (r/fn [row]
                                     (r/eq (r/get-field row :name) "Pikachu")))) conn) [(first pokemons)]))
-      (is (= 1 (r/run (r/get-field {:a 1} :a) conn))))
+      (is (= 1 (r/run (r/get-field {:a 1} :a) conn)))
+      (is (= 1 (r/run (r/get-field {:a {:b {:c 1}}} [:a :b :c]) conn))))
 
     (testing "selecting data with optargs"
       (is (= (-> (r/table nil test-table {:read-mode :majority}) (r/get 25) (r/get-field :name) (r/run conn))

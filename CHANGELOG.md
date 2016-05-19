@@ -2,8 +2,11 @@
 
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com).
 
-## [0.15.19] - 2016-05-08
+## Unreleased
+### Added
+- `get-field` can get nested fields
 
+## [0.15.19] - 2016-05-08
 ### Changed
 - **Breaking** renamed `indexes-of` to `offsets-of`
 - Renamed `get-intersection` to `get-intersecting`

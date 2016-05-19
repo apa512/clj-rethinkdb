@@ -231,8 +231,12 @@
 
 (defn get-field
   "Get a single field from an object."
-  [sel field-name]
-  (term :GET_FIELD [sel field-name]))
+  [sel field-names]
+  (if (sequential? field-names)
+    (clojure.core/reduce #(get-field %1 %2)
+                         sel
+                         field-names)
+    (term :GET_FIELD [sel field-names])))
 
 (defn args [sq]
   (term :ARGS [sq]))
