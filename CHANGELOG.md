@@ -3,8 +3,8 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com).
 
 ## Unreleased
-### Added
-- `get-field` can get nested fields
+### Changed
+- `get-field` can get nested fields when passed a vector
 
 ## [0.15.19] - 2016-05-08
 ### Changed
