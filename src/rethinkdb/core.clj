@@ -76,7 +76,6 @@
            (throw (ex-info init-response {:host host :port port :auth-key auth-key-printable :db db}))))
        (let [conn (connection {:client client
                                :db db
-                               :initial-query-chan (async/chan)
                                :query-chan (async/chan)
                                :pending {}
                                :async? async?

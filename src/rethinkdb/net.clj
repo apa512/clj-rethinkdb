@@ -145,15 +145,8 @@
     (concat query [{:db [(types/tt->int :DB) [db]]}])
     query))
 
-(defn add-token [conn query]
-  (let [token (:token (swap! (:conn conn) update-in [:token] inc))
-        query (assoc query :token token)]
-    (swap! (:conn conn) assoc-in [:pending token] query)
-    query))
-
 (defn setup-producer [conn]
-  (let [{:keys [initial-query-chan query-chan client]} @conn]
-    (async/pipeline 1 query-chan (map (partial add-token conn)) initial-query-chan)
+  (let [{:keys [query-chan client]} @conn]
     (async/go-loop []
       (when-let [{:keys [term query-type token]} (async/<! query-chan)]
         (let [term (add-global-optargs @conn
@@ -174,12 +167,17 @@
 ;;; Sending initial query
 ;;; ========================================================================
 
+(defn get-next-token [conn]
+  (:token (swap! (:conn conn) update :token inc)))
+
 (defn send-initial-query [conn query]
   (let [{:keys [async?]} query
-        {:keys [initial-query-chan]} @conn
-        stream (s/stream)]
-    (async/go (async/>! initial-query-chan
-                        (assoc query :result stream)))
+        {:keys [query-chan]} @conn
+        stream (s/stream)
+        token (get-next-token conn)
+        query (assoc query :token token :result stream)]
+    (swap! (:conn conn) assoc-in [:pending token] query)
+    (async/go (async/>! query-chan query))
     (if async?
       (let [result-chan (async/chan)]
         (s/connect stream result-chan)
