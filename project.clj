@@ -13,7 +13,6 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.48" :scope "provided"]
                  [org.clojure/core.async "0.2.374"]
-                 [org.clojure/data.codec "0.1.0"]
                  [org.clojure/tools.logging "0.3.1"]
                  [aleph "0.4.1"]
                  [gloss "0.2.5"]

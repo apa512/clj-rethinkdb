@@ -1,11 +1,10 @@
 (ns rethinkdb.response
-  (:require [clojure.string :as string]
-            [clj-time.core :as t]
-            [clj-time.coerce :as c]
-            [clojure.data.codec.base64 :as base64]
-            [byte-streams :as bs]))
+  (:require [clj-time.core :as t]
+            [clj-time.coerce :as c])
+  (:import [java.util Base64 Base64$Decoder]))
 
 (declare parse-response)
+(def decoder (atom nil))
 
 (defmulti parse-reql-type (fn [resp] (get resp :$reql_type$)))
 
@@ -21,8 +20,10 @@
   (apply hash-map (apply concat (parse-response (:data resp)))))
 
 (defmethod parse-reql-type "BINARY" [resp]
-  (base64/decode (bs/to-byte-array
-                   (string/replace (:data resp) #"\r\n" ""))))
+  ;; Decoders are thread safe, so we only need one.
+  (let [decoder (or @decoder (let [mime-decoder (Base64/getMimeDecoder)]
+                               (reset! decoder mime-decoder)))]
+    (.decode ^Base64$Decoder decoder ^String (:data resp))))
 
 (defmethod parse-reql-type "GEOMETRY" [resp]
   (dissoc resp :$reql_type$))

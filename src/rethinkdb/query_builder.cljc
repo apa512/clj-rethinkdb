@@ -2,11 +2,10 @@
   (:require [clojure.string :as string]
             [rethinkdb.types :refer [tt->int qt->int]]
     #?@(:clj [
-            [clj-time.coerce :as c]
-            [clojure.data.codec.base64 :as base64]]))
+            [clj-time.coerce :as c]]))
   #?(:clj
      (:import (org.joda.time DateTime)
-              (java.util UUID))))
+              (java.util UUID Base64 Base64$Encoder))))
 
 (defn term [term args & [optargs]]
   {::term term
@@ -14,6 +13,7 @@
    ::optargs optargs})
 
 (declare parse-term)
+(def encoder (atom nil))
 
 (defn snake-case [s]
   (string/replace (name s) \- \_))
@@ -47,8 +47,12 @@
                                     :cljs (.getTime arg))])))
 
 #?(:clj (defmethod parse-arg :binary [arg]
-          {"$reql_type$" "BINARY"
-           "data" (String. ^bytes (base64/encode arg) "UTF-8")}))
+          ;; Base64 decoders are thread safe, so we only need one of these.
+          (let [encoder (or @encoder (let [base64-encoder (Base64/getEncoder)]
+                                       (reset! encoder base64-encoder)))]
+            {"$reql_type$" "BINARY"
+             "data" (.encodeToString ^Base64$Encoder encoder arg)})))
+
 
 (defmethod parse-arg :uuid [arg]
   (str arg))

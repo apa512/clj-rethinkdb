@@ -12,7 +12,7 @@ A RethinkDB client for Clojure. Tested and supported on RethinkDB 2.0.x but shou
 
 ## Changes
 
-All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, 0.10.x is the last release track supporting Clojure 1.6 and below. 0.11.x is the last release track that supports versions of RethinkDB < 2.0.
+All changes are published in the [CHANGELOG](CHANGELOG.md). Of particular note, `0.10.x` is the last release track supporting Clojure 1.6 and below. `0.11.x` is the last release track that supports versions of RethinkDB < 2.0. `0.15.x` is the last minor version that supports Java 7.
 
 ## Usage
 

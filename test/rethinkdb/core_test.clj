@@ -647,16 +647,19 @@
               :namespaced/keyword "value"})))))
 
 (deftest binary
-  (with-open [conn (r/connect :db test-db)]
-    (let [file (io/file (io/resource "pikachu.png"))
-          file-bytes (bs/to-byte-array file)]
-      (-> (r/table "pokedex")
-          (r/insert {:national_no 25
-                     :name        "Pikachu"
-                     :image       file-bytes})
-          (r/run conn))
-      (let [resp (-> (r/table "pokedex") (r/run conn) first :image)]
-        (is (Arrays/equals ^bytes resp ^bytes file-bytes))))))
+  (testing "Encoding and decoding is thread safe"
+    (dorun (pmap
+             #(with-open [conn (r/connect :db test-db)]
+               (let [file (io/file (io/resource "pikachu.png"))
+                     file-bytes (bs/to-byte-array file)]
+                 (-> (r/table "pokedex")
+                     (r/insert {:national_no %
+                                :name "Pikachu"
+                                :image file-bytes})
+                     (r/run conn))
+                 (let [resp (-> (r/table "pokedex") (r/get %) (r/run conn) :image)]
+                   (is (Arrays/equals ^bytes resp ^bytes file-bytes)))))
+             (range 20)))))
 
 (use-fixtures :each utils/setup-each)
 (use-fixtures :once utils/setup-once)

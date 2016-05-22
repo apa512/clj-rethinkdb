@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. This change
 ## Unreleased
 ### Changed
 - `get-field` can get nested fields when passed a vector
+- **Breaking** Use Java 8's Base64 class instead of the `clojure.data.codec` library. This requires Java 8.
 
 ## [0.15.19] - 2016-05-08
 ### Changed

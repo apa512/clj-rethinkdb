@@ -15,3 +15,6 @@ test:
   override:
     - case $CIRCLE_NODE_INDEX in 0) lein test2junit ;; 1) lein cljsbuild once ;; esac:
         parallel: true
+machine:
+  java:
+    version: oraclejdk8
