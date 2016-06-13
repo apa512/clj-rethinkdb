@@ -371,7 +371,24 @@
       (r/to-iso8601 (r/time 2014 12 31 "+02:00")) "2014-12-31T00:00:00+02:00"
       (r/to-iso8601 (r/time 2014 12 31 14 12 33)) "2014-12-31T14:12:33+00:00"
       (r/to-iso8601 (r/time 2014 12 31 14 12 33 "-04:00")) "2014-12-31T14:12:33-04:00"
-      (r/to-epoch-time (r/time 1970 1 1)) 0)))
+      (r/to-epoch-time (r/time 1970 1 1)) 0)
+
+    (let [now (t/now)
+          table (r/table (r/db test-db) test-table)
+          generated-id (-> table
+                           (r/insert {:timestamp now})
+                           (r/run conn)
+                           :generated_keys
+                           first)]
+      (is (= now (let [timestamp-result (-> table
+                                            (r/get generated-id)
+                                            (r/run conn)
+                                            :timestamp)]
+                   (-> table
+                       (r/get generated-id)
+                       r/delete
+                       (r/run conn))
+                   timestamp-result))))))
 
 (deftest control-structures
   (with-open [conn (r/connect)]
