@@ -43,7 +43,7 @@
   (zipmap (keys arg) (map parse-arg (vals arg))))
 
 (defmethod parse-arg :time [arg]
-  (parse-term (term :EPOCH_TIME [#?(:clj (c/to-epoch arg)
+  (parse-term (term :EPOCH_TIME [#?(:clj (double (/ (c/to-long arg) 1000))
                                     :cljs (.getTime arg))])))
 
 #?(:clj (defmethod parse-arg :binary [arg]
