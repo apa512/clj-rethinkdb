@@ -2,8 +2,9 @@
 
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com).
 
-## Unreleased
+## [0.5.24] - 2016-06-13
 ### Changed
+- Save milliseconds for dates
 - `get-field` can get nested fields when passed a vector
 - **Breaking** Use Java 8's Base64 class instead of the `clojure.data.codec` library. This requires Java 8.
 
