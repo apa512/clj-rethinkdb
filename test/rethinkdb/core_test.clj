@@ -65,7 +65,11 @@
         (-> (r/get 1) (r/update {:japanese "Fushigidane"})) :replaced 1
         (-> (r/get 1) (r/replace (merge bulbasaur {:weight "6.9 kg"}))) :replaced 1
         (-> (r/get 1) r/delete) :deleted 1
-        (r/sync) :synced 1))
+        (r/sync) :synced 1
+        (r/insert {:national_no 1.1
+                   :name        "Bulbasaur"
+                   :type        #{"Grass" "Poison"}}) :inserted 1
+        (-> (r/get 1.1) (r/delete)) :deleted 1))
 
     (testing "merging values"
       (let [trainers [{:id 1 :name "Ash" :pokemon_ids [25 81]}]]
@@ -294,7 +298,16 @@
         (r/set-intersection [1 2 3] [1 2 4]) [1 2]
         (r/set-intersection [1 2 3] [4 5 6]) []
         (r/set-difference [1 2 3] [1 2 4]) [3]
-        (r/set-difference [1 2 3] [4 5 6]) [1 2 3]))
+        (r/set-difference [1 2 3] [4 5 6]) [1 2 3])
+
+      (are [term result] (= (set (r/run term conn)) (set result))
+        (r/set-insert #{1 2 3} 3) [1 2 3]
+        (r/set-insert #{1 2 3} 4) [1 2 3 4]
+        (r/set-union #{1 2 3} #{4 5 6}) [1 2 3 4 5 6]
+        (r/set-intersection #{1 2 3} [1 2 4]) [1 2]
+        (r/set-intersection #{1 2 3} [4 5 6]) []
+        (r/set-difference #{1 2 3} #{1 2 4}) [3]
+        (r/set-difference #{1 2 3} #{4 5 6}) [1 2 3]))
 
     (testing "has-fields"
       (let [o {:x 1 :y 2}

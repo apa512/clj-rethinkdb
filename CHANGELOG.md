@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com).
 
+## [Unreleased]
+
+### Changed
+- Writing sets in RethinkDB documents no longer throws exceptions. They are coerced to arrays before getting written to RethinkDB, and are returned as vectors.
+
 ## [0.5.24] - 2016-06-13
 ### Changed
 - Save milliseconds for dates
