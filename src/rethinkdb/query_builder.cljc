@@ -22,7 +22,7 @@
   (fn [arg]
     (cond
       (::term arg) :query
-      (or (sequential? arg) (seq? arg)) :sequential
+      (or (sequential? arg) (seq? arg) (set? arg)) :sequential
       (map? arg) :map
       (= (type arg) #?(:clj org.joda.time.DateTime :cljs js/Date)) :time
       (= (type arg) #?(:clj java.util.UUID :cljs UUID)) :uuid)))

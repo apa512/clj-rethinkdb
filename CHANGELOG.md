@@ -3,6 +3,40 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com).
 
 ## [Unreleased]
+
+### Changed
+- Writing sets in RethinkDB documents no longer throws exceptions. They are coerced to arrays before getting written to RethinkDB, and are returned as vectors.
+
+## [0.5.24] - 2016-06-13
+### Changed
+- Save milliseconds for dates
+- `get-field` can get nested fields when passed a vector
+- **Breaking** Use Java 8's Base64 class instead of the `clojure.data.codec` library. This requires Java 8.
+
+## [0.15.19] - 2016-05-08
+### Changed
+- **Breaking** renamed `indexes-of` to `offsets-of`
+- Renamed `get-intersection` to `get-intersecting`
+- Added support for `group` with multiple fields
+
+### Added
+- Added `range`
+
+## [0.15.15] - 2016-04-23
+- Add TLS support
+
+## [0.15.13] - 2016-04-17
+### Changed
+- Use netty on the backend and make connections thread safe
+- Use connection DB with `table-create`
+- Dropped the `read-timeout` option to connect
+- Allow namespaced keywords
+- Add support for binary
+
+### Added
+- Added options to make queries return a core.async channel
+
+## [0.13.14] - 2016-02-21
 ### Changed
 - Disable Nagle's algorithm (set TCP NO_DELAY to true). This provides a speedup of around 30-40x for small queries on Linux. [#114](https://github.com/apa512/clj-rethinkdb/pull/114)
 - Added a new arity to `changes` that allows you to pass optargs. [#112](https://github.com/apa512/clj-rethinkdb/issues/112)
