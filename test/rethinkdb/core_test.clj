@@ -122,6 +122,10 @@
     (testing "order-by + map"
       (r/run (-> (r/table test-table) (r/insert pokemons)) conn)
       (r/run (-> (r/table test-table) r/sync) conn)
+      (is (= (-> (r/coerce-to [{:a 1 :b 3} {:a 1 :b 2} {:a 2 :b 1}] "ARRAY")
+                 (r/order-by [:a :b])
+                 (r/run conn))
+             [{:a 1 :b 2} {:a 1 :b 3} {:a 2 :b 1}]))
       (are [order result] (= result (r/run (-> (r/table test-table)
                                                (r/order-by {:index (order :national_no)})
                                                (r/map (r/fn [row]
