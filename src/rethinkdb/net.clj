@@ -2,7 +2,7 @@
   (:require [byte-streams :as bs]
             [cheshire.core :as json]
             [clojure.core.async :as async]
-            [clojure.core.async.impl.protocols :refer [ReadPort]]
+            [clojure.core.async.impl.protocols :refer [Channel ReadPort]]
             [clojure.string :as string]
             [clojure.tools.logging :as log]
             [gloss.core :as gloss]
@@ -30,40 +30,14 @@
     (log/error ex)
     ex))
 
-(defn close
-  "Clojure proxy for java.io.Closeable's close."
-  [^Closeable x]
-  (.close x))
-
 (defn close-cursor [conn token]
   (when-let [cursor (get-in @conn [:pending token :cursor])]
-    (close cursor)))
+    (s/close! cursor)))
 
-(deftype Cursor [conn stream token]
-  Closeable
-  (close [this]
-    (s/close! stream)
-    (when (get-in @conn [:pending token])
-      (swap! (:conn conn) update :pending #(dissoc % token))
-      (send-stop-query conn token)))
-  clojure.lang.Counted
-  (count [this]
-    (count (into [] (seq this))))
-  clojure.lang.Seqable
-  (seq [this]
-    (s/stream->seq stream))
-  java.lang.Iterable
-  (iterator [this]
-    (.iterator (seq this)))
-  java.util.Collection
-  (toArray [this]
-    (into-array Object this))
-  manifold.stream.core.IEventSink
-  (put [this x _]
-    (case x
-      ::more (send-continue-query conn token)
-      ::done (close this)
-      (s/put! stream x))))
+(extend-type manifold.stream.default.Stream
+  ReadPort
+  (take! [this fn1-handler]
+    (s/take! this)))
 
 (defn init-connection [client version protocol auth-key]
   (s/put! client (io/encode init-protocol
@@ -73,22 +47,29 @@
   (string/replace (bs/to-string @(s/take! client)) #"\W*$" ""))
 
 (defn deliver-result [conn token resp]
-  (when-let [{:keys [result cursor]} (get-in @conn [:pending token])]
+  (when-let [{:keys [result cursor async?]} (get-in @conn [:pending token])]
     (swap! (:conn conn) update :pending #(dissoc % token))
-    (if cursor
-      (s/put-all! cursor (conj resp ::done))
+    (if-let [stream (or cursor (and async? (sequential? resp) result))]
+      (d/finally (s/put-all! stream resp)
+                 (fn [] (s/close! stream)))
       (do (s/put! result resp)
           (s/close! result)))))
 
 (defn append-result [conn token resp]
   (when-let [{:keys [result async? cursor]} (get-in @conn [:pending token])]
     (let [cursor (or cursor
-                     (let [cursor (Cursor. conn (if async? result (s/stream)) token)]
-                       (swap! (:conn conn) assoc-in [:pending token :cursor] cursor)
+                     (let [stream (if async? result (s/stream))]
+                       (s/on-closed stream
+                                    (fn []
+                                      (when (get-in @conn [:pending token])
+                                        (swap! (:conn conn) update :pending #(dissoc % token))
+                                        (send-stop-query conn token))))
+                       (swap! (:conn conn) assoc-in [:pending token :cursor] stream)
                        (when-not async?
-                         (s/put! result cursor))
-                       cursor))]
-      (s/put-all! cursor (conj resp ::more)))))
+                         (s/put! result stream))
+                       stream))]
+      (d/finally (s/put-all! cursor resp)
+                 (fn [] (send-continue-query conn token))))))
 
 (defn handle-response [conn token resp]
   (let [{type :t resp :r etype :e notes :n :as json-resp} resp]
@@ -179,12 +160,11 @@
     (swap! (:conn conn) assoc-in [:pending token] query)
     (async/go (async/>! query-chan query))
     (if async?
-      (let [result-chan (async/chan)]
-        (s/connect stream result-chan)
-        result-chan)
+      stream
       (let [response @(s/take! stream)]
-        (if (instance? Throwable response)
-          (throw response)
+        (condp instance? response
+          manifold.stream.default.Stream (s/stream->seq response)
+          Throwable (throw response)
           response)))))
 
 (defn send-stop-query [conn token]
@@ -197,7 +177,8 @@
                                   :token token})))
 
 (defn send-start-query [conn term & [opts]]
-  (let [async? (async-query? opts @conn)]
+  (let [async? (or (= (::qb/term term) :CHANGES)
+                   (async-query? opts @conn))]
     (send-initial-query conn {:term term
                               :query-type :START
                               :async? async?})))

@@ -26,7 +26,7 @@
     (test-fn)))
 
 (defn setup-once [test-fn]
-  (with-open [conn (r/connect)]
+  (with-open [conn (r/connect :db test-db)]
     (ensure-db test-db conn)
     (ensure-table test-table {:primary-key :national_no} conn)
     (test-fn)

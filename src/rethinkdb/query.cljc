@@ -15,7 +15,8 @@
   #?(:cljs (:use-macros [rethinkdb.query :only [fn]]))
   (:require [clojure.walk :as walk]
             [rethinkdb.query-builder :as qb :refer [term]]
-    #?@(:clj [[rethinkdb.net :as net]
+    #?@(:clj [[manifold.stream :as s]
+              [rethinkdb.net :as net]
               [rethinkdb.core :as core]]))
   #?(:clj
      (:import [rethinkdb.core Connection])))
@@ -46,6 +47,8 @@
                 new-terms (walk/postwalk-replace new-replacements body)]
             (func new-args new-terms))))
 
+(def close s/close!)
+
 ;;; Import connect
 
 #?(:clj (def ^Connection connect
@@ -57,11 +60,6 @@
                     auth-key \"\"
                     db nil}}"
           core/connect))
-
-;;; Cursors
-
-;#?(:clj (defn close [cursor]
-;          (net/close cursor)))
 
 ;;; Manipulating databases
 
