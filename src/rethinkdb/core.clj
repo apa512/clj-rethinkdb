@@ -84,6 +84,5 @@
          (setup-consumer conn)
          conn))
      (catch Exception e
-       (log/error e "Error connecting to RethinkDB database")
        (throw (ex-info "Error connecting to RethinkDB database"
                        {:host host :port port :auth-key auth-key-printable :db db} e))))))

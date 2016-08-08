@@ -27,7 +27,7 @@
   (fn [arg]
     (cond
       (::term arg) :query
-      (or (sequential? arg) (seq? arg)) :sequential
+      (or (sequential? arg) (seq? arg) (set? arg)) :sequential
       (map? arg) :map
       (= (type arg) #?(:clj DateTime :cljs js/Date)) :time
       (= (type arg) UUID) :uuid

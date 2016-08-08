@@ -26,9 +26,7 @@
    :int32-le])
 
 (defn make-rethink-exception [msg m]
-  (let [ex (ex-info (str "RethinkDB server: " msg) m)]
-    (log/error ex)
-    ex))
+  (ex-info (str "RethinkDB server: " msg) m))
 
 (defn close-cursor [conn token]
   (when-let [cursor (get-in @conn [:pending token :cursor])]

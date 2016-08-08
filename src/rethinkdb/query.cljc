@@ -331,7 +331,7 @@
   (if-let [index (clojure.core/or (clojure.core/get field-or-ordering "index")
                                   (clojure.core/get field-or-ordering :index))]
     (term :ORDER_BY [sel] {:index (qb/parse-term index)})
-    (term :ORDER_BY [sel field-or-ordering])))
+    (term :ORDER_BY (flatten [sel field-or-ordering]))))
 
 (defn skip
   "Skip a number of elements from the head of the sequence."
