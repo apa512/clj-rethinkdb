@@ -9,3 +9,6 @@ pom.xml.asc
 /.nrepl-*
 /doc
 rethinkdb_data/
+!.idea/
+.idea/*
+!/.idea/codeStyleSettings.xml

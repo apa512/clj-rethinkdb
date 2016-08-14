@@ -16,15 +16,15 @@
 (def test-table utils/test-table)
 
 (def pokemons [{:national_no 25
-                :name        "Pikachu"
-                :type        ["Electric"]}
+                :name "Pikachu"
+                :type ["Electric"]}
                {:national_no 81
-                :name        "Magnemite"
-                :type        ["Electric" "Steel"]}])
+                :name "Magnemite"
+                :type ["Electric" "Steel"]}])
 
 (def bulbasaur {:national_no 1
-                :name        "Bulbasaur"
-                :type        ["Grass" "Poison"]})
+                :name "Bulbasaur"
+                :type ["Grass" "Poison"]})
 
 (deftest manipulating-databases
   (with-open [conn (r/connect)]
@@ -66,8 +66,8 @@
         (-> (r/get 1) r/delete) :deleted 1
         (r/sync) :synced 1
         (r/insert {:national_no 1.1
-                   :name        "Bulbasaur"
-                   :type        #{"Grass" "Poison"}}) :inserted 1
+                   :name "Bulbasaur"
+                   :type #{"Grass" "Poison"}}) :inserted 1
         (-> (r/get 1.1) (r/delete)) :deleted 1))
 
     (testing "merging values"
@@ -85,16 +85,16 @@
                                                          (r/map (r/fn [row] (r/get-field row :name)))
                                                          (r/coerce-to "array"))})))
                            conn)
-                   first
-                   :pokemons
-                   (into #{}))))))
+                    first
+                    :pokemons
+                    (into #{}))))))
 
     (testing "selecting data"
       (is (= (set (r/run (r/table test-table) conn)) (set pokemons)))
       (is (= (r/run (-> (r/table test-table) (r/get 25)) conn) (first pokemons)))
       (is (= (set (r/run (-> (r/table test-table) (r/get-all [25 81])) conn)) (set pokemons)))
       (is (= pokemons (sort-by :national_no (r/run (-> (r/table test-table)
-                                                     (r/between r/minval r/maxval {:right-bound :closed})) conn))))
+                                                       (r/between r/minval r/maxval {:right-bound :closed})) conn))))
       (is (= (r/run (-> (r/table test-table)
                         (r/between 80 81 {:right-bound :closed})) conn) [(last pokemons)]))
       (is (= (r/run (-> (r/db test-db)
@@ -244,12 +244,13 @@
                (map #(get-in % [:new_val :n]) (take 100 (s/stream->seq changes)))
                (take 100 (s/stream->seq received))))))))
 
-(deftest core.async
+(deftest core-async
   (with-open [conn (r/connect :async? true)]
-    (is (.contains
-         (<!! (-> (r/db-list)
-                  (r/run conn {:async? true})))
-         "cljrethinkdb_test"))
+    (is (= (<!! (async/into #{}
+                            (-> (r/db-list)
+                                (r/run conn {:async? true}))))
+           1)
+        #_"cljrethinkdb_test")
     (-> (r/db test-db)
         (r/table test-table)
         (r/insert {:national_no 172 :name "Pichu"})
@@ -593,7 +594,7 @@
               Exception
               (r/run (-> twin-peaks
                          (r/filter (r/fn [row]
-                                         (r/eq (r/get-field row :job) "Deputy"))
+                                     (r/eq (r/get-field row :job) "Deputy"))
                                    {:default (r/error)})
                          (r/get-field :name))
                      conn)))
