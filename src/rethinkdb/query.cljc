@@ -40,14 +40,14 @@
 (defn- term? [x]
   (:rethinkdb.query-builder/term x))
 
-#?(:clj (defmacro fn [args & [body]]
-          (let [new-args (into [] (clojure.core/map
-                                   #(hash-map :temp-var (keyword %)) args))
-                new-replacements (zipmap args new-args)
-                new-terms (walk/postwalk-replace new-replacements body)]
-            (func new-args new-terms))))
+(defmacro fn [args & [body]]
+  (let [new-args (into [] (clojure.core/map
+                            #(hash-map :temp-var (keyword %)) args))
+        new-replacements (zipmap args new-args)
+        new-terms (walk/postwalk-replace new-replacements body)]
+    (func new-args new-terms)))
 
-(def close s/close!)
+#?(:clj (def close s/close!))
 
 ;;; Import connect
 

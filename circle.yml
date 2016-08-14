@@ -13,7 +13,7 @@ notify:
     - url: https://webhooks.gitter.im/e/45e8ba5133104828a25b
 test:
   override:
-    - case $CIRCLE_NODE_INDEX in 0) lein test2junit ;; 1) lein cljsbuild once ;; esac:
+    - case $CIRCLE_NODE_INDEX in 0) lein test2junit ;; 1) lein doo phantom test once && lein cljsbuild once advanced ;; esac:
         parallel: true
 machine:
   java:
