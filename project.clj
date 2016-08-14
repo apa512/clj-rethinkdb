@@ -11,9 +11,9 @@
             [lein-cljsbuild "1.1.3"]
             [lein-doo "0.1.7"]]
   :test2junit-output-dir ~(or (System/getenv "CIRCLE_TEST_REPORTS") "target/test2junit")
-  :dependencies [[org.clojure/clojure "1.7.0"]
+  :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/clojurescript "1.7.48" :scope "provided"]
-                 [org.clojure/core.async "0.2.374"]
+                 [org.clojure/core.async "0.2.385"]
                  [org.clojure/tools.logging "0.3.1"]
                  [aleph "0.4.1"]
                  [gloss "0.2.5"]

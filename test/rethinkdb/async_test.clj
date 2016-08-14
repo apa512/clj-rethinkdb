@@ -6,7 +6,7 @@
   (are [async? opts conn]
     (= async? (boolean (net/async-query? opts conn)))
 
-    ;; Synchornous queries
+    ;; Synchronous queries
     false nil {}
     false nil {:async? false}
     false {} {}

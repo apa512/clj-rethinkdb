@@ -12,13 +12,20 @@
             [manifold.stream.core]
             [rethinkdb.query-builder :as qb]
             [rethinkdb.response :refer [parse-response]]
-            [rethinkdb.types :as types])
-  (:import [java.io Closeable]))
+            [rethinkdb.types :as types]
+            [cheshire.parse :as parse]
+            [cheshire.factory :as factory])
+  (:import [manifold.stream.default Stream]
+           (com.fasterxml.jackson.core JsonFactory)
+           (java.nio CharBuffer)))
 
 (declare send-continue-query send-stop-query)
 
-(gloss/defcodec query-protocol
-  [:uint64-le (gloss/finite-frame :int32-le (gloss/string :utf-8))])
+(gloss/defcodec send-protocol
+  [:uint64-le (gloss/finite-frame :int32-le (gloss/string :utf-8 :char-sequence true))])
+
+(gloss/defcodec receive-protocol
+  [:uint64-le (gloss/finite-frame :int32-le (gloss/string :utf-8 :char-sequence true))])
 
 (gloss/defcodec init-protocol
   [:int32-le
@@ -42,7 +49,7 @@
                             [version auth-key protocol])))
 
 (defn read-init-response [client]
-  (string/replace (bs/to-string @(s/take! client)) #"\W*$" ""))
+  (string/replace (bs/to-string @(s/take! client) {:encoding "UTF-8"}) #"\W*$" ""))
 
 (defn deliver-result [conn token resp]
   (when-let [{:keys [result cursor async?]} (get-in @conn [:pending token])]
@@ -108,14 +115,25 @@
                                 :unknown)
                         :response json-resp})))))
 
+(defn parse-char-array [^chars ca]
+  (parse/parse (.createParser ^JsonFactory (or factory/*json-factory*
+                                               factory/json-factory)
+                              ca)
+               true nil nil))
+
+;; Test also byte-streams to reader
+;; (json/parse-stream (bs/to-reader myjson))
+
 (defn setup-consumer [conn]
   (s/consume
-   (fn [[token json]]
+   (fn [[token ^CharBuffer charbuffer]]
+     (log/trace "Resp:" token charbuffer)
+     (def mybuff charbuffer)
      (handle-response conn token
-                      (-> json
-                          (json/parse-string-strict true)
+                      (-> (.array charbuffer)
+                          (parse-char-array)
                           parse-response)))
-   (io/decode-channel (:client @conn) query-protocol)))
+   (io/decode-stream (:client @conn) receive-protocol)))
 
 
 (defn add-global-optargs [{:keys [db]} query]
@@ -135,7 +153,8 @@
               json (json/generate-string term {:key-fn #(subs (str %) 1)})]
           (when-not (and (= query-type :CONTINUE)
                          (not (get-in @conn [:pending token])))
-            (s/put! client (io/encode query-protocol [token json])))
+            (log/trace "Send:" token json)
+            (s/put! client (io/encode send-protocol [token json])))
           (recur))))))
 
 (defn async-query? [opts conn]
@@ -156,12 +175,12 @@
         token (get-next-token conn)
         query (assoc query :token token :result stream)]
     (swap! (:conn conn) assoc-in [:pending token] query)
-    (async/go (async/>! query-chan query))
+    (async/put! query-chan query)
     (if async?
       stream
       (let [response @(s/take! stream)]
         (condp instance? response
-          manifold.stream.default.Stream (s/stream->seq response)
+          Stream (s/stream->seq response)
           Throwable (throw response)
           response)))))
 
