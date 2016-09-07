@@ -1,19 +1,24 @@
 (ns rethinkdb.query-builder
   (:require [clojure.string :as string]
             [rethinkdb.types :refer [tt->int qt->int]]
-    #?@(:clj [
-            [clj-time.coerce :as c]]))
+    #?@(:clj [[clj-time.coerce :as c]]))
   #?(:clj
      (:import (org.joda.time DateTime)
-              (java.util UUID Base64 Base64$Encoder))))
+              (java.util Base64 Base64$Encoder Date UUID))))
+
+(declare parse-term)
+
+(def encoder (atom nil))
 
 (defn term [term args & [optargs]]
   {::term term
    ::args args
    ::optargs optargs})
 
-(declare parse-term)
-(def encoder (atom nil))
+#?(:clj (defn date-time->long [t]
+          (condp instance? t
+            DateTime (double (/ (c/to-long t) 1000))
+            Date (double (/ (.getTime t) 1000)))))
 
 (defn snake-case [s]
   (string/replace (name s) \- \_))
@@ -29,7 +34,8 @@
       (::term arg) :query
       (or (sequential? arg) (seq? arg) (set? arg)) :sequential
       (map? arg) :map
-      (= (type arg) #?(:clj DateTime :cljs js/Date)) :time
+      #?(:clj (#{DateTime Date} (type arg))
+         :cljs (= (type arg) js/Date)) :time
       (= (type arg) UUID) :uuid
       #?@(:clj [(instance? (type (byte-array [])) arg) :binary]))))
 
@@ -43,7 +49,7 @@
   (zipmap (keys arg) (map parse-arg (vals arg))))
 
 (defmethod parse-arg :time [arg]
-  (parse-term (term :EPOCH_TIME [#?(:clj (double (/ (c/to-long arg) 1000))
+  (parse-term (term :EPOCH_TIME [#?(:clj (date-time->long arg)
                                     :cljs (.getTime arg))])))
 
 #?(:clj (defmethod parse-arg :binary [arg]

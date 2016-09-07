@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [byte-streams :as bs]
             [clj-time.core :as t]
+            [clj-time.coerce :as c]
             [clojure.test :refer :all]
             [clojure.core.async :as async :refer [go go-loop <! take! <!! close!]]
             [manifold.stream :as s]
@@ -394,19 +395,19 @@
     (let [now (t/now)
           table (r/table (r/db test-db) test-table)
           generated-id (-> table
-                           (r/insert {:timestamp now})
+                           (r/insert {:joda-time now
+                                      :java-time (c/to-date now)})
                            (r/run conn)
                            :generated_keys
-                           first)]
-      (is (= now (let [timestamp-result (-> table
+                           first)
+          {:keys [joda-time java-time]} (-> table
                                             (r/get generated-id)
-                                            (r/run conn)
-                                            :timestamp)]
-                   (-> table
-                       (r/get generated-id)
-                       r/delete
-                       (r/run conn))
-                   timestamp-result))))))
+                                            (r/run conn))]
+      (-> table
+          (r/get generated-id)
+          r/delete
+          (r/run conn))
+      (= now java-time joda-time))))
 
 (deftest control-structures
   (with-open [conn (r/connect)]
