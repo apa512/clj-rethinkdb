@@ -56,6 +56,13 @@
         (r/index-status) :index "name"
         (r/index-status) :ready true))))
 
+(deftest manipulating-user
+  (with-open [conn (r/connect)]
+    (is (= 1 (:inserted (r/run (-> (r/db "rethinkdb") (r/table "users") (r/insert {:id "clj_rethinkdb_test_user" :password "secret"})) conn))))
+    (is (= 1 (:granted (r/run (-> (r/db test-db) (r/grant "clj_rethinkdb_test_user" {:read true :write true})) conn))))
+    (is (= 1 (:granted (r/run (r/grant "clj_rethinkdb_test_user" {:read true :write true}) conn))))
+    (is (= 1 (:deleted (r/run (-> (r/db "rethinkdb") (r/table "users") (r/filter {:id "clj_rethinkdb_test_user"}) (r/delete)) conn))))))
+
 (deftest manipulating-data
   (with-open [conn (r/connect :db test-db)]
     (testing "writing data"
