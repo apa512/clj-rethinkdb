@@ -105,6 +105,14 @@
   ([db]
    (term :TABLE_LIST [db])))
 
+(defn grant
+  "Grant or deny access permissions for a user account, globally or on a per-database or per-table basis.
+   conf is a map containing the optional {:keys [read write connect config]} with Boolean values"
+  ([username conf]
+   (term :GRANT [username conf]))            ; whole cluster grant
+  ([table username conf]
+   (term :GRANT [table username conf])))
+
 (defn index-create
   "Create a new secondary index on a table. To create a simple index based on the
   value of a single field, pass the field as the index-name. If you need to

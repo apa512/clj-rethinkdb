@@ -18,7 +18,7 @@
                  [aleph "0.4.1"]
                  [gloss "0.2.5"]
                  [cheshire "5.6.1"]
-                 [rethinkdb-protobuf "2.2.0.1"]
+                 [rethinkdb-protobuf "2.3.0"]
                  [com.google.protobuf/protobuf-java "3.0.0-alpha-3.1"]
                  [clj-time "0.11.0"]]
   :profiles {:dev {:resource-paths ["test-resources"]
