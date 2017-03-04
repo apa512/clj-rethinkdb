@@ -38,8 +38,8 @@
       (is (=
            (-> (r/table :names)
                (r/eq-join :type (r/table :types))
-               (r/run conn)))
-          [{:left {:id 1, :name "Pikachu", :type 2}, :right {:id 2, :type "Electric"}}]))
+               (r/run conn))
+          [{:left {:id 1, :name "Pikachu", :type 2}, :right {:id 2, :type "Electric"}}])))
 
     (testing "Simple eq-join with zip"
       (is (-> (r/table :names)
