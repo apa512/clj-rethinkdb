@@ -48,5 +48,55 @@
               (r/run conn))
           (= [{:id 1, :name "Pikachu", :type "Electric"}])))))
 
+(deftest inner-join
+  "Magnemite will not be picked up because it has an array of ints instead of a single int"
+  (with-open [conn (r/connect :db u/test-db)]
+    (testing
+        "Simple inner-join"
+      (is (=
+           (-> (r/table :names)
+               (r/inner-join (r/table :types) (r/fn [row1 row2]
+                                                (r/eq (r/get-field row1 :type)
+                                                      (r/get-field row2 :id))))
+               (r/run conn))
+           [{:left {:id 1, :name "Pikachu", :type 2}, :right {:id 2, :type "Electric"}}])))
+    (testing
+        "Simple inner-join with zip"
+      (is (=
+           (-> (r/table :names)
+               (r/inner-join (r/table :types) (r/fn [row1 row2]
+                                                (r/eq (r/get-field row1 :type)
+                                                      (r/get-field row2 :id))))
+               (r/zip)
+               (r/run conn))
+           [{:id 2, :name "Pikachu", :type "Electric"}])))))
+
+(deftest outer-join
+  "Steel won't be picked up because it doesn't match the exact type of any individual pokemon."
+  (with-open [conn (r/connect :db u/test-db)]
+    (testing
+        "Simple outer-join"
+      (is (=
+           (-> (r/table :names)
+               (r/outer-join (r/table :types) (r/fn [row1 row2]
+                                                (r/eq (r/get-field row1 :type)
+                                                      (r/get-field row2 :id))))
+               (r/run conn))
+           [{:left {:id 2, :name "Magnemite", :type [1 2]}}
+            {:left {:id 1, :name "Pikachu", :type 2}
+             :right {:id 2, :type "Electric"}}])))
+    (testing
+        "Outer-join with zip"
+      (is (=
+           (-> (r/table :names)
+               (r/outer-join (r/table :types) (r/fn [row1 row2]
+                                               (r/eq (r/get-field row1 :type)
+                                                     (r/get-field row2 :id))))
+               (r/zip)
+               (r/run conn))
+           [{:id 2, :name "Magnemite" :type [1 2]}
+            {:id 2, :name "Pikachu", :type "Electric"}])))))
+
+
 (use-fixtures :once setup-once)
 (use-fixtures :each setup-each)
