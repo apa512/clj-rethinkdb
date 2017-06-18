@@ -449,8 +449,8 @@
 
 (defn distinct
   "Remove duplicate elements from the sequence."
-  [sq]
-  (term :DISTINCT [sq]))
+  ([sq & [optargs]]
+   (term :DISTINCT [sq] optargs)))
 
 (defn contains
   "Returns whether or not a sequence contains all the specified values, or if

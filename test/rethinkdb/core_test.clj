@@ -118,6 +118,10 @@
       (is (= (-> (r/db test-db) (r/table test-table {:read-mode :majority}) (r/get 25) (r/get-field :name) (r/run conn))
              "Pikachu")))
 
+    (testing "distinct"
+      (is (= (-> (r/table test-table) (r/distinct {:index "name"}) (r/run conn))
+             ["Magnemite" "Pikachu"])))
+
     (testing "default values"
       (are [term result] (= result (r/run term conn))
         (-> (r/get-field {:a 1} :b) (r/default "not found")) "not found"
