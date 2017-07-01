@@ -37,7 +37,7 @@
     x
     (term :ARGS [x])))
 
-(defn- term? [x]
+(defn term? [x]
   (:rethinkdb.query-builder/term x))
 
 (defmacro fn [args & [body]]
