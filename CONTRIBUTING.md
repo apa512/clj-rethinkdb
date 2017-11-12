@@ -35,3 +35,7 @@ If possible provide:
 * Docstrings for functions
 * Documentation examples
 * Add the change to the Unreleased section of [CHANGELOG.md](CHANGELOG.md)
+
+## Developer notes
+
+clj-rethinkdb relies on protobuf definitions created in [rethinkdb-protobuf](https://github.com/apa512/rethinkdb-protobuf/). If you're wanting to add query terms for new versions of RethinkDB, the protobuf file definition will need to be updated. At the time of writing, the original copy is stored at [ql2.proto](https://github.com/rethinkdb/rethinkdb/blob/next/src/rdb_protocol/ql2.proto).
