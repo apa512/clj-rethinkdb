@@ -13,7 +13,8 @@
             [rethinkdb.query-builder :as qb]
             [rethinkdb.response :refer [parse-response]]
             [rethinkdb.types :as types])
-  (:import [java.io Closeable]))
+  (:import [java.io Closeable]
+           [manifold.stream SplicedStream]))
 
 (declare send-continue-query send-stop-query)
 
@@ -125,7 +126,7 @@
     query))
 
 (defn setup-producer [conn]
-  (let [{:keys [query-chan client]} @conn]
+  (let [{:keys [query-chan ^SplicedStream client]} @conn]
     (async/go-loop []
       (when-let [{:keys [term query-type token]} (async/<! query-chan)]
         (let [term (add-global-optargs @conn

@@ -11,6 +11,7 @@
   (:import (clojure.lang ExceptionInfo)
            (java.util UUID Arrays)
            (ch.qos.logback.classic Logger Level)
+           (manifold.stream.default Stream)
            (org.slf4j LoggerFactory)))
 
 (def test-db utils/test-db)
@@ -248,7 +249,7 @@
                    (r/table test-table)
                    (r/insert doc))
                conn))
-      (let [received (s/stream)]
+      (let [^Stream received (s/stream)]
         (go-loop []
           (s/put! received (get-in (<! changes-chan) [:new_val :n]))
           (recur))
@@ -434,7 +435,7 @@
       (r/type-of [1 2 3]) "ARRAY"
       (r/type-of {:number 42}) "OBJECT"
       (r/json "{\"number\":42}") {:number 42})
-    (is (= (:url (r/run (r/http "http://httpbin.org/get") conn)) "http://httpbin.org/get"))))
+    (is (= (:url (r/run (r/http "https://httpbin.org/get") conn)) "https://httpbin.org/get"))))
 
 (deftest math-and-logic
   (with-open [conn (r/connect)]

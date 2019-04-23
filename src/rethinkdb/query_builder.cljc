@@ -18,7 +18,7 @@
 #?(:clj (defn date-time->long [t]
           (condp instance? t
             DateTime (double (/ (c/to-long t) 1000))
-            Date (double (/ (.getTime t) 1000)))))
+            Date (double (/ (.getTime ^Date t) 1000)))))
 
 (defn snake-case [s]
   (string/replace (name s) \- \_))
