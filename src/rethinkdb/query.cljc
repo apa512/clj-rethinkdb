@@ -459,6 +459,11 @@
   [sq x-or-func]
   (term :CONTAINS [sq x-or-func]))
 
+(defn fold
+  "Apply a function to a sequence in order, maintaining state via an accumulator. 
+  The fold command returns either a single value or a new sequence."
+  [sq base func & [optargs]] (term :FOLD [sq base func] optargs))
+
 ;;; Document manipulation
 
 (defn pluck

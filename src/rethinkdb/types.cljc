@@ -86,6 +86,7 @@
                        "LIMIT" 71,
                        "OFFSETS_OF" 87,
                        "CONTAINS" 93,
+                       "FOLD" 187,
                        "GET_FIELD" 31,
                        "KEYS" 94,
                        "VALUES" 186,

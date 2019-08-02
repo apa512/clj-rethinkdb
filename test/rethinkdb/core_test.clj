@@ -231,7 +231,15 @@
       (r/max [4 6]) 6
       (r/distinct [1 6 1 8]) [1 6 8]
       (r/contains [1 6 1 8] 1) true
-      (r/contains [1 6 1 8] 2) false)))
+      (r/contains [1 6 1 8] 2) false
+      (r/fold [1 6 1 8] 0 (r/fn [acc number] (r/add acc number))) 16
+      (r/fold [1 6 1 8] 0 (r/fn [acc number] (r/add acc 1))  ; increment accumulator
+              {:emit (r/fn [acc number new-acc]
+                       (r/branch (-> new-acc (r/mod 2) (r/eq 0))
+                                 [number]
+                                 [])) ; select elements on even positions
+               :final-emit (r/fn [acc] [100])}) [6 8 100] ; append 100 to the end
+      )))
 
 (deftest changefeeds
   (with-open [conn (r/connect)]
