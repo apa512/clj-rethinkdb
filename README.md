@@ -1,8 +1,8 @@
 # clj-rethinkdb
 
-A RethinkDB client for Clojure. Tested and supported on RethinkDB 2.0.x but should with work all versions that support the JSON protocol (i.e. >= 1.13).
+A RethinkDB client for Clojure. Tested against RethinkDB 2.4.4 (the final RethinkDB release) but should work with all versions that support the JSON protocol (i.e. >= 1.13).
 
-[![Circle CI](https://circleci.com/gh/apa512/clj-rethinkdb.svg?style=svg)](https://circleci.com/gh/apa512/clj-rethinkdb)
+[![CI](https://github.com/apa512/clj-rethinkdb/actions/workflows/ci.yml/badge.svg)](https://github.com/apa512/clj-rethinkdb/actions/workflows/ci.yml)
 [![Dependencies Status](https://versions.deps.co/apa512/clj-rethinkdb/status.svg)](https://versions.deps.co/apa512/clj-rethinkdb)
 [![Join the chat at https://gitter.im/apa512/clj-rethinkdb](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/apa512/clj-rethinkdb?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 

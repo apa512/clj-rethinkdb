@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: JVM (Java ${{ matrix.java }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['11', '17', '21']
+
+    services:
+      rethinkdb:
+        image: rethinkdb:2.4.4-bookworm-slim
+        ports:
+          - 28015:28015
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+
+      - uses: DeLaGuardo/setup-clojure@13
+        with:
+          lein: 2.11.2
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('project.clj') }}
+          restore-keys: ${{ runner.os }}-m2-
+
+      - name: Wait for RethinkDB
+        run: |
+          for _ in $(seq 1 60); do
+            if (exec 3<>/dev/tcp/127.0.0.1/28015) 2>/dev/null; then
+              echo "RethinkDB is accepting driver connections"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "RethinkDB did not become ready within 60s" >&2
+          exit 1
+
+      - name: Run tests
+        run: lein test
+
+  cljs:
+    name: ClojureScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - uses: DeLaGuardo/setup-clojure@13
+        with:
+          lein: 2.11.2
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('project.clj') }}
+          restore-keys: ${{ runner.os }}-m2-
+
+      - name: Run ClojureScript tests
+        run: lein doo node test once
+
+      - name: Advanced compile
+        run: lein cljsbuild once advanced

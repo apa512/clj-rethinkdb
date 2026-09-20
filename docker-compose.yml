@@ -1,6 +1,5 @@
-version: '3'
 services:
   rethinkdb:
-    image: rethinkdb:2.3.6
+    image: rethinkdb:2.4.4-bookworm-slim
     ports:
       - "28015:28015"
