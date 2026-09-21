@@ -10,7 +10,7 @@
             [test2junit "1.1.2"]
             [lein-cljsbuild "1.1.3"]
             [lein-doo "0.1.7"]]
-  :test2junit-output-dir ~(or (System/getenv "CIRCLE_TEST_REPORTS") "target/test2junit")
+  :test2junit-output-dir "target/test2junit"
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.48" :scope "provided"]
                  [org.clojure/core.async "0.4.490"]
@@ -22,13 +22,17 @@
                  [com.google.protobuf/protobuf-java "3.0.0"]
                  [clj-time "0.11.0"]]
   :profiles {:dev {:resource-paths ["test-resources"]
-                   :dependencies [[ch.qos.logback/logback-classic "1.1.7"]]}}
+                   :dependencies [[ch.qos.logback/logback-classic "1.1.7"]
+                                  ;; JAXB was removed from the JDK in Java 11; ClojureScript
+                                  ;; 1.7.x needs it to compile. Build-time only.
+                                  [javax.xml.bind/jaxb-api "2.3.1"]]}}
   :clean-targets ^{:protect false} [:target-path "out"]
   :cljsbuild {:builds [{:id "test"
                         :source-paths ["src" "test"]
                         :compiler     {:output-to     "target/clj-rethinkdb.js"
                                        :main rethinkdb.test-runner
-                                       :optimizations :whitespace}}
+                                       :target        :nodejs
+                                       :optimizations :none}}
                        {:id "advanced"
                         :source-paths ["src"]
                         :compiler {:output-to "target/clj-rethinkdb-adv.js"

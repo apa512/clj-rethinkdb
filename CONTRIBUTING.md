@@ -36,6 +36,29 @@ If possible provide:
 * Documentation examples
 * Add the change to the Unreleased section of [CHANGELOG.md](CHANGELOG.md)
 
+## Running the tests
+
+The test suite talks to a real RethinkDB server on `localhost:28015`. The quickest way to get one is Docker:
+
+```sh
+docker compose up -d
+```
+
+Then run the JVM suite:
+
+```sh
+lein test
+```
+
+The ClojureScript tests only exercise query building (no network) and run on Node:
+
+```sh
+lein doo node test once
+lein cljsbuild once advanced
+```
+
+Note that `lein test` creates and drops a `cljrethinkdb_test` database, so point it at a throwaway server rather than one holding data you care about.
+
 ## Developer notes
 
 clj-rethinkdb relies on protobuf definitions created in [rethinkdb-protobuf](https://github.com/apa512/rethinkdb-protobuf/). If you're wanting to add query terms for new versions of RethinkDB, the protobuf file definition will need to be updated. At the time of writing, the original copy is stored at [ql2.proto](https://github.com/rethinkdb/rethinkdb/blob/next/src/rdb_protocol/ql2.proto).

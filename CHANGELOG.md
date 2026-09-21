@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com).
 
+## [Unreleased]
+### Changed
+- Test suite verified against RethinkDB 2.4.4, the final RethinkDB release. `docker-compose.yml` now runs 2.4.4 instead of 2.3.6.
+- Replaced the (long defunct) CircleCI 1.0 configuration with GitHub Actions, running the JVM suite on Java 11, 17 and 21 plus a ClojureScript job.
+- ClojureScript tests now run on Node rather than the discontinued PhantomJS.
+
+### Fixed
+- ClojureScript builds failed on Java 11 and newer with `ClassNotFoundException: javax.xml.bind.DatatypeConverter`. JAXB, removed from the JDK in Java 11, is now supplied as a build-time dependency.
+- Regenerated the self-signed certificates in `test-resources`; the previous pair expired on 2026-04-21.
+
 ## [0.15.26] - 2016-07-10
 - Writing sets in RethinkDB documents no longer throws exceptions. They are coerced to arrays before getting written to RethinkDB, and are returned as vectors.
 - Added support for `order-by` with multiple fields
